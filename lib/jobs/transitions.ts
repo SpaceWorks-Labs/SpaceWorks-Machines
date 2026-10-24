@@ -7,7 +7,8 @@ import { release } from "@/lib/consumables/reservations";
 import { toMilli } from "@/lib/consumables/math";
 import { changeMachineStatus } from "@/lib/machines/machines";
 import { enqueueWebhookDeliveries } from "@/lib/webhooks/emit";
-import { jobAccess, JobGuardError, jobSettings, lockJob, lockJobMachine, lockTypeCapacity,
+import { actorMayUseType } from "@/lib/typeScope";
+import { jobAccess, JobGuardError, JobNotFoundError, jobSettings, lockJob, lockJobMachine, lockTypeCapacity,
   nextJobNumber, nonNegativeInteger, requireReason, type JobContext } from "./context";
 import type { JobCommand } from "./commands";
 import { jobEvent } from "./events";
@@ -83,15 +84,20 @@ async function reprint(tx: Prisma.TransactionClient, job: Job, actorId: string, 
 async function runTransition(tx: Prisma.TransactionClient, context: JobContext, command: JobCommand, dependencies: JobDependencies) {
   const job = await lockJob(tx, context.spaceId, context.jobId);
   const access = await jobAccess(tx, context.spaceId, context.actorId);
+  // A machine-type manager sees only jobs of their types: others answer not-found, and on their own request for
+  // another type they act only as its requester.
+  const outOfScope = access.role === "TYPE_MANAGER" && !(await actorMayUseType(tx, context.spaceId, context.actorId, job.typeId));
+  if (outOfScope && job.requesterId !== context.actorId) throw new JobNotFoundError();
+  const role = outOfScope ? "MEMBER" : access.role;
   const settings = await jobSettings(tx, job.spaceId);
   const payments = dependencies.payments ?? jobPaymentEffects;
   const review = ["approve", "reject", "reprint", "priority", "reassign"].includes(command.kind);
   const capability = review ? "jobs.review" : "jobs.operate";
-  if (command.kind === "cancel" && !can(access.role, "jobs.review")) {
+  if (command.kind === "cancel" && !can(role, "jobs.review")) {
     if (job.requesterId !== context.actorId || !settings.allowRequesterCancel || !["SUBMITTED", "APPROVED"].includes(job.status)) throw new JobGuardError("You cannot cancel this job.");
-  } else if (command.kind === "note" && !can(access.role, "jobs.review")) {
+  } else if (command.kind === "note" && !can(role, "jobs.review")) {
     if (job.requesterId !== context.actorId || command.internal) throw new JobGuardError("You cannot add this note.");
-  } else if (command.kind !== "note" && !can(access.role, capability)) throw new JobGuardError("You cannot perform this job action.");
+  } else if (command.kind !== "note" && !can(role, capability)) throw new JobGuardError("You cannot perform this job action.");
   if (!allowed[command.kind].includes(job.status)) throw new JobGuardError(`Cannot ${command.kind} a ${job.status.toLowerCase()} job.`);
   if (command.kind === "approve") return approveInTransaction(tx, job, context.actorId, command, settings, payments);
   if (command.kind === "reprint") return reprint(tx, job, context.actorId, settings, payments);
@@ -103,7 +109,7 @@ async function runTransition(tx: Prisma.TransactionClient, context: JobContext, 
     const needed = command.kind === "start" || (settings.requirePaymentBeforeCollection && job.paymentTiming !== "PAY_LATER");
     const paid = !needed || await (command.kind === "start" ? payments.canStart(tx, job) : payments.canCollect(tx, job));
     if (command.paymentOverrideReason !== undefined) {
-      if (!can(access.role, "payments.manage")) throw new JobGuardError("Payment overrides require payments.manage.");
+      if (!can(role, "payments.manage")) throw new JobGuardError("Payment overrides require payments.manage.");
       note = requireReason(command.paymentOverrideReason);
       eventData = { paymentOverride: true };
     } else if (!paid) throw new JobGuardError("This job is not paid.");

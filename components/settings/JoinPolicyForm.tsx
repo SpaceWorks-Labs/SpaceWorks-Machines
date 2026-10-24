@@ -10,7 +10,7 @@ import { Radio, RadioGroup } from "@/components/ui/choice";
 
 const OPTIONS: Array<{ value: JoinPolicy; label: string; description: string }> = [
   { value: "OPEN", label: "Anyone can join", description: "Makers with a verified email join straight away." },
-  { value: "APPROVAL", label: "Ask to join", description: "Makers ask; a space manager approves them on the Team page." },
+  { value: "APPROVAL", label: "Ask to join", description: "Makers ask; a machine manager approves them on the Team page." },
   { value: "INVITE_ONLY", label: "Invite only", description: "Only people you invite from the Team page can join." },
 ];
 

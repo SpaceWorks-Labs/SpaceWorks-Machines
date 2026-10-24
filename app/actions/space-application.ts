@@ -62,8 +62,8 @@ export async function checkSpaceSlug(input: unknown): Promise<ActionResult<{ ava
 }
 
 /**
- * Apply for a new space. The applicant becomes its owner; nothing opens until a platform admin
- * approves it. Owners and platform admins are emailed through the outbox in the same transaction.
+ * Apply for a new space. The applicant becomes its machine manager; nothing opens until a platform admin
+ * approves it. Its machine managers and platform admins are emailed through the outbox in the same transaction.
  */
 export async function submitSpaceApplication(input: unknown): Promise<ActionResult<{ slug: string }>> {
   const session = await auth();
@@ -77,7 +77,7 @@ export async function submitSpaceApplication(input: unknown): Promise<ActionResu
   const application = parsed.data;
 
   const open = await prisma.spaceMember.count({
-    where: { userId, role: "OWNER", space: { status: { in: ["PENDING_REVIEW", "CHANGES_REQUESTED"] } } },
+    where: { userId, role: "MACHINE_MANAGER", space: { status: { in: ["PENDING_REVIEW", "CHANGES_REQUESTED"] } } },
   });
   if (open >= MAX_OPEN_APPLICATIONS) return { ok: false, error: "You already have applications waiting for a decision. Wait for those first." };
   // Counted only once the form is valid, so fixing typos never uses up the allowance.
@@ -91,7 +91,7 @@ export async function submitSpaceApplication(input: unknown): Promise<ActionResu
         select: { id: true, slug: true },
       });
       await provisionSpace(tx, created.id);
-      await tx.spaceMember.create({ data: { userId, spaceId: created.id, role: "OWNER" } });
+      await tx.spaceMember.create({ data: { userId, spaceId: created.id, role: "MACHINE_MANAGER" } });
       await tx.spaceReview.create({
         data: { spaceId: created.id, action: "SUBMITTED", actorUserId: userId, applicationSnapshot: applicationSnapshot(application) },
       });
@@ -125,7 +125,7 @@ export async function resubmitSpaceApplication(input: unknown): Promise<ActionRe
   if (!space) return { ok: false, error: "Space not found." };
   const membership = await getMembership(userId, space.id);
   if (!membership) return { ok: false, error: "Space not found." };
-  if (!can(membership.role, "space.settings")) return { ok: false, error: "Only owners and managers can update the application." };
+  if (!can(membership.role, "space.settings")) return { ok: false, error: "Only machine managers can update the application." };
   if (!(await hasAuthenticator(userId))) return { ok: false, error: STAFF_AUTHENTICATOR_MESSAGE };
 
   const outcome = await prisma.$transaction(async (tx) => {

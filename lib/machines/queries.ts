@@ -6,6 +6,7 @@ import { isLowStock, remainingPercent } from "@/lib/consumables/math";
 import { machineFileUrl } from "./fileAccess";
 import { readFields, type FieldDefinition } from "./fields";
 import { readFilePolicy, type FilePolicy } from "./filePolicy";
+import { typeWhere, type TypeScope } from "@/lib/typeScope";
 
 /** Serialisable shapes for views (no Decimal or Prisma objects cross the frontend gateway). */
 
@@ -86,10 +87,10 @@ export function poolRow(row: Prisma.ConsumablePoolGetPayload<{ select: typeof PO
 }
 
 /** Machine counts by status for a space (retired machines excluded), plus the retired count. */
-export async function machineStatusCounts(spaceId: string) {
+export async function machineStatusCounts(spaceId: string, scope: TypeScope = null) {
   const [grouped, retired] = await Promise.all([
-    prisma.machine.groupBy({ by: ["status"], where: { spaceId, retiredAt: null }, _count: true }),
-    prisma.machine.count({ where: { spaceId, retiredAt: { not: null } } }),
+    prisma.machine.groupBy({ by: ["status"], where: { spaceId, retiredAt: null, ...typeWhere(scope) }, _count: true }),
+    prisma.machine.count({ where: { spaceId, retiredAt: { not: null }, ...typeWhere(scope) } }),
   ]);
   const counts: Record<MachineStatus, number> = { IDLE: 0, RUNNING: 0, PAUSED: 0, RESERVED: 0, MAINTENANCE: 0, OFFLINE: 0 };
   for (const row of grouped) counts[row.status] = row._count;

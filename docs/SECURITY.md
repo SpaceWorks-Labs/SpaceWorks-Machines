@@ -69,7 +69,9 @@ public issue.
   ("Space not found."), never "forbidden", so space addresses cannot be probed.
 - **Roles and capabilities** are defined only in `lib/permissionRoles.ts` and checked on the server for every
   page and action. A space's status limits them further: nothing before approval, reading only while
-  suspended or archived. Space managers can never change owners or other space managers.
+  suspended or archived. Only machine managers change anyone's role, and a space always keeps one active
+  machine manager. Machine type managers act only on their assigned types; everything else answers 404
+  (`lib/typeScope.ts`).
 - **Settings are audited.** Every settings change records an audit event (`SPACE_SETTINGS_CHANGED`) with the
   area and the names of the changed fields, never their values, in the same transaction as the change.
 - **Rate limits** on sign-in, magic links and sensitive actions (Redis), with the client address taken only
@@ -88,7 +90,7 @@ There are no OAuth or SSO providers. People sign in with email and password, or 
   and replaced by the next request. Requests are rate limited and answer the same whether or not the address
   has an account. `/login/link` uses the link only when the person presses **Sign in**, so mail scanners that
   open links do not spend it. Opening a link proves the address, so it also verifies the email.
-- **Staff need an authenticator.** Anyone on a space's staff (owner, space manager, machine manager, operator,
+- **Staff need an authenticator.** Anyone on a space's staff (machine manager, machine type manager, operator,
   technician, viewer) must turn on an authenticator app before the dashboard or its actions open
   (`hasAuthenticator` in `lib/permissions.ts`). Makers never need one. An account with an authenticator gives
   its code after either sign-in method; recovery codes stand in for a lost device.

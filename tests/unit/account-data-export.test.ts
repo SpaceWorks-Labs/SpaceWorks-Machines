@@ -43,7 +43,7 @@ function pollutedSource(): AccountExportSource {
       recoveryCodeHashes: SECRETS.recoveryCodeHashes,
       sessionVersion: SECRETS.sessionVersion,
     },
-    spaceMembers: [{ role: "OWNER", status: "ACTIVE", createdAt: new Date("2030-01-03T00:00:00Z"), space: { name: "Analytical Society", slug: "analytical" }, inviteToken: SECRETS.access_token }],
+    spaceMembers: [{ role: "MACHINE_MANAGER", status: "ACTIVE", createdAt: new Date("2030-01-03T00:00:00Z"), space: { name: "Analytical Society", slug: "analytical" }, inviteToken: SECRETS.access_token }],
   };
   return source as unknown as AccountExportSource;
 }
@@ -59,7 +59,7 @@ describe("account data export shaping", () => {
       accountCreatedAt: "2029-12-01T00:00:00.000Z",
       twoFactorAuthenticationEnabled: true,
     });
-    expect(data.spaces).toEqual([{ space: "Analytical Society", spaceSlug: "analytical", role: "OWNER", status: "ACTIVE", joinedAt: "2030-01-03T00:00:00.000Z" }]);
+    expect(data.spaces).toEqual([{ space: "Analytical Society", spaceSlug: "analytical", role: "MACHINE_MANAGER", status: "ACTIVE", joinedAt: "2030-01-03T00:00:00.000Z" }]);
     expect(data.truncated.spaces).toBe(false);
   });
 

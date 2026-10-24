@@ -79,7 +79,7 @@ describe("machine file visibility", () => {
 
   it("denies staff access before space approval", async () => {
     mocks.photo.mockResolvedValue({ machine: { ...machine, space: { ...machine.space, status: "PENDING" } } });
-    mocks.member.mockResolvedValue({ role: "OWNER", status: "ACTIVE" });
+    mocks.member.mockResolvedValue({ role: "MACHINE_MANAGER", status: "ACTIVE" });
     expect(await resolveMachineFile(photoKey, "staff-1")).toBeNull();
   });
 

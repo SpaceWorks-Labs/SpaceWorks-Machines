@@ -19,10 +19,10 @@ and the machine parts of `payments`.
   Radix primitives, Redis (ioredis + BullMQ), S3-compatible private storage (Silo on a VPS), Nodemailer
   behind a database outbox, Vitest and Playwright.
 - Tenancy: `Space` is the tenant. Cross-space access returns 404.
-- Roles (`SpaceRole`): OWNER and MANAGER (space managers: whole-space settings, money, people,
-  integrations), MACHINE_MANAGER (machine side: types, file policies, queue rules, pricing per type and
-  machine, consumables, maintenance, printers), OPERATOR, TECHNICIAN, VIEWER are staff and need an
-  authenticator; MEMBER is a maker who submits jobs. Capabilities live in `lib/permissionRoles.ts`.
+- Roles (`SpaceRole`, as changed by the owner on 2026-10-24, see `docs/DECISIONS.md`): MACHINE_MANAGER (the
+  top role: everything, including settings, money, people and integrations), TYPE_MANAGER (the machine side
+  for assigned types only), OPERATOR, TECHNICIAN, VIEWER are staff and need an authenticator; MEMBER is a
+  maker who submits jobs. Capabilities live in `lib/permissionRoles.ts`.
 - No training, certification or machine access gating.
 - Money is integer minor units (paise/cents) with an ISO currency per space. Payments: Razorpay, Stripe
   (each space's own account, secrets encrypted) and offline (cash, bank, UPI recorded by staff).

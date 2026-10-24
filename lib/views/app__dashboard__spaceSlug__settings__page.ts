@@ -3,7 +3,7 @@ import { canDeleteSpace, requireSpaceCapability } from "@/lib/permissions";
 
 type Props = { params: Promise<{ spaceSlug: string; }>; };
 
-/** Space settings, profile tab: space managers only. */
+/** Space settings, profile tab: machine managers only. */
 export async function loadSpaceSettingsView({ params }: Props) {
   const { spaceSlug } = await params;
   const { space, membership } = await requireSpaceCapability(spaceSlug, "space.settings");

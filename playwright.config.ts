@@ -28,6 +28,9 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     command: process.env.PLAYWRIGHT_SERVER_COMMAND || defaultServerCommand,
+    // The test server trusts x-real-ip, so each browser context signs in from its own address
+    // (tests/e2e/clientAddress.ts) and the suite stays under the per-address sign-in limit.
+    ...(process.env.PLAYWRIGHT_SERVER_COMMAND ? {} : { env: { ...process.env as Record<string, string>, TRUSTED_PROXY_IP_HEADER: process.env.TRUSTED_PROXY_IP_HEADER || "x-real-ip" } }),
     url: `${testBaseUrl}/api/health`,
     reuseExistingServer: !process.env.CI,
     timeout: 240_000,

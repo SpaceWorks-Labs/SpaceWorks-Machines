@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { NavTabs } from "@/components/ui/tabs";
 
-/** Space settings sections (space managers). Machine settings live on their own page for machine managers. */
+/** Space settings sections (machine managers). Machine settings have their own page, shared with machine type managers. */
 export function SettingsTabs({ slug }: { slug: string }) {
   const pathname = usePathname() ?? "";
   const base = `/dashboard/${slug}/settings`;

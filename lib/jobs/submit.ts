@@ -16,6 +16,7 @@ import { prepareJobFiles } from "./files";
 import { jobEvent } from "./events";
 import { approveInTransaction, type JobDependencies } from "./transitions";
 import { jobPaymentEffects } from "@/lib/payments/jobs/effects";
+import { actorMayUseType } from "@/lib/typeScope";
 
 export type SubmitJobInput = { spaceId: string; actorId: string; typeId: string; machineId?: string;
   requesterEmail?: string; title: string; description?: string; sourceLink?: string;
@@ -40,7 +41,8 @@ async function submissionContext(tx: Prisma.TransactionClient, input: SubmitJobI
   const audience = member?.status === "ACTIVE" ? "MEMBER" as const : "PUBLIC" as const;
   if (settings.eligibility === "MEMBERS_ONLY" && audience !== "MEMBER") throw new JobGuardError("Only active members can request jobs in this space.");
   const type = await tx.machineType.findFirst({ where: { spaceId: input.spaceId, id: input.typeId } });
-  if (!type) throw new JobNotFoundError();
+  // Submitting on someone's behalf is a staff action: a machine-type manager may do it only for their types.
+  if (!type || (input.requesterEmail && !(await actorMayUseType(tx, input.spaceId, input.actorId, type.id)))) throw new JobNotFoundError();
   if (!type.acceptsJobs || type.archivedAt) throw new JobGuardError("This machine type is not accepting jobs.");
   if (input.machineId) {
     if (!type.requesterPicksMachine && !staff) throw new JobGuardError("Staff allocate machines for this type.");

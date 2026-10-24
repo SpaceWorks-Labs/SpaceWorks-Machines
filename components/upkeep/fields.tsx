@@ -1,3 +1,5 @@
+"use client";
+
 import { CheckboxField } from "@/components/ui/choice";
 import { Dropdown, Field, Input, Textarea } from "@/components/ui/field";
 import { DOWNTIME_REASONS, FAULT_SEVERITIES, FAULT_STATUSES, MAINTENANCE_KINDS, MAINTENANCE_TRIGGERS } from "@/lib/upkeep/schemas";

@@ -5,8 +5,7 @@ import { savePrinterAction } from "@/app/actions/integrations";
 import { SpacePageHeader } from "@/components/dashboard/space/SpacePageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, Chip, DetailList, ProgressBar } from "@/components/ui/display";
-import { CheckboxField } from "@/components/ui/choice";
-import { Dropdown, Field, Input } from "@/components/ui/field";
+import { PrinterFields } from "@/components/printers/PrinterFields";
 import { MachineStatusChip } from "@/components/machines/MachineStatusChip";
 import { ActionDialog } from "@/components/upkeep/ActionDialog";
 import { AutoRefresh, PrinterControls } from "@/components/printers/PrinterControls";
@@ -28,15 +27,8 @@ export default async function MachinePrinterPage({ params }: { params: Promise<{
         actions={<><MachineStatusChip status={machine.status} />
           <ActionDialog action={savePrinterAction} fixed={{ spaceSlug: space.slug, machineId: machine.id }} booleans={["enabled", "syncMachineStatus", "autoCompleteJobs"]}
             trigger={connection ? "Edit connection" : "Set up connection"} triggerVariant="primary" title="Printer connection" submitLabel="Save connection" success="Connection saved">
-            <Field label="Connection type"><Dropdown name="adapter" defaultValue={connection?.adapter ?? "SIMULATED"}>
-              {adapters.filter((adapter) => adapter.available).map((adapter) => <option key={adapter.kind} value={adapter.kind}>{adapter.label}</option>)}</Dropdown></Field>
-            <Field label="Address" optional helperText="For network printers."><Input name="baseUrl" maxLength={300} defaultValue={connection?.baseUrl} /></Field>
-            <Field label="Device id" optional helperText="Serial number or user name, when the printer needs one."><Input name="deviceId" maxLength={120} defaultValue={connection?.deviceId} /></Field>
-            <Field label="Key or access code" optional helperText={connection?.hasSecret ? "Saved. Leave blank to keep it." : "Stored encrypted and never shown again."}><Input name="secret" type="password" autoComplete="off" maxLength={500} /></Field>
-            <Field label="Check every (seconds)"><Input name="pollSeconds" type="number" min={15} max={3600} defaultValue={settings.pollSeconds} /></Field>
-            <CheckboxField name="enabled" defaultChecked={connection?.enabled ?? true} label="Connection on" />
-            <CheckboxField name="autoCompleteJobs" defaultChecked={settings.autoCompleteJobs} label="Finish jobs from the printer" description="Complete or fail the running job when the print ends." />
-            <CheckboxField name="syncMachineStatus" defaultChecked={settings.syncMachineStatus} label="Mirror printing and idle onto the machine" description="Never overrides maintenance, offline or reserved." />
+            <PrinterFields adapters={adapters.filter((adapter) => adapter.available).map((adapter) => ({ kind: adapter.kind, label: adapter.label }))}
+              connection={connection ? { adapter: connection.adapter, baseUrl: connection.baseUrl, deviceId: connection.deviceId, hasSecret: connection.hasSecret, enabled: connection.enabled } : null} settings={settings} />
           </ActionDialog></>} />
 
       <section aria-label="Connection types" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

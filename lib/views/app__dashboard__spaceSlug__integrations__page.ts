@@ -2,11 +2,12 @@ import { prisma } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { requireSpaceTeam } from "@/lib/permissions";
 import { can, spaceAllows } from "@/lib/permissionRoles";
+import { machineTypeWhere } from "@/lib/typeScope";
 
 /** API keys and webhook endpoints. Secrets never leave the server: keys show their prefix, endpoints their host. */
 export async function loadIntegrationsView({ params }: { params: Promise<{ spaceSlug: string }> }) {
   const { spaceSlug } = await params;
-  const { space, membership } = await requireSpaceTeam(spaceSlug);
+  const { space, membership, typeScope } = await requireSpaceTeam(spaceSlug);
   // Either capability opens the page (the navigation shows it for both); each section checks its own.
   if (!(["integrations.manage", "printers.manage"] as const).some((capability) => can(membership.role, capability) && spaceAllows(space.status, capability))) redirect(`/dashboard/${spaceSlug}`);
   const canManage = can(membership.role, "integrations.manage") && spaceAllows(space.status, "integrations.manage");
@@ -17,7 +18,7 @@ export async function loadIntegrationsView({ params }: { params: Promise<{ space
     canManage ? prisma.webhookEndpoint.findMany({ where: { spaceId: space.id }, orderBy: { createdAt: "asc" },
       select: { id: true, url: true, description: true, events: true, isActive: true, consecutiveFailures: true, disabledAt: true,
         deliveries: { orderBy: { createdAt: "desc" }, take: 1, select: { status: true, createdAt: true } } } }) : [],
-    prisma.printerConnection.count({ where: { spaceId: space.id, enabled: true } }),
+    prisma.printerConnection.count({ where: { spaceId: space.id, enabled: true, ...machineTypeWhere(typeScope) } }),
   ]);
   const now = Date.now();
   return { space: { ...space, ...profile }, canManage, canPrinters: can(membership.role, "printers.manage"), printers,

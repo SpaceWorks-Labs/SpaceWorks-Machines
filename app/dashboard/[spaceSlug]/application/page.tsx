@@ -78,7 +78,7 @@ export default async function SpaceApplicationPage({ params }: { params: Promise
             <>
               <CardHeader
                 title="What you told us"
-                description={space.status === "CHANGES_REQUESTED" && !isManager ? "An owner or manager can update the application." : undefined}
+                description={space.status === "CHANGES_REQUESTED" && !isManager ? "A machine manager can update the application." : undefined}
               />
               <DetailList
                 items={[

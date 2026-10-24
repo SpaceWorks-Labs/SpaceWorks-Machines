@@ -2,22 +2,24 @@ import { prisma } from "@/lib/db";
 import { requireSpaceCapability } from "@/lib/permissions";
 import { scheduleDue, upkeepSettings, warrantyState } from "@/lib/upkeep";
 import { faultNumber } from "@/lib/upkeep/labels";
+import { typeWhere } from "@/lib/typeScope";
 
 /** Upkeep across the space: what needs attention now. Any staff member may read it. */
 export async function loadMaintenanceView({ params }: { params: Promise<{ spaceSlug: string }> }) {
   const { spaceSlug } = await params;
-  const { space } = await requireSpaceCapability(spaceSlug, "maintenance.view");
+  const { space, typeScope } = await requireSpaceCapability(spaceSlug, "maintenance.view");
+  const machine = typeWhere(typeScope);
   const now = new Date();
   const [profile, settings, schedules, faults, downtime, warranties] = await Promise.all([
     prisma.space.findUniqueOrThrow({ where: { id: space.id }, select: { logoUrl: true, timezone: true } }),
     upkeepSettings(prisma, space.id),
-    prisma.maintenanceSchedule.findMany({ where: { spaceId: space.id, isActive: true, machine: { retiredAt: null } },
+    prisma.maintenanceSchedule.findMany({ where: { spaceId: space.id, isActive: true, machine: { retiredAt: null, ...machine } },
       include: { machine: { select: { name: true, slug: true, meterMinutes: true, meterJobs: true } } } }),
-    prisma.faultReport.findMany({ where: { spaceId: space.id, status: { in: ["OPEN", "ACKNOWLEDGED", "IN_PROGRESS"] } }, orderBy: [{ createdAt: "desc" }], take: 50,
+    prisma.faultReport.findMany({ where: { spaceId: space.id, machine, status: { in: ["OPEN", "ACKNOWLEDGED", "IN_PROGRESS"] } }, orderBy: [{ createdAt: "desc" }], take: 50,
       select: { number: true, title: true, severity: true, status: true, createdAt: true, machine: { select: { name: true } } } }),
-    prisma.downtime.findMany({ where: { spaceId: space.id, endedAt: null }, orderBy: { startedAt: "asc" },
+    prisma.downtime.findMany({ where: { spaceId: space.id, endedAt: null, machine }, orderBy: { startedAt: "asc" },
       select: { id: true, reason: true, startedAt: true, machine: { select: { name: true, slug: true } } } }),
-    prisma.warranty.findMany({ where: { spaceId: space.id, expiresOn: { not: null }, machine: { retiredAt: null } }, orderBy: { expiresOn: "asc" },
+    prisma.warranty.findMany({ where: { spaceId: space.id, expiresOn: { not: null }, machine: { retiredAt: null, ...machine } }, orderBy: { expiresOn: "asc" },
       select: { expiresOn: true, vendorName: true, machine: { select: { name: true, slug: true } } } }),
   ]);
   const attention = schedules.map((schedule) => ({ id: schedule.id, title: schedule.title, machine: schedule.machine.name, machineSlug: schedule.machine.slug,

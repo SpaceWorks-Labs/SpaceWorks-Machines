@@ -3,7 +3,8 @@ import type { MeteringUnit, Prisma, UsageSource } from "@prisma/client";
 import { recordAuditEvent } from "@/lib/audit";
 import { applyAdjustment, lockPool } from "@/lib/consumables/ledger";
 import { fromMilli, poolServesMachine, toMilli } from "@/lib/consumables/math";
-import { jobAccess, JobGuardError, lockJob, lockJobMachine, nonNegativeInteger } from "@/lib/jobs/context";
+import { jobAccess, JobGuardError, JobNotFoundError, lockJob, lockJobMachine, nonNegativeInteger } from "@/lib/jobs/context";
+import { actorMayUseType } from "@/lib/typeScope";
 
 export type UsageInput = { spaceId: string; machineId: string; source: UsageSource; actorId?: string | null;
   jobId?: string; minutes: number; succeeded: boolean; percentComplete?: number; quantity?: string;
@@ -34,6 +35,7 @@ export async function recordUsage(tx: Prisma.TransactionClient, input: UsageInpu
     if (await tx.usageLog.findFirst({ where: { spaceId: input.spaceId, jobId: job.id, source: "JOB" } })) throw new JobGuardError("Job usage was already recorded.");
   } else if (input.source === "JOB") throw new JobGuardError("Job usage needs a job.");
   const machine = await lockJobMachine(tx, input.spaceId, input.machineId);
+  if (input.source === "MANUAL" && !(await actorMayUseType(tx, input.spaceId, input.actorId, machine.typeId))) throw new JobNotFoundError();
   if (input.poolId && input.source === "ADAPTER") throw new JobGuardError("Adapter usage cannot take pool stock.");
   if (input.poolId && input.source === "MANUAL") {
     const pool = await lockPool(tx, input.spaceId, input.poolId);

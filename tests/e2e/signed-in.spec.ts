@@ -27,7 +27,7 @@ async function signIn(page: Page, email: string) {
 
 const nav = (page: Page) => page.getByRole("navigation", { name: "Space" }).first();
 
-test("an owner sees both settings areas and reaches email and chat settings", async ({ page }) => {
+test("a machine manager sees both settings areas and reaches email and chat settings", async ({ page }) => {
   await signIn(page, "owner@demo.test");
   await page.goto("/dashboard/tinkerspace");
   await expect(nav(page).getByRole("link", { name: "Space settings" })).toBeVisible();
@@ -38,7 +38,7 @@ test("an owner sees both settings areas and reaches email and chat settings", as
   await expect(page.getByRole("button", { name: "Add channel" })).toBeVisible();
 });
 
-test("a machine manager gets machine settings but is sent back from space settings", async ({ page }) => {
+test("a machine type manager gets machine settings but is sent back from space settings", async ({ page }) => {
   await signIn(page, "machines@demo.test");
   await page.goto("/dashboard/tinkerspace/machine-settings");
   await expect(page.getByRole("heading", { name: "Machine settings", level: 1 })).toBeVisible();

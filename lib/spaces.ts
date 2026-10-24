@@ -41,10 +41,10 @@ export async function platformAdminEmails(client: OutboxClient): Promise<string[
   return [...new Set(flagged.map((user) => user.email!.toLowerCase()))];
 }
 
-/** Queue a lifecycle email to every owner of a space (within the caller's transaction). */
+/** Queue a lifecycle email to every machine manager of a space (within the caller's transaction). */
 export async function notifyOwners(client: OutboxClient, spaceId: string, notice: SpaceNotice, reason?: string | null) {
   const owners = await client.spaceMember.findMany({
-    where: { spaceId, role: "OWNER", user: { email: { not: null } } },
+    where: { spaceId, role: "MACHINE_MANAGER", user: { email: { not: null } } },
     select: { user: { select: { email: true } } },
     take: 20,
   });

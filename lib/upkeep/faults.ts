@@ -1,10 +1,11 @@
 import "server-only";
-import type { FaultSeverity, FaultStatus, Prisma } from "@prisma/client";
+import type { FaultSeverity, FaultStatus, Prisma, SpaceRole } from "@prisma/client";
 import { recordAuditEvent } from "@/lib/audit";
-import { can, type Capability } from "@/lib/permissionRoles";
+import { CAPABILITIES, type Capability } from "@/lib/permissionRoles";
+import { rolesForType } from "@/lib/typeScope";
 import { emitWebhook } from "@/lib/webhooks/emit";
 import { queueUpkeepAlert } from "./alerts";
-import { lockMachine, required, text, UpkeepError, UpkeepNotFoundError, type Actor } from "./context";
+import { assertMachineScope, lockMachine, required, text, UpkeepError, UpkeepNotFoundError, type Actor } from "./context";
 import { startDowntime } from "./downtime";
 
 export const MAX_FAULT_PHOTOS = 4;
@@ -29,7 +30,7 @@ async function nextFaultNumber(tx: Prisma.TransactionClient, spaceId: string) {
 export async function reportFault(tx: Prisma.TransactionClient, actor: Actor, input: {
   machineId: string; severity: FaultSeverity; title: string; description?: string; jobId?: string | null; takeOffline?: boolean;
 }) {
-  const machine = await lockMachine(tx, actor.spaceId, input.machineId);
+  const machine = await lockMachine(tx, actor.spaceId, input.machineId, actor.actorId);
   if (machine.retiredAt) throw new UpkeepNotFoundError();
   if (input.jobId && !await tx.job.findFirst({ where: { spaceId: actor.spaceId, id: input.jobId }, select: { id: true } })) throw new UpkeepNotFoundError();
   const fault = await tx.faultReport.create({ data: { spaceId: actor.spaceId, machineId: machine.id, number: await nextFaultNumber(tx, actor.spaceId),
@@ -46,9 +47,10 @@ export async function reportFault(tx: Prisma.TransactionClient, actor: Actor, in
   return { fault, webhookDeliveryIds: ids };
 }
 
-async function assignable(tx: Prisma.TransactionClient, spaceId: string, userId: string) {
-  const member = await tx.spaceMember.findFirst({ where: { spaceId, userId, status: "ACTIVE" }, select: { role: true } });
-  return Boolean(member && can(member.role, "maintenance.manage" satisfies Capability));
+async function assignable(tx: Prisma.TransactionClient, spaceId: string, userId: string, machineId: string) {
+  const machine = await tx.machine.findUniqueOrThrow({ where: { spaceId_id: { spaceId, id: machineId } }, select: { typeId: true } });
+  return await tx.spaceMember.count({ where: { spaceId, userId, status: "ACTIVE",
+    ...rolesForType(CAPABILITIES["maintenance.manage" satisfies Capability] as readonly SpaceRole[], machine.typeId) } }) > 0;
 }
 
 export async function updateFault(tx: Prisma.TransactionClient, actor: Actor, input: {
@@ -57,10 +59,11 @@ export async function updateFault(tx: Prisma.TransactionClient, actor: Actor, in
   const rows = await tx.$queryRaw<{ id: string }[]>`SELECT "id" FROM "FaultReport" WHERE "spaceId" = ${actor.spaceId} AND "id" = ${input.faultId} FOR UPDATE`;
   if (!rows[0]) throw new UpkeepNotFoundError();
   const fault = await tx.faultReport.findUniqueOrThrow({ where: { spaceId_id: { spaceId: actor.spaceId, id: input.faultId } } });
+  await assertMachineScope(tx, actor.spaceId, actor.actorId, fault.machineId);
   if (CLOSED.includes(fault.status)) throw new UpkeepError("This fault is closed.");
   const data: Prisma.FaultReportUncheckedUpdateInput = {};
   if (input.assignedToId !== undefined) {
-    if (input.assignedToId && !await assignable(tx, actor.spaceId, input.assignedToId)) throw new UpkeepError("Assign someone who manages maintenance in this space.");
+    if (input.assignedToId && !await assignable(tx, actor.spaceId, input.assignedToId, fault.machineId)) throw new UpkeepError("Assign someone who manages maintenance in this space.");
     data.assignedToId = input.assignedToId;
   }
   const status = input.status && input.status !== fault.status ? input.status : null;
@@ -83,8 +86,9 @@ export async function updateFault(tx: Prisma.TransactionClient, actor: Actor, in
 }
 
 export async function addFaultPhoto(tx: Prisma.TransactionClient, actor: Actor, input: { faultId: string; storageKey: string }) {
-  const fault = await tx.faultReport.findFirst({ where: { spaceId: actor.spaceId, id: input.faultId }, select: { id: true, _count: { select: { photos: true } } } });
+  const fault = await tx.faultReport.findFirst({ where: { spaceId: actor.spaceId, id: input.faultId }, select: { id: true, machineId: true, reportedById: true, _count: { select: { photos: true } } } });
   if (!fault) throw new UpkeepNotFoundError();
+  if (fault.reportedById !== actor.actorId) await assertMachineScope(tx, actor.spaceId, actor.actorId, fault.machineId);
   if (fault._count.photos >= MAX_FAULT_PHOTOS) throw new UpkeepError(`A fault holds up to ${MAX_FAULT_PHOTOS} photos.`);
   return tx.faultPhoto.create({ data: { spaceId: actor.spaceId, faultId: fault.id, storageKey: input.storageKey } });
 }

@@ -10,7 +10,7 @@ export type InviteAcceptance =
   | { ok: false; reason: "unavailable" | "wrong-account" | "full" };
 
 /**
- * Join a space with a single-use invite, in the invite's role. An invite bound to an email (owner invites
+ * Join a space with a single-use invite, in the invite's role. An invite bound to an email (machine-manager invites
  * from the super admin, emailed invites) only works for that verified account. Someone already in the space
  * keeps a more senior role; a pending or blocked maker becomes active.
  */

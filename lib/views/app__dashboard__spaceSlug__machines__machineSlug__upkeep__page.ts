@@ -6,14 +6,15 @@ import { machineFileUrl } from "@/lib/machines/fileAccess";
 import { formatQuantity, poolServesMachine } from "@/lib/consumables/math";
 import { scheduleDue, serviceHistory, upkeepSettings, warrantyState } from "@/lib/upkeep";
 import { faultNumber } from "@/lib/upkeep/labels";
+import { typeWhere } from "@/lib/typeScope";
 
 const day = (value: Date | null) => value?.toISOString().slice(0, 10) ?? "";
 
 /** One machine's upkeep: schedules with due state, records, downtime, faults, warranty and history. */
 export async function loadMachineUpkeepView({ params }: { params: Promise<{ spaceSlug: string; machineSlug: string }> }) {
   const { spaceSlug, machineSlug } = await params;
-  const { space, membership } = await requireSpaceCapability(spaceSlug, "maintenance.view");
-  const machine = await prisma.machine.findFirst({ where: { spaceId: space.id, slug: machineSlug },
+  const { space, membership, typeScope } = await requireSpaceCapability(spaceSlug, "maintenance.view");
+  const machine = await prisma.machine.findFirst({ where: { spaceId: space.id, slug: machineSlug, ...typeWhere(typeScope) },
     select: { id: true, slug: true, name: true, status: true, retiredAt: true, meterMinutes: true, meterJobs: true, typeId: true } });
   if (!machine) notFound();
   const now = new Date();

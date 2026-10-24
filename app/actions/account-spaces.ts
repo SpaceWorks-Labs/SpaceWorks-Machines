@@ -11,6 +11,7 @@ import type { ActionResult } from "./space";
 import { flattenZodErrors } from "./utils";
 import { queueChatAlerts } from "@/lib/chat/notify";
 import { JOIN_MESSAGES, joinAsMaker } from "@/lib/spaceMembers";
+import { isLastActiveManager } from "@/lib/lastManager";
 
 const revalidatePath = trackedRevalidation(nextRevalidatePath);
 
@@ -19,15 +20,15 @@ const leaveSpaceSchema = z.object({
 });
 
 const NOT_A_MEMBER = "You are not part of this space.";
-const SOLE_OWNER_ERROR = "You are the only owner. Transfer ownership or delete the space first.";
+const SOLE_OWNER_ERROR = "You're the only machine manager. Make someone else a machine manager or delete the space first.";
 
 /**
  * The signed-in person leaves a space (staff or maker), or withdraws a pending request. Only their own row
  * is removed. A blocked maker stays blocked: leaving would let them rejoin on their own.
  *
- * The last-owner check and the delete run in one transaction holding a row
- * lock on the space, so two co-owners leaving at the same time cannot
- * both pass the check and leave the space ownerless.
+ * The last-manager check and the delete run in one transaction holding a row
+ * lock on the space, so two machine managers leaving at the same time cannot
+ * both pass the check and leave the space without one.
  */
 export async function leaveSpace(input: unknown): Promise<ActionResult> {
   const session = await auth();
@@ -57,10 +58,7 @@ export async function leaveSpace(input: unknown): Promise<ActionResult> {
       select: { id: true, role: true, status: true },
     });
     if (!membership || membership.status === "BLOCKED") return "not-member" as const;
-    if (membership.role === "OWNER") {
-      const owners = await tx.spaceMember.count({ where: { spaceId: space.id, role: "OWNER" } });
-      if (owners <= 1) return "sole-owner" as const;
-    }
+    if (await isLastActiveManager(tx, space.id, membership.id)) return "sole-owner" as const;
     // Scoped to the caller's own user id as well as the row id.
     const removed = await tx.spaceMember.deleteMany({ where: { id: membership.id, userId, spaceId: space.id } });
     if (removed.count !== 1) return "not-member" as const;

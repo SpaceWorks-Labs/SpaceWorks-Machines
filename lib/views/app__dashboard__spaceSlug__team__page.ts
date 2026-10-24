@@ -24,13 +24,15 @@ export async function loadSpaceTeamView({ params, searchParams }: Props) {
   const now = new Date();
   const staffWhere = { spaceId: space.id, role: { not: "MEMBER" as const } };
   const makerWhere = { spaceId: space.id, role: "MEMBER" as const };
-  const [profile, staff, roleGroups, makerTotal, pendingCount, recentMakers] = await Promise.all([
+  const [profile, staff, roleGroups, makerTotal, pendingCount, recentMakers, types, assignments] = await Promise.all([
     prisma.space.findUniqueOrThrow({ where: { id: space.id }, select: { logoUrl: true, joinPolicy: true } }),
     prisma.spaceMember.findMany({ where: staffWhere, orderBy: { createdAt: "asc" }, take: STAFF_LIMIT, select: { id: true, userId: true, role: true, createdAt: true, user: { select: { name: true, email: managerView } } } }),
     prisma.spaceMember.groupBy({ by: ["role"], where: staffWhere, _count: { _all: true } }),
     prisma.spaceMember.count({ where: makerWhere }),
     prisma.spaceMember.count({ where: { ...makerWhere, status: "PENDING" } }),
     prisma.spaceMember.count({ where: { ...makerWhere, status: "ACTIVE", createdAt: { gte: new Date(now.getTime() - RECENT_DAYS * 86_400_000) } } }),
+    prisma.machineType.findMany({ where: { spaceId: space.id }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }], select: { id: true, name: true } }),
+    prisma.typeManagerAssignment.findMany({ where: { spaceId: space.id }, select: { userId: true, machineTypeId: true } }),
   ]);
   const makerPages = Math.max(1, Math.ceil(makerTotal / MAKERS_PAGE_SIZE));
   const makerPage = Math.min(requestedPage, makerPages);
@@ -56,6 +58,7 @@ export async function loadSpaceTeamView({ params, searchParams }: Props) {
     role: m.role,
     joinedLabel: joinedFormatter.format(m.createdAt),
     isYou: m.userId === membership.userId,
+    ...(m.role === "TYPE_MANAGER" ? { typeIds: assignments.filter((row) => row.userId === m.userId).map((row) => row.machineTypeId) } : {}),
   }));
   const makerRows: MakerRow[] = makers.map((m) => ({ id: m.id, userId: m.userId, name: m.user.name, email: managerView ? m.user.email ?? null : null, status: m.status, joinedLabel: joinedFormatter.format(m.createdAt) }));
   return {
@@ -63,6 +66,8 @@ export async function loadSpaceTeamView({ params, searchParams }: Props) {
     membership,
     managerView,
     canManageMembers,
+    canAssignTypes: can(membership.role, "team.manage"),
+    types,
     staffCount: staff.length,
     roleCounts,
     rows,

@@ -2,9 +2,8 @@ import type { SpaceRole } from "@prisma/client";
 
 /** Chip and avatar tones per role, shared by the team list, role picker and roles card. */
 export const ROLE_TONES = {
-  OWNER: "ink",
-  MANAGER: "warning",
-  MACHINE_MANAGER: "accent",
+  MACHINE_MANAGER: "ink",
+  TYPE_MANAGER: "warning",
   OPERATOR: "info",
   TECHNICIAN: "success",
   VIEWER: "neutral",
@@ -12,9 +11,8 @@ export const ROLE_TONES = {
 } as const satisfies Record<SpaceRole, string>;
 
 export const DOT_TONES: Record<SpaceRole, string> = {
-  OWNER: "bg-primary",
-  MANAGER: "bg-highlight",
-  MACHINE_MANAGER: "bg-accent",
+  MACHINE_MANAGER: "bg-primary",
+  TYPE_MANAGER: "bg-highlight",
   OPERATOR: "bg-info-solid",
   TECHNICIAN: "bg-success-solid",
   VIEWER: "bg-line-strong",

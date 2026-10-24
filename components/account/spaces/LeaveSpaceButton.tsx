@@ -8,7 +8,7 @@ import { ConfirmationDialog } from "@/components/feedback/ConfirmationDialog";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/menu";
 
-const SOLE_OWNER_HINT = "Make someone else an owner, or delete the space first.";
+const SOLE_OWNER_HINT = "Make someone else a machine manager, or delete the space first.";
 
 export function LeaveSpaceButton({ spaceSlug, spaceName, soleOwner, pending: requestPending }: { spaceSlug: string; spaceName: string; soleOwner: boolean; pending?: boolean }) {
   const router = useRouter();
@@ -21,12 +21,12 @@ export function LeaveSpaceButton({ spaceSlug, spaceName, soleOwner, pending: req
   if (soleOwner) {
     // A disabled button gets no pointer events, so the focusable wrapper carries the tooltip.
     return (
-      <Tooltip content={`You're the only owner. ${SOLE_OWNER_HINT}`}>
+      <Tooltip content={`You're the only machine manager. ${SOLE_OWNER_HINT}`}>
         <span tabIndex={0} aria-describedby={hintId} className="inline-flex rounded-full">
           <Button size="sm" variant="secondary" disabled>
             Leave<span className="sr-only"> {spaceName}</span>
           </Button>
-          <span id={hintId} className="sr-only">You are the only owner. {SOLE_OWNER_HINT}</span>
+          <span id={hintId} className="sr-only">You are the only machine manager. {SOLE_OWNER_HINT}</span>
         </span>
       </Tooltip>
     );

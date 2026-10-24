@@ -18,7 +18,7 @@ import { provisionSpace } from "@/lib/machines/provision";
 
 const revalidatePath = trackedRevalidation(nextRevalidatePath);
 
-/** Owner invites from a platform admin last two weeks: long enough for someone to notice the email. */
+/** Machine-manager invites from a platform admin last two weeks: long enough for someone to notice the email. */
 const OWNER_INVITE_DAYS = 14;
 
 const reviewSchema = z.object({
@@ -106,8 +106,8 @@ export async function setSpaceLimits(input: unknown): Promise<ActionResult> {
 }
 
 /**
- * Set up an approved space for someone. They become its owner by accepting an invite bound to
- * their email address, so a space never has an owner who did not agree to it.
+ * Set up an approved space for someone. They become its machine manager by accepting an invite bound to
+ * their email address, so a space never has a machine manager who did not agree to it.
  */
 export async function createSpaceForOwner(input: unknown): Promise<ActionResult<{ spaceId: string }>> {
   const session = await superAdmin();
@@ -130,12 +130,12 @@ export async function createSpaceForOwner(input: unknown): Promise<ActionResult<
       });
       const expiresAt = new Date(Date.now() + OWNER_INVITE_DAYS * 24 * 60 * 60_000);
       const invite = await tx.spaceInvite.create({
-        data: { spaceId: created.id, token: crypto.randomBytes(24).toString("base64url"), role: "OWNER", email: ownerEmail, createdByUserId: session.user.id, expiresAt },
+        data: { spaceId: created.id, token: crypto.randomBytes(24).toString("base64url"), role: "MACHINE_MANAGER", email: ownerEmail, createdByUserId: session.user.id, expiresAt },
         select: { id: true, token: true },
       });
       await enqueueOutbox(tx, "owner-invite", { to: ownerEmail, spaceId: created.id, token: invite.token, expiresAt: expiresAt.toISOString() });
       await recordAuditEvent({ action: "SPACE_CREATED", actorUserId: session.user.id, spaceId: created.id, targetType: "Space", targetId: created.id, client: tx });
-      await recordAuditEvent({ action: "SPACE_INVITE_CREATED", actorUserId: session.user.id, spaceId: created.id, targetType: "SpaceInvite", targetId: invite.id, metadata: { role: "OWNER" }, client: tx });
+      await recordAuditEvent({ action: "SPACE_INVITE_CREATED", actorUserId: session.user.id, spaceId: created.id, targetType: "SpaceInvite", targetId: invite.id, metadata: { role: "MACHINE_MANAGER" }, client: tx });
       return created.id;
     });
     revalidatePath("/super-admin/spaces");
@@ -148,27 +148,27 @@ export async function createSpaceForOwner(input: unknown): Promise<ActionResult<
   }
 }
 
-/** Send a fresh owner invite when the first expired or went to the wrong inbox. */
+/** Send a fresh machine-manager invite when the first expired or went to the wrong inbox. */
 export async function resendOwnerInvite(input: unknown): Promise<ActionResult> {
   const session = await superAdmin();
   if (!session) return TOO_MANY;
   const parsed = z.object({ spaceId: z.string().trim().min(1).max(64), ownerEmail: z.string().trim().toLowerCase().email("Enter the owner's email address").max(320) }).safeParse(input);
   if (!parsed.success) return { ok: false, error: "Check the highlighted fields.", fieldErrors: flattenZodErrors(parsed.error) };
   const { spaceId, ownerEmail } = parsed.data;
-  const space = await prisma.space.findUnique({ where: { id: spaceId }, select: { id: true, _count: { select: { members: { where: { role: "OWNER" } } } } } });
+  const space = await prisma.space.findUnique({ where: { id: spaceId }, select: { id: true, _count: { select: { members: { where: { role: "MACHINE_MANAGER" } } } } } });
   if (!space) return { ok: false, error: "Space not found." };
-  if (space._count.members > 0) return { ok: false, error: "This space already has an owner. They can invite others from the Team page." };
+  if (space._count.members > 0) return { ok: false, error: "This space already has a machine manager. They can invite others from the Team page." };
 
   const expiresAt = new Date(Date.now() + OWNER_INVITE_DAYS * 24 * 60 * 60_000);
   await prisma.$transaction(async (tx) => {
-    // Only one owner invite stays usable.
-    await tx.spaceInvite.deleteMany({ where: { spaceId, role: "OWNER", usedAt: null } });
+    // Only one machine-manager invite stays usable.
+    await tx.spaceInvite.deleteMany({ where: { spaceId, role: "MACHINE_MANAGER", usedAt: null } });
     const invite = await tx.spaceInvite.create({
-      data: { spaceId, token: crypto.randomBytes(24).toString("base64url"), role: "OWNER", email: ownerEmail, createdByUserId: session.user.id, expiresAt },
+      data: { spaceId, token: crypto.randomBytes(24).toString("base64url"), role: "MACHINE_MANAGER", email: ownerEmail, createdByUserId: session.user.id, expiresAt },
       select: { id: true, token: true },
     });
     await enqueueOutbox(tx, "owner-invite", { to: ownerEmail, spaceId, token: invite.token, expiresAt: expiresAt.toISOString() });
-    await recordAuditEvent({ action: "SPACE_INVITE_CREATED", actorUserId: session.user.id, spaceId, targetType: "SpaceInvite", targetId: invite.id, metadata: { role: "OWNER" }, client: tx });
+    await recordAuditEvent({ action: "SPACE_INVITE_CREATED", actorUserId: session.user.id, spaceId, targetType: "SpaceInvite", targetId: invite.id, metadata: { role: "MACHINE_MANAGER" }, client: tx });
   });
   revalidatePath(`/super-admin/spaces/${spaceId}`);
   return { ok: true };

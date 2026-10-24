@@ -3,7 +3,7 @@ import type { MaintenanceKind, MaintenanceTrigger, Prisma } from "@prisma/client
 import { recordAuditEvent } from "@/lib/audit";
 import { emitWebhook } from "@/lib/webhooks/emit";
 import { advanceSchedule } from "./due";
-import { day, lockMachine, required, text, UpkeepError, UpkeepNotFoundError, type Actor } from "./context";
+import { assertMachineScope, day, lockMachine, required, text, UpkeepError, UpkeepNotFoundError, type Actor } from "./context";
 import { closeOpenDowntime } from "./downtime";
 
 export type ScheduleInput = {
@@ -35,7 +35,7 @@ async function lockSchedule(tx: Prisma.TransactionClient, spaceId: string, sched
 
 /** Usage schedules start counting from the machine's meters now; time schedules from the first due date. */
 export async function createSchedule(tx: Prisma.TransactionClient, actor: Actor & { machineId: string }, input: ScheduleInput) {
-  const machine = await lockMachine(tx, actor.spaceId, actor.machineId);
+  const machine = await lockMachine(tx, actor.spaceId, actor.machineId, actor.actorId);
   const data = fields(input);
   const firstDue = day(input.firstDueOn);
   const schedule = await tx.maintenanceSchedule.create({ data: { ...data, spaceId: actor.spaceId, machineId: machine.id, createdById: actor.actorId,
@@ -49,7 +49,7 @@ export async function createSchedule(tx: Prisma.TransactionClient, actor: Actor 
 export async function updateSchedule(tx: Prisma.TransactionClient, actor: Actor & { scheduleId: string }, input: ScheduleInput & { isActive: boolean }) {
   const current = await tx.maintenanceSchedule.findFirst({ where: { spaceId: actor.spaceId, id: actor.scheduleId }, select: { machineId: true, trigger: true } });
   if (!current) throw new UpkeepNotFoundError();
-  const machine = await lockMachine(tx, actor.spaceId, current.machineId);
+  const machine = await lockMachine(tx, actor.spaceId, current.machineId, actor.actorId);
   const schedule = await lockSchedule(tx, actor.spaceId, actor.scheduleId);
   const data = fields(input);
   const firstDue = day(input.firstDueOn);
@@ -71,7 +71,7 @@ export type LogInput = {
  * "restore idle" it closes the machine's open downtime and sets it back to idle.
  */
 export async function logMaintenance(tx: Prisma.TransactionClient, actor: Actor, input: LogInput) {
-  const machine = await lockMachine(tx, actor.spaceId, input.machineId);
+  const machine = await lockMachine(tx, actor.spaceId, input.machineId, actor.actorId);
   const performedAt = input.performedAt ?? new Date();
   if (performedAt.getTime() > Date.now() + 60_000) throw new UpkeepError("The date can't be in the future.");
   if (input.cost != null && (!Number.isInteger(input.cost) || input.cost < 0)) throw new UpkeepError("Enter a cost of zero or more.");
@@ -95,8 +95,9 @@ export async function logMaintenance(tx: Prisma.TransactionClient, actor: Actor,
 export const MAX_ATTACHMENTS = 10;
 
 export async function addMaintenanceAttachment(tx: Prisma.TransactionClient, actor: Actor, input: { logId: string; storageKey: string; filename: string; contentType: string; sizeBytes: number }) {
-  const log = await tx.maintenanceLog.findFirst({ where: { spaceId: actor.spaceId, id: input.logId }, select: { id: true, _count: { select: { attachments: true } } } });
+  const log = await tx.maintenanceLog.findFirst({ where: { spaceId: actor.spaceId, id: input.logId }, select: { id: true, machineId: true, _count: { select: { attachments: true } } } });
   if (!log) throw new UpkeepNotFoundError();
+  await assertMachineScope(tx, actor.spaceId, actor.actorId, log.machineId);
   if (log._count.attachments >= MAX_ATTACHMENTS) throw new UpkeepError(`A record holds up to ${MAX_ATTACHMENTS} attachments.`);
   const row = await tx.maintenanceAttachment.create({ data: { spaceId: actor.spaceId, logId: log.id, storageKey: input.storageKey,
     filename: input.filename, contentType: input.contentType, sizeBytes: input.sizeBytes, uploadedById: actor.actorId } });

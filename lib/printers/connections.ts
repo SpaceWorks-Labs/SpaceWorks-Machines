@@ -6,6 +6,7 @@ import { decryptSpaceSecret, encryptSpaceSecret } from "@/lib/spaceSecrets";
 import { adapterFor } from "./adapters";
 import { injectError } from "./simulated";
 import type { CommandResult, ConnectionConfig } from "./types";
+import { actorMayUseMachine } from "@/lib/typeScope";
 
 export class PrinterError extends Error {}
 export type PrinterSettings = { pollSeconds: number; syncMachineStatus: boolean; autoCompleteJobs: boolean };
@@ -27,7 +28,7 @@ export async function saveConnection(tx: Prisma.TransactionClient, actor: { spac
   machineId: string; adapter: PrinterAdapterKind; enabled: boolean; baseUrl?: string; deviceId?: string; secret?: string; settings: Partial<PrinterSettings>;
 }) {
   const machine = await tx.machine.findFirst({ where: { spaceId: actor.spaceId, id: input.machineId }, select: { id: true } });
-  if (!machine) throw new PrinterError("Space not found.");
+  if (!machine || !(await actorMayUseMachine(tx, actor.spaceId, actor.actorId, machine.id))) throw new PrinterError("Space not found.");
   if (!adapterFor(input.adapter).available) throw new PrinterError("That connection type is coming soon.");
   const current = await tx.printerConnection.findUnique({ where: { spaceId_machineId: { spaceId: actor.spaceId, machineId: machine.id } } });
   const settings = readPrinterSettings({ ...readPrinterSettings(current?.settings), ...input.settings });
@@ -49,7 +50,7 @@ export type PrinterCommand = "test" | "start" | "pause" | "resume" | "cancel" | 
 export async function runPrinterCommand(spaceId: string, connectionId: string, command: PrinterCommand, actorId: string | null,
   options: { jobId?: string; name?: string; estimatedSeconds?: number } = {}, now = new Date()): Promise<CommandResult> {
   const connection = await prisma.printerConnection.findFirst({ where: { spaceId, id: connectionId } });
-  if (!connection) throw new PrinterError("Space not found.");
+  if (!connection || !(await actorMayUseMachine(prisma, spaceId, actorId, connection.machineId))) throw new PrinterError("Space not found.");
   const adapter = adapterFor(connection.adapter);
   const config = configOf(connection);
   let result: CommandResult;

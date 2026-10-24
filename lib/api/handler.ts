@@ -21,7 +21,8 @@ const json = (body: unknown, status = 200) => NextResponse.json(body, { status, 
 async function assertActorCan(caller: ApiCaller, capability: Capability) {
   const member = caller.actorId ? await prisma.spaceMember.findUnique({ where: { userId_spaceId: { userId: caller.actorId, spaceId: caller.spaceId } },
     select: { status: true, role: true, user: { select: { mfaEnabledAt: true } } } }) : null;
-  if (!member || member.status !== "ACTIVE" || !isStaffRole(member.role) || !member.user.mfaEnabledAt || !can(member.role, capability)) {
+  // Keys act space-wide, so a creator who is now a machine type manager (scoped to some types) can't write through one.
+  if (!member || member.status !== "ACTIVE" || !isStaffRole(member.role) || member.role === "TYPE_MANAGER" || !member.user.mfaEnabledAt || !can(member.role, capability)) {
     throw new ApiError(403, "The person who created this key can no longer do this. Create a new key.");
   }
   return caller.actorId!;

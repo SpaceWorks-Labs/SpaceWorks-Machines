@@ -23,12 +23,19 @@ export const updateSpaceSchema = z.object({
 });
 
 /** Any role; who may hand out which is checked with assignableRoles in lib/permissionRoles.ts. */
-export const spaceRoleSchema = z.enum(["OWNER", "MANAGER", "MACHINE_MANAGER", "OPERATOR", "TECHNICIAN", "VIEWER", "MEMBER"]);
+export const spaceRoleSchema = z.enum(["MACHINE_MANAGER", "TYPE_MANAGER", "OPERATOR", "TECHNICIAN", "VIEWER", "MEMBER"]);
 
 export const updateSpaceRoleSchema = z.object({
   spaceSlug: z.string().trim().min(1),
   targetUserId: z.string().trim().min(1),
   role: spaceRoleSchema,
+});
+
+/** The machine types a machine type manager looks after (replaces the whole set). */
+export const typeAssignmentsSchema = z.object({
+  spaceSlug: z.string().trim().min(1),
+  targetUserId: z.string().trim().min(1),
+  typeIds: z.array(z.string().trim().min(1).max(64)).max(200),
 });
 
 export const removeSpaceMemberSchema = z.object({

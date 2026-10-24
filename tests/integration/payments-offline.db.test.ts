@@ -29,7 +29,7 @@ describe("offline payment controls and gates", () => {
     await expect(f.act(job.id, { kind: "start" })).rejects.toThrow("not paid");
     await expect(confirmOfflinePayment(context)).rejects.toThrow("different person");
     await expect(confirmOfflinePayment({ ...context, actorId: f.maker.id })).rejects.toThrow("Space not found");
-    await prisma.spaceMember.create({ data: { spaceId: f.spaceId, userId: f.outsider.id, role: "MANAGER" } });
+    await prisma.spaceMember.create({ data: { spaceId: f.spaceId, userId: f.outsider.id, role: "MACHINE_MANAGER" } });
     await prisma.user.update({ where: { id: f.outsider.id }, data: { mfaEnabledAt: new Date() } });
     expect(await confirmOfflinePayment({ ...context, actorId: f.outsider.id })).toMatchObject({ status: "PAID", confirmedById: f.outsider.id });
     await expect(confirmOfflinePayment({ ...context, actorId: f.outsider.id })).rejects.toThrow("not awaiting");
@@ -60,7 +60,7 @@ describe("offline payment controls and gates", () => {
     await prisma.user.update({ where: { id: f.home.user.id }, data: { mfaEnabledAt: null } });
     await expect(recordOfflinePayment(context, { method: "CASH", reference: "R" })).rejects.toThrow("authenticator");
     await prisma.user.update({ where: { id: f.home.user.id }, data: { mfaEnabledAt: new Date() } });
-    await prisma.spaceMember.updateMany({ where: { spaceId: f.spaceId, userId: f.home.user.id }, data: { role: "MACHINE_MANAGER" } });
+    await prisma.spaceMember.updateMany({ where: { spaceId: f.spaceId, userId: f.home.user.id }, data: { role: "OPERATOR" } });
     await expect(recordOfflinePayment(context, { method: "CASH", reference: "R" })).rejects.toThrow("Space not found");
   });
   it("serialises concurrent offline records so one receives money", async () => {
@@ -75,7 +75,7 @@ describe("offline payment controls and gates", () => {
     await prisma.space.update({ where: { id: f.spaceId }, data: { offlineConfirmationRequired: true } });
     const job = await f.approve(); const [p] = await f.payments(job);
     await recordOfflinePayment(f.context(p.id), { method: "CASH", reference: "R" });
-    await prisma.spaceMember.create({ data: { spaceId: f.spaceId, userId: f.outsider.id, role: "MANAGER" } });
+    await prisma.spaceMember.create({ data: { spaceId: f.spaceId, userId: f.outsider.id, role: "MACHINE_MANAGER" } });
     await prisma.user.update({ where: { id: f.outsider.id }, data: { mfaEnabledAt: new Date() } });
     await prisma.space.update({ where: { id: f.spaceId }, data: { status: "SUSPENDED" } });
     await expect(recordOfflinePayment(f.context(p.id), { method: "CASH", reference: "R" })).rejects.toThrow("new payments");
@@ -97,7 +97,7 @@ describe("offline payment controls and gates", () => {
     await f.act(job.id, { kind: "complete", actualMinutes: 1 });
     await prisma.spaceMember.updateMany({ where: { spaceId: f.spaceId, userId: f.home.user.id }, data: { role: "OPERATOR" } });
     await expect(f.act(job.id, { kind: "collect", paymentOverrideReason: "Release" })).rejects.toThrow("payments.manage");
-    await prisma.spaceMember.updateMany({ where: { spaceId: f.spaceId, userId: f.home.user.id }, data: { role: "OWNER" } });
+    await prisma.spaceMember.updateMany({ where: { spaceId: f.spaceId, userId: f.home.user.id }, data: { role: "MACHINE_MANAGER" } });
     await expect(f.act(job.id, { kind: "collect", paymentOverrideReason: "" })).rejects.toThrow("reason");
     await f.act(job.id, { kind: "collect", paymentOverrideReason: "Approved handover" });
     const audits = await prisma.auditEvent.findMany({ where: { targetId: job.id, action: { in: ["job.started", "job.collected"] } } });

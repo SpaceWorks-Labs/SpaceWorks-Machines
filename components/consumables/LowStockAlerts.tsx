@@ -19,6 +19,6 @@ export function LowStockAlerts({ spaceSlug, enabled, canConfigure }: { spaceSlug
       <fieldset disabled={mutation.pending}><CheckboxField name="lowStockAlerts" defaultChecked={enabled} label="Send low-stock email and chat alerts" />
         {mutation.fieldErrors.lowStockAlerts?.[0] ? <p role="alert" className="text-caption text-danger-fg">{mutation.fieldErrors.lowStockAlerts[0]}</p> : null}</fieldset>
       <div><Button type="submit" loading={mutation.pending}>Save alert setting</Button></div>
-    </form> : <p className="text-body-ui text-ink-secondary">Low-stock alerts are {enabled ? "on" : "off"}. A space manager can change this setting.</p>}
+    </form> : <p className="text-body-ui text-ink-secondary">Low-stock alerts are {enabled ? "on" : "off"}. A machine manager can change this setting.</p>}
   </Card>;
 }

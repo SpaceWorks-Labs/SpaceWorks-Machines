@@ -66,7 +66,7 @@ export default async function SuperAdminUserDetailPage({ params }: Props) {
                 {memberships.map((membership) => (
                   <TR key={membership.id}>
                     <TD><NameCell href={`/super-admin/spaces/${membership.space.id}`} name={membership.space.name} sub={`/s/${membership.space.slug}`} /></TD>
-                    <TD><Chip size="sm" tone={membership.role === "OWNER" ? "ink" : "neutral"}>{ROLE_LABELS[membership.role]}</Chip></TD>
+                    <TD><Chip size="sm" tone={membership.role === "MACHINE_MANAGER" ? "ink" : "neutral"}>{ROLE_LABELS[membership.role]}</Chip></TD>
                     <TD className="whitespace-nowrap text-ink-secondary">{membership.createdAt.toLocaleDateString()}</TD>
                   </TR>
                 ))}

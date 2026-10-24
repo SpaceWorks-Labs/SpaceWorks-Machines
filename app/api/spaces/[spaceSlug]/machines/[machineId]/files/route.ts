@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { spaceActionAccess } from "@/lib/permissions";
+import { typeWhere } from "@/lib/typeScope";
 import { checkRateLimitById } from "@/lib/rateLimit";
 import { isSameOriginRequest } from "@/lib/net/sameOrigin";
 import { addMachineDocument, addMachinePhoto } from "@/lib/machines/files";
@@ -28,7 +29,7 @@ export async function POST(request: Request, { params }: Context) {
   if (!access.ok) return json({ ok: false, error: access.error }, access.error === "Space not found." ? 404 : 403);
   if (!(await checkRateLimitById("machineUpload", `user:${access.userId}`))) return json({ ok: false, error: "Too many uploads. Try again later." }, 429);
 
-  const machine = await prisma.machine.findFirst({ where: { id: machineId, spaceId: access.space.id }, select: { id: true } });
+  const machine = await prisma.machine.findFirst({ where: { id: machineId, spaceId: access.space.id, ...typeWhere(access.typeScope) }, select: { id: true } });
   if (!machine) return json({ ok: false, error: "Machine not found." }, 404);
 
   let form: FormData;

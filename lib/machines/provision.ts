@@ -3,7 +3,7 @@ import "server-only";
 import type { Prisma } from "@prisma/client";
 import { MACHINE_TYPE_PRESETS, type MachineTypePreset } from "./presets";
 
-/** Requester emails per job event; every one is on until a space manager turns it off. */
+/** Requester emails per job event; every one is on until a machine manager turns it off. */
 export const DEFAULT_REQUESTER_EMAILS = { submitted: true, approved: true, rejected: true, started: true, completed: true, failed: true, cancelled: true, payment: true, refund: true } as const;
 /** Staff alerts per job event (email to jobs.review holders and chat channels). */
 export const DEFAULT_STAFF_ALERTS = { submitted: true, cancelled: true, failed: true, payment: true } as const;

@@ -2,7 +2,7 @@
 
 ## REST API (`/api/v1`)
 
-- **Keys:** create them under **Integrations → API keys** (space managers). A key belongs to one space and carries
+- **Keys:** create them under **Integrations → API keys** (machine managers). A key belongs to one space and carries
   scopes. The token (`swm_<prefix>_<secret>`) is shown once; only its SHA-256 is stored. Keys can expire and be revoked.
 - **Auth:** `Authorization: Bearer swm_…`. Unknown, revoked and expired keys answer `401`. A missing scope answers
   `403`. Writes act as the person who created the key, who must still be active staff of the space with the matching

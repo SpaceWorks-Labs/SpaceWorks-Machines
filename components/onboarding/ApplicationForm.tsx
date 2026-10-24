@@ -150,7 +150,7 @@ export function ApplicationForm({ applicantEmail }: { applicantEmail: string }) 
             checked={authorised}
             onCheckedChange={(checked) => setAuthorised(checked === true)}
             label="I'm allowed to apply for this space"
-            description="You'll be its owner here. A platform admin reviews every application before it opens."
+            description="You'll be its machine manager here. A platform admin reviews every application before it opens."
           />
           <div className="flex items-center justify-between gap-3">
             <Button type="button" variant="ghost" onClick={() => goTo(1)} disabled={pending}>

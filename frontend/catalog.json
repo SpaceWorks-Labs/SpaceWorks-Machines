@@ -754,6 +754,11 @@
     },
     {
       "module": "app/actions/team",
+      "name": "setTypeAssignmentsAction",
+      "id": "team:setTypeAssignmentsAction"
+    },
+    {
+      "module": "app/actions/team",
       "name": "removeSpaceMember",
       "id": "team:removeSpaceMember"
     },

@@ -44,7 +44,7 @@ export async function uploadSpaceLogo(
   if (!spaceAllows(space.status, "space.settings")) return { ok: false, error: SPACE_LOCKED };
   const membership = await getMembership(session.user.id, space.id);
   if (!membership || !can(membership.role, "space.settings"))
-    return { ok: false, error: "Only space owners and managers can upload logos." };
+    return { ok: false, error: "Only machine managers can upload logos." };
   if (!(await hasAuthenticator(session.user.id))) return { ok: false, error: STAFF_AUTHENTICATOR_MESSAGE };
   const derivative = await imageFile(formData);
   if ("error" in derivative) return { ok: false, error: derivative.error };

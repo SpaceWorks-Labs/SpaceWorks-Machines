@@ -27,7 +27,7 @@ function lowerFirst(text: string) {
 }
 
 /**
- * Single-use invite links with a role, optionally bound to (and emailed to) one address. Space managers only;
+ * Single-use invite links with a role, optionally bound to (and emailed to) one address. Machine managers only;
  * the actions re-check the role. Only the newest link's URL is ever rendered.
  */
 export function SpaceInviteLinkPanel(props: {

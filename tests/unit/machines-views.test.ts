@@ -26,7 +26,7 @@ function list(filters: { type?: string | string[]; status?: string | string[] } 
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.access.mockResolvedValue({ space: { id: "space-1", slug: "workshop", name: "Workshop", status: "ACTIVE" }, membership: { role: "MACHINE_MANAGER" } });
+  mocks.access.mockResolvedValue({ space: { id: "space-1", slug: "workshop", name: "Workshop", status: "ACTIVE" }, membership: { role: "MACHINE_MANAGER" }, typeScope: null });
   mocks.profile.mockResolvedValue({ logoUrl: null, currency: "OMR" });
   mocks.types.mockResolvedValue([type, { ...type, id: "archived-type", archivedAt: new Date() }]);
   mocks.machines.mockResolvedValue([]);
@@ -96,9 +96,9 @@ describe("staff machine views", () => {
 
   it.each([
     ["VIEWER", "ACTIVE", false, false], ["OPERATOR", "ACTIVE", false, true], ["TECHNICIAN", "ACTIVE", false, true],
-    ["MACHINE_MANAGER", "ACTIVE", true, true], ["OWNER", "SUSPENDED", false, false], ["MANAGER", "ARCHIVED", false, false],
+    ["MACHINE_MANAGER", "ACTIVE", true, true], ["MACHINE_MANAGER", "SUSPENDED", false, false], ["MACHINE_MANAGER", "ARCHIVED", false, false],
   ])("gates controls for %s in %s", async (role, status, manage, changeStatus) => {
-    mocks.access.mockResolvedValue({ space: { id: "space-1", slug: "workshop", name: "Workshop", status }, membership: { role } });
+    mocks.access.mockResolvedValue({ space: { id: "space-1", slug: "workshop", name: "Workshop", status }, membership: { role }, typeScope: null });
     expect((await list()).canManage).toBe(manage);
     const view = await loadMachineView({ params: params() });
     expect(view.canManage).toBe(manage);

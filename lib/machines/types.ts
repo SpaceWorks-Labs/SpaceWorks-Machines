@@ -7,6 +7,7 @@ import { DEFAULT_FILE_POLICY } from "./filePolicy";
 import { DEFAULT_QUEUE_RULES, presetByKey } from "./presets";
 import { presetTypeData } from "./provision";
 import type { TypeSection } from "./schemas";
+import { actorMayUseType } from "@/lib/typeScope";
 
 export class TypeNotFoundError extends Error {
   constructor() {
@@ -61,7 +62,7 @@ export async function createMachineType(tx: Prisma.TransactionClient, input: { s
 /** Save one section of a type; the settings audit row keeps the before and after of what changed. */
 export async function updateMachineType(tx: Prisma.TransactionClient, input: { spaceId: string; actorId: string; typeId: string; change: TypeSection }) {
   const before = await tx.machineType.findFirst({ where: { id: input.typeId, spaceId: input.spaceId }, select: TYPE_SNAPSHOT });
-  if (!before) throw new TypeNotFoundError();
+  if (!before || !(await actorMayUseType(tx, input.spaceId, input.actorId, input.typeId))) throw new TypeNotFoundError();
   const values = input.change.values as Record<string, unknown>;
   await tx.machineType.update({ where: { spaceId_id: { spaceId: input.spaceId, id: input.typeId } }, data: values as Prisma.MachineTypeUpdateInput });
   const snapshot = Object.fromEntries(Object.keys(values).map((key) => [key, (before as Record<string, unknown>)[key]]));

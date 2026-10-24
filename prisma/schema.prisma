@@ -114,9 +114,10 @@ enum SpaceReviewAction {
 /// Roles in a space. Everyone except MEMBER is staff and needs an authenticator; MEMBER is a maker.
 /// Capabilities per role live in lib/permissionRoles.ts.
 enum SpaceRole {
-  OWNER
-  MANAGER
+  /// The top role: the whole makerspace, including the team and deleting the space.
   MACHINE_MANAGER
+  /// Manages only the machine types they are assigned to (TypeManagerAssignment).
+  TYPE_MANAGER
   OPERATOR
   TECHNICIAN
   VIEWER
@@ -208,7 +209,7 @@ model SpaceReview {
   @@index([action, createdAt])
 }
 
-/// A person's role in a space: staff (OWNER … VIEWER) or a maker (MEMBER).
+/// A person's role in a space: staff (MACHINE_MANAGER … VIEWER) or a maker (MEMBER).
 model SpaceMember {
   id        String            @id @default(cuid())
   userId    String
@@ -218,12 +219,29 @@ model SpaceMember {
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user            User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  space           Space                   @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  typeAssignments TypeManagerAssignment[]
 
   @@unique([userId, spaceId])
   @@unique([spaceId, id])
   @@index([spaceId, role, status])
+}
+
+/// A machine type a TYPE_MANAGER manages. Removing the member or the type removes the assignment.
+model TypeManagerAssignment {
+  id            String   @id @default(cuid())
+  spaceId       String
+  machineTypeId String
+  userId        String
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  type   MachineType @relation(fields: [spaceId, machineTypeId], references: [spaceId, id], onDelete: Cascade)
+  member SpaceMember @relation(fields: [userId, spaceId], references: [userId, spaceId], onDelete: Cascade)
+
+  @@unique([spaceId, machineTypeId, userId])
+  @@index([spaceId, userId])
 }
 
 /// A link that adds someone to a space with a role. With `email` set, only that verified address may accept.
@@ -507,11 +525,12 @@ model MachineType {
   createdAt               DateTime         @default(now())
   updatedAt               DateTime         @updatedAt
 
-  space    Space            @relation(fields: [spaceId], references: [id], onDelete: Cascade)
-  machines Machine[]
-  pools    ConsumablePool[]
-  pricing  PricingRule[]
-  jobs     Job[]
+  space        Space                   @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  machines     Machine[]
+  typeManagers TypeManagerAssignment[]
+  pools        ConsumablePool[]
+  pricing      PricingRule[]
+  jobs         Job[]
 
   @@unique([spaceId, slug])
   @@unique([spaceId, id])

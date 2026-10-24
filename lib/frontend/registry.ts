@@ -150,17 +150,18 @@ import { createSpaceForOwner as endpoint146 } from "@/app/actions/super-admin-sp
 import { resendOwnerInvite as endpoint147 } from "@/app/actions/super-admin-spaces";
 import { setSpaceVisibility as endpoint148 } from "@/app/actions/super-admin-spaces";
 import { updateSpaceRole as endpoint149 } from "@/app/actions/team";
-import { removeSpaceMember as endpoint150 } from "@/app/actions/team";
-import { decideMember as endpoint151 } from "@/app/actions/team";
-import { deleteSpace as endpoint152 } from "@/app/actions/team";
-import { createScheduleAction as endpoint153 } from "@/app/actions/upkeep";
-import { updateScheduleAction as endpoint154 } from "@/app/actions/upkeep";
-import { logMaintenanceAction as endpoint155 } from "@/app/actions/upkeep";
-import { startDowntimeAction as endpoint156 } from "@/app/actions/upkeep";
-import { endDowntimeAction as endpoint157 } from "@/app/actions/upkeep";
-import { updateFaultAction as endpoint158 } from "@/app/actions/upkeep";
-import { saveWarrantyAction as endpoint159 } from "@/app/actions/upkeep";
-import { logManualUsageAction as endpoint160 } from "@/app/actions/upkeep";
+import { setTypeAssignmentsAction as endpoint150 } from "@/app/actions/team";
+import { removeSpaceMember as endpoint151 } from "@/app/actions/team";
+import { decideMember as endpoint152 } from "@/app/actions/team";
+import { deleteSpace as endpoint153 } from "@/app/actions/team";
+import { createScheduleAction as endpoint154 } from "@/app/actions/upkeep";
+import { updateScheduleAction as endpoint155 } from "@/app/actions/upkeep";
+import { logMaintenanceAction as endpoint156 } from "@/app/actions/upkeep";
+import { startDowntimeAction as endpoint157 } from "@/app/actions/upkeep";
+import { endDowntimeAction as endpoint158 } from "@/app/actions/upkeep";
+import { updateFaultAction as endpoint159 } from "@/app/actions/upkeep";
+import { saveWarrantyAction as endpoint160 } from "@/app/actions/upkeep";
+import { logManualUsageAction as endpoint161 } from "@/app/actions/upkeep";
 
 export const viewReaders = Object.freeze({
   "app__account__jobs__page:loadAccountJobsView": endpoint0,
@@ -315,15 +316,16 @@ export const backendActions = Object.freeze({
   "super-admin-spaces:resendOwnerInvite": endpoint147,
   "super-admin-spaces:setSpaceVisibility": endpoint148,
   "team:updateSpaceRole": endpoint149,
-  "team:removeSpaceMember": endpoint150,
-  "team:decideMember": endpoint151,
-  "team:deleteSpace": endpoint152,
-  "upkeep:createScheduleAction": endpoint153,
-  "upkeep:updateScheduleAction": endpoint154,
-  "upkeep:logMaintenanceAction": endpoint155,
-  "upkeep:startDowntimeAction": endpoint156,
-  "upkeep:endDowntimeAction": endpoint157,
-  "upkeep:updateFaultAction": endpoint158,
-  "upkeep:saveWarrantyAction": endpoint159,
-  "upkeep:logManualUsageAction": endpoint160,
+  "team:setTypeAssignmentsAction": endpoint150,
+  "team:removeSpaceMember": endpoint151,
+  "team:decideMember": endpoint152,
+  "team:deleteSpace": endpoint153,
+  "upkeep:createScheduleAction": endpoint154,
+  "upkeep:updateScheduleAction": endpoint155,
+  "upkeep:logMaintenanceAction": endpoint156,
+  "upkeep:startDowntimeAction": endpoint157,
+  "upkeep:endDowntimeAction": endpoint158,
+  "upkeep:updateFaultAction": endpoint159,
+  "upkeep:saveWarrantyAction": endpoint160,
+  "upkeep:logManualUsageAction": endpoint161,
 });

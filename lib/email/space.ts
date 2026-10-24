@@ -37,7 +37,7 @@ async function loadSpace(id: string) {
   return prisma.space.findUnique({ where: { id }, select: { name: true, slug: true } });
 }
 
-/** Tell an owner about their application or space. Returns "dropped" if the space is gone. */
+/** Tell a machine manager about their application or space. Returns "dropped" if the space is gone. */
 export async function deliverSpaceNotice(payload: NoticePayload, messageId: string): Promise<"sent" | "dropped"> {
   const space = await loadSpace(payload.spaceId);
   if (!space) return "dropped";
@@ -107,7 +107,7 @@ export async function deliverAdminApplicationAlert(payload: AdminPayload, messag
   return "sent";
 }
 
-/** Invite the person a platform admin named as owner of a new space. */
+/** Invite the person a platform admin named as machine manager of a new space. */
 export async function deliverOwnerInvite(payload: InvitePayload, messageId: string): Promise<"sent" | "dropped"> {
   const space = await loadSpace(payload.spaceId);
   if (!space || new Date(payload.expiresAt) <= new Date()) return "dropped";
@@ -116,7 +116,7 @@ export async function deliverOwnerInvite(payload: InvitePayload, messageId: stri
     messageId,
     subject: `You're invited to run ${space.name}`,
     heading: `Run ${space.name} on Space Works Machines`,
-    paragraphs: [`A platform admin set up ${space.name} and named you as its owner. Accept the invite with this email address to open its dashboard and start setting up its machines.`],
+    paragraphs: [`A platform admin set up ${space.name} and named you as its machine manager. Accept the invite with this email address to open its dashboard and start setting up its machines.`],
     action: { label: "Accept the invite", url: absoluteUrl(`/join/space/${payload.token}`) },
     footnote: `This link works once and expires on ${new Date(payload.expiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}. Sign in or create an account with ${payload.to} to accept it.`,
   });

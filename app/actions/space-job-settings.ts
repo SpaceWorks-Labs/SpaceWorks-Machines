@@ -7,7 +7,7 @@ import { invalid, revalidate, slugOf, staffAction } from "@/lib/actionAccess";
 import type { ActionResult } from "./space";
 
 /**
- * Whole-space policy in SpaceJobSettings that space managers own. Phase 2 needs only the low-stock alert switch;
+ * Whole-space policy in SpaceJobSettings that machine managers own. Phase 2 needs only the low-stock alert switch;
  * Phase 3 adds the job, payment and notification policy here. Every change is audited with before and after.
  */
 export async function setLowStockAlerts(input: unknown): Promise<ActionResult> {

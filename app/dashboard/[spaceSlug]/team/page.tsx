@@ -29,7 +29,7 @@ export default async function SpaceTeamPage({ params, searchParams }: Props) {
 
       <div className="grid grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="flex min-w-0 flex-col gap-8">
-          <TeamList spaceSlug={space.slug} actorRole={membership.role} rows={view.rows} showEmail={managerView} />
+          <TeamList spaceSlug={space.slug} actorRole={membership.role} rows={view.rows} showEmail={managerView} types={view.types} canAssignTypes={view.canAssignTypes} />
           <MakersList spaceSlug={space.slug} rows={view.makerRows} canManage={view.canManageMembers} total={view.makerTotal} />
           {view.makerPages > 1 ? (
             <nav aria-label="Maker pages" className="flex flex-wrap items-center justify-end gap-2">

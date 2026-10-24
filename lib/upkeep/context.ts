@@ -1,6 +1,7 @@
 import "server-only";
 import type { Machine, Prisma } from "@prisma/client";
 import { changeMachineStatus } from "@/lib/machines/machines";
+import { actorMayUseMachine, actorMayUseType } from "@/lib/typeScope";
 
 export class UpkeepNotFoundError extends Error {
   constructor() { super("Space not found."); }
@@ -19,11 +20,21 @@ export function required(value: string | undefined, max: number, message: string
   return clean;
 }
 
-/** Row-lock a machine of this space (machine before schedule/downtime rows, as the job services do). */
-export async function lockMachine(tx: Prisma.TransactionClient, spaceId: string, machineId: string): Promise<Machine> {
+/**
+ * Row-lock a machine of this space (machine before schedule/downtime rows, as the job services do). With an
+ * actor, a machine-type manager outside the machine's type gets the same not-found as a foreign machine.
+ */
+export async function lockMachine(tx: Prisma.TransactionClient, spaceId: string, machineId: string, actorId?: string | null): Promise<Machine> {
   const rows = await tx.$queryRaw<{ id: string }[]>`SELECT "id" FROM "Machine" WHERE "spaceId" = ${spaceId} AND "id" = ${machineId} FOR UPDATE`;
   if (!rows[0]) throw new UpkeepNotFoundError();
-  return tx.machine.findUniqueOrThrow({ where: { spaceId_id: { spaceId, id: machineId } } });
+  const machine = await tx.machine.findUniqueOrThrow({ where: { spaceId_id: { spaceId, id: machineId } } });
+  if (!(await actorMayUseType(tx, spaceId, actorId, machine.typeId))) throw new UpkeepNotFoundError();
+  return machine;
+}
+
+/** For rows that point at a machine without locking it (faults, records, warranty documents). */
+export async function assertMachineScope(tx: Prisma.TransactionClient, spaceId: string, actorId: string | null | undefined, machineId: string) {
+  if (!(await actorMayUseMachine(tx, spaceId, actorId, machineId))) throw new UpkeepNotFoundError();
 }
 
 /** Set a machine's status unless it is retired or already there; returns webhook delivery ids. */

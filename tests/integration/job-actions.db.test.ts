@@ -18,7 +18,7 @@ let f: JobsFixture;
 beforeAll(async () => { f = await jobsFixture(); });
 afterAll(async () => { await f?.cleanup(); });
 const role = async (role: SpaceRole) => prisma.spaceMember.updateMany({ where: { spaceId: f.home.space.id, userId: f.home.user.id }, data: { role } });
-beforeEach(async () => { identity.id = f.home.user.id; await role("OWNER"); });
+beforeEach(async () => { identity.id = f.home.user.id; await role("MACHINE_MANAGER"); });
 const settings = () => ({ spaceSlug: f.home.space.slug, values: jobSettingsSchema.parse({ ...JOB_DEFAULTS, maxOpenJobsPerRequester: 100 }) });
 const pricing = () => ({ spaceSlug: f.home.space.slug, typeId: null, machineId: null, audience: "MEMBER", mode: "FLAT", flatFee: 1000, timeRatePerHour: 0, materialRate: "0", setupFee: 0, minimumCharge: 0, timeIncrementMinutes: 1, depositMode: "NONE", depositValue: 0, paymentTiming: null });
 
@@ -64,9 +64,12 @@ describe.sequential("job actions enforce capabilities and tenant scope in Postgr
     expect((await f.readJob(job.id)).status).toBe("COLLECTED");
   });
   it("gates settings separately from money switches and audits field names only", async () => {
+    await role("TYPE_MANAGER");
+    expect(await saveJobSettingsAction(settings())).toMatchObject({ ok: false });
+    expect(await saveJobMoneySettingsAction({ spaceSlug: f.home.space.slug, values: moneySettingsSchema.parse(JOB_DEFAULTS) })).toMatchObject({ ok: false });
+    expect(await savePricingRuleAction(pricing())).toMatchObject({ ok: false });
     await role("MACHINE_MANAGER");
     expect(await saveJobSettingsAction(settings())).toEqual({ ok: true });
-    expect(await saveJobMoneySettingsAction({ spaceSlug: f.home.space.slug, values: moneySettingsSchema.parse(JOB_DEFAULTS) })).toMatchObject({ ok: false });
     expect(await savePricingRuleAction(pricing())).toEqual({ ok: true });
     const audit = await prisma.auditEvent.findFirstOrThrow({ where: { spaceId: f.home.space.id, action: "SPACE_SETTINGS_CHANGED", metadata: { path: ["area"], equals: "machine.jobs" } } });
     expect(audit.metadata).toMatchObject({ area: "machine.jobs" });
@@ -84,17 +87,17 @@ describe.sequential("job actions enforce capabilities and tenant scope in Postgr
     expect(await deletePricingRuleAction({ spaceSlug: f.away.space.slug, ruleId: existing.id })).toEqual({ ok: false, error: "Space not found." });
     expect(await deletePricingRuleAction({ spaceSlug: f.home.space.slug, ruleId: existing.id })).toEqual({ ok: true });
   });
-  it("permits money settings only to space managers and prevents staff payment impersonation", async () => {
+  it("permits money settings only to machine managers and prevents staff payment impersonation", async () => {
     const input = { spaceSlug: f.home.space.slug, values: { ...moneySettingsSchema.parse(JOB_DEFAULTS), paymentsEnabled: true } };
     expect(await saveJobMoneySettingsAction(input)).toEqual({ ok: true });
     const { job } = await f.submit();
     await f.act(job.id, { kind: "approve", priceOverride: 1000, reason: "Quote" });
     const payment = await prisma.payment.create({ data: { spaceId: f.home.space.id, jobId: job.id, amount: 1000, currency: "INR" } });
     const record = { spaceSlug: f.home.space.slug, paymentId: payment.id, command: { kind: "record", method: "CASH", reference: "Receipt" } };
-    await role("MACHINE_MANAGER");
+    await role("OPERATOR");
     expect(await jobPaymentAction(record)).toMatchObject({ ok: false });
     expect(await payNowAction({ spaceSlug: f.home.space.slug, paymentId: payment.id })).toEqual({ ok: false, error: "Space not found." });
-    await role("OWNER");
+    await role("MACHINE_MANAGER");
     expect(await jobPaymentAction({ ...record, spaceSlug: f.away.space.slug })).toEqual({ ok: false, error: "Space not found." });
     expect(await jobPaymentAction(record)).toEqual({ ok: true });
     expect((await prisma.payment.findUniqueOrThrow({ where: { id: payment.id } })).status).toBe("PAID");
@@ -114,9 +117,9 @@ describe.sequential("job actions enforce capabilities and tenant scope in Postgr
     const { job } = await f.submit();
     await f.act(job.id, { kind: "approve" });
     const input = { spaceSlug: f.home.space.slug, jobId: job.id, command: { kind: "start", paymentOverrideReason: "Agreed exception" } };
-    await role("MACHINE_MANAGER");
+    await role("OPERATOR");
     expect(await transitionJobAction(input)).toMatchObject({ ok: false, error: "Payment overrides require payments.manage." });
-    await role("OWNER");
+    await role("MACHINE_MANAGER");
     expect(await transitionJobAction(input)).toMatchObject({ ok: true });
     expect(await prisma.jobEvent.findFirst({ where: { spaceId: f.home.space.id, jobId: job.id, kind: "started" } })).toMatchObject({ note: "Agreed exception", data: { paymentOverride: true } });
     await f.act(job.id, { kind: "complete", actualMinutes: 1 });

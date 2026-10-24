@@ -22,7 +22,7 @@ export function JoinSpaceCard({ slug, name, joinPolicy, takingMakers, viewer }: 
       ? <Callout tone="success" title="You help run this space" action={<Link href={`/dashboard/${slug}`} className={buttonClasses({ variant: "secondary", size: "sm" })}>Open the dashboard</Link>}>Your staff role gives you the space dashboard.</Callout>
       : <Callout tone="success" title={`You're a maker at ${name}`}>Booking machines and submitting jobs arrive in the next release.</Callout>;
   }
-  if (viewer.status === "PENDING") return <Callout tone="info" title="Request sent">A space manager will look at it. We&apos;ll email you when they decide.</Callout>;
+  if (viewer.status === "PENDING") return <Callout tone="info" title="Request sent">A machine manager will look at it. We&apos;ll email you when they decide.</Callout>;
   if (viewer.status === "BLOCKED") return <Callout tone="warning" title="You can't join this space">Ask the space if you think this is a mistake.</Callout>;
   if (!takingMakers) return <Callout tone="warning" title="Not taking new makers">{name} isn&apos;t taking new makers right now.</Callout>;
   if (joinPolicy === "INVITE_ONLY") return <Callout tone="info" title="Invite only">{name} adds makers by invitation. Ask the space for an invite.</Callout>;
@@ -52,7 +52,7 @@ export function JoinSpaceCard({ slug, name, joinPolicy, takingMakers, viewer }: 
         >
           {joinPolicy === "OPEN" ? `Join ${name}` : "Ask to join"}
         </Button>
-        <span className="text-body-ui text-ink-muted">{joinPolicy === "OPEN" ? "You join straight away." : "A space manager approves new makers."}</span>
+        <span className="text-body-ui text-ink-muted">{joinPolicy === "OPEN" ? "You join straight away." : "A machine manager approves new makers."}</span>
       </div>
     </div>
   );

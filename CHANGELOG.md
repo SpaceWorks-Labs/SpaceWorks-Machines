@@ -4,6 +4,19 @@ Releases are published from `main` and titled **`Space Works Machines <version>`
 file selects the series; each build is tagged `v<series>-main.<run>.<sha>`, which is what a deployment pins
 to. Pushes to `dev` publish staging images tagged `dev` without a release.
 
+## Unreleased
+
+- **Roles.** No owner or space manager role any more: the machine manager is the top role (settings, money,
+  the team including other machine managers, deleting the space), and a space always keeps one active machine
+  manager. New machine type managers get full access and settings for the machine types a machine manager
+  gives them on the Team page, and nothing else (404 outside them, enforced in every loader and domain
+  function). Migration `0004_type_managers` turns existing owners and space managers into machine managers.
+- **Decisions.** `docs/DECISIONS.md` replaces the handoff: locked decisions, the owner's, the defaults taken
+  while building and the checks still waiting on the owner.
+- **CI.** Form fields render under the development server (no lazy client children), and the browser suite
+  signs in from separate addresses so the sign-in rate limit holds.
+- Money in reports (revenue and costs) is shown to the machine manager only.
+
 ## 0.2.0 (Unreleased)
 
 The full machine management app: phases 2 to 6 on top of the 0.1.0 foundation.

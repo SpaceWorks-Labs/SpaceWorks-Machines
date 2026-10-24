@@ -11,7 +11,7 @@ export async function loadStartView() {
     prisma.user.findUnique({ where: { id: session.user.id }, select: { name: true, email: true, emailVerified: true } }),
     isSpaceApplicationsEnabled(),
     prisma.spaceMember.findMany({
-      where: { userId: session.user.id, role: "OWNER", space: { status: { in: ["PENDING_REVIEW", "CHANGES_REQUESTED"] } } },
+      where: { userId: session.user.id, role: "MACHINE_MANAGER", space: { status: { in: ["PENDING_REVIEW", "CHANGES_REQUESTED"] } } },
       select: { space: { select: { name: true, slug: true, status: true } } },
       orderBy: { createdAt: "desc" },
       take: 5,

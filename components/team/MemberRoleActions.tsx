@@ -19,7 +19,7 @@ export function MemberRoleActions(props: { spaceSlug: string; targetUserId: stri
   const { showToast } = useToast();
   const [pending, startTransition] = useTransition();
   const [confirmRemove, setConfirmRemove] = useState(false);
-  const canEdit = !isYou && role !== "OWNER" && canManageTeamMember(actorRole, role);
+  const canEdit = !isYou && canManageTeamMember(actorRole, role);
   const options = assignableRoles(actorRole);
 
   if (!canEdit) return <Chip size="sm" tone={ROLE_TONES[role]}>{ROLE_LABELS[role]}</Chip>;

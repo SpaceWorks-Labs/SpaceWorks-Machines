@@ -11,7 +11,7 @@ export async function loadSuperAdminOverviewView() {
     prisma.spaceMember.count(),
     prisma.outboxMessage.count({ where: { status: OutboxStatus.FAILED } }),
     prisma.outboxMessage.count({ where: { status: OutboxStatus.PENDING, availableAt: { lt: minutesAgo(15) } } }),
-    prisma.user.count({ where: { mfaEnabledAt: null, spaceMembers: { some: { role: { in: [SpaceRole.OWNER, SpaceRole.MANAGER] } } } } }),
+    prisma.user.count({ where: { mfaEnabledAt: null, spaceMembers: { some: { role: { in: [SpaceRole.MACHINE_MANAGER] } } } } }),
     prisma.user.count({ where: { emailVerified: null } }),
     prisma.space.count({ where: { status: SpaceStatus.PENDING_REVIEW, updatedAt: { lt: new Date(Date.now() - 7 * 24 * 60 * 60_000) } } }),
   ]);
@@ -47,7 +47,7 @@ export async function loadSuperAdminOverviewView() {
     { label: "Suspended spaces", value: statusCount(SpaceStatus.SUSPENDED), href: "/super-admin/spaces?status=SUSPENDED" },
     { label: "Failed emails", value: failedEmails, href: "/super-admin/email" },
     { label: "Emails queued over 15 minutes", value: stuckEmails, href: "/super-admin/email" },
-    { label: "Owners and admins without MFA", value: managersWithoutMfa, href: "/super-admin/security" },
+    { label: "Machine managers and admins without MFA", value: managersWithoutMfa, href: "/super-admin/security" },
     { label: "Users with unverified email", value: unverifiedUsers, href: "/super-admin/users?filter=unverified" },
   ];
   return { stats, attention, activity7d, recentSpaces, spaces };

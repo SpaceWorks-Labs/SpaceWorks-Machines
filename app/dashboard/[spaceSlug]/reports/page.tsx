@@ -5,7 +5,7 @@ import { SpacePageHeader } from "@/components/dashboard/space/SpacePageHeader";
 import { Bars } from "@/components/reports/Bars";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, Chip, StatTile } from "@/components/ui/display";
-import { Field, Input } from "@/components/ui/field";
+import { DateRangeForm } from "@/components/forms/FilterForms";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatMoney, isCurrencyCode } from "@/lib/money/currencies";
 import { WARRANTY_LABELS } from "@/lib/upkeep/labels";
@@ -23,11 +23,7 @@ export default async function ReportsPage({ params, searchParams }: { params: Pr
   return (
     <div className="flex flex-col gap-7 pb-4">
       <SpacePageHeader space={space} title="Reports" description="Jobs, machine use, consumables, money and upkeep over a period." />
-      <form className="flex flex-wrap items-end gap-3" aria-label="Report period">
-        <Field label="From"><Input type="date" name="from" defaultValue={range.from} /></Field>
-        <Field label="To"><Input type="date" name="to" defaultValue={range.to} /></Field>
-        <Button type="submit" variant="secondary">Show period</Button>
-      </form>
+      <DateRangeForm from={range.from} to={range.to} label="Report period" submit="Show period" />
 
       <Card as="section" aria-label="Jobs report">
         <CardHeader title="Jobs" description={`${reports.jobs.total} submitted in this period.`} action={exportLink("jobs")} />

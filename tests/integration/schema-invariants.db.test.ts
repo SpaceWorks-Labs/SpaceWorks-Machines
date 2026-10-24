@@ -33,7 +33,7 @@ describe.sequential("production database invariants", () => {
   });
 
   it("allows one team row per person per space", async () => {
-    await prisma.spaceMember.create({ data: { userId, spaceId, role: "OWNER" } });
+    await prisma.spaceMember.create({ data: { userId, spaceId, role: "MACHINE_MANAGER" } });
     await expect(prisma.spaceMember.create({ data: { userId, spaceId, role: "VIEWER" } })).rejects.toThrow();
   });
 
@@ -57,7 +57,7 @@ describe.sequential("production database invariants", () => {
 
   it("removes a space's team, invites and review history with it", async () => {
     const space = await prisma.space.create({ data: { name: "Cascade", slug: `cascade-${suffix}` } });
-    await prisma.spaceMember.create({ data: { userId, spaceId: space.id, role: "OWNER" } });
+    await prisma.spaceMember.create({ data: { userId, spaceId: space.id, role: "MACHINE_MANAGER" } });
     await prisma.spaceInvite.create({ data: { spaceId: space.id, token: `cascade-${suffix}` } });
     await prisma.spaceReview.create({ data: { spaceId: space.id, action: "SUBMITTED" } });
     await prisma.space.delete({ where: { id: space.id } });

@@ -36,7 +36,7 @@ const entry = { id: "entry-1", kind: "CORRECTION", delta: decimal("-0.001"), bal
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.access.mockResolvedValue({ space: { id: "space-1", slug: "workshop", name: "Workshop", status: "ACTIVE" }, membership: { role: "MACHINE_MANAGER" } });
+  mocks.access.mockResolvedValue({ space: { id: "space-1", slug: "workshop", name: "Workshop", status: "ACTIVE" }, membership: { role: "MACHINE_MANAGER" }, typeScope: null });
   mocks.profile.mockResolvedValue({ logoUrl: null, currency: "OMR", timezone: "Asia/Kolkata" });
   mocks.types.mockResolvedValue([type]); mocks.type.mockResolvedValue(type); mocks.pools.mockResolvedValue([pool]); mocks.pool.mockResolvedValue(pool);
   mocks.machines.mockResolvedValue([{ id: "machine-1", name: "Laser one", type: { consumableUnit: "SHEETS" } }]);
@@ -103,15 +103,22 @@ describe("machine settings and consumable views", () => {
   });
 
   it.each([
-    ["VIEWER", "ACTIVE", false, false, false], ["OPERATOR", "ACTIVE", false, true, false],
-    ["MACHINE_MANAGER", "ACTIVE", true, true, false], ["MANAGER", "ACTIVE", true, true, true],
-    ["OWNER", "SUSPENDED", false, false, false], ["OWNER", "ARCHIVED", false, false, false],
-  ])("gates settings, stock and alerts for %s in %s", async (role, status, settings, stock, alerts) => {
-    mocks.access.mockResolvedValue({ space: { id: "space-1", slug: "workshop", status }, membership: { role } });
+    ["VIEWER", "ACTIVE", false, false, false, false], ["OPERATOR", "ACTIVE", false, false, true, false],
+    ["TYPE_MANAGER", "ACTIVE", false, true, false, false], ["MACHINE_MANAGER", "ACTIVE", true, true, true, true],
+    ["MACHINE_MANAGER", "SUSPENDED", false, false, false, false], ["MACHINE_MANAGER", "ARCHIVED", false, false, false, false],
+  ])("gates settings, type edits, stock and alerts for %s in %s", async (role, status, settings, typeEdit, stock, alerts) => {
+    mocks.access.mockResolvedValue({ space: { id: "space-1", slug: "workshop", status }, membership: { role }, typeScope: role === "TYPE_MANAGER" ? ["type-1"] : null });
     expect((await loadMachineSettingsView({ params: params() })).canManage).toBe(settings);
-    expect((await loadMachineTypeView({ params: params() })).canManage).toBe(settings);
+    expect((await loadMachineTypeView({ params: params() })).canManage).toBe(typeEdit);
     for (const view of [await loadConsumablesView({ params: params() }), await detail()]) {
       expect(view.canManage).toBe(stock); expect(view.canConfigureAlerts).toBe(alerts);
     }
+  });
+
+  it("shows a machine type manager only their types, and the rest as not found", async () => {
+    mocks.access.mockResolvedValue({ space: { id: "space-1", slug: "workshop", status: "ACTIVE" }, membership: { role: "TYPE_MANAGER" }, typeScope: ["type-2"] });
+    await loadMachineSettingsView({ params: params() });
+    expect(mocks.types).toHaveBeenCalledWith(expect.objectContaining({ where: { spaceId: "space-1", id: { in: ["type-2"] } } }));
+    await expect(loadMachineTypeView({ params: params() })).rejects.toThrow("NEXT_NOT_FOUND");
   });
 });

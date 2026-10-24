@@ -14,7 +14,7 @@ export default async function SuperAdminNewSpacePage() {
         <ArrowLeft aria-hidden className="size-4" />
         Spaces
       </Link>
-      <PageHeader title="Add a space" description="Skip the application: set it up as active and invite its owner." />
+      <PageHeader title="Add a space" description="Skip the application: set it up as active and invite its machine manager." />
       <CreateSpaceForm />
     </div>
   );

@@ -78,19 +78,19 @@ test("they turn on an authenticator and then need it to sign in", async ({ page 
   await signInWithPassword(page, owner.email, ownerSecret);
 });
 
-test("a super admin creates a space and its owner accepts the emailed invite", async ({ browser }) => {
+test("a super admin creates a space and its machine manager accepts the emailed invite", async ({ browser }) => {
   const made = spawnSync(process.execPath, ["docker/ops/admin.mjs", "create", "--email", admin.email, "--name", "Root", "--password-stdin"], { input: password, encoding: "utf8", env: process.env });
   expect(made.status, made.stderr).toBe(0);
   const adminPage = await fresh(browser);
   await signInWithPassword(adminPage, admin.email);
   await adminPage.goto("/super-admin/spaces/new");
-  await adminPage.getByLabel("Owner's email").fill(owner.email);
+  await adminPage.getByLabel("Machine manager's email").fill(owner.email);
   await adminPage.getByLabel("Space name").fill("Kochi Makers");
   await adminPage.getByLabel("Web address").fill(slug);
   await adminPage.getByLabel("What does the makerspace do, and who uses its machines?").fill("Printers, a laser cutter and a CNC router for everyone in Kochi.");
   await adminPage.getByLabel("Contact email").fill(`desk-${run}@example.test`);
   await adminPage.getByLabel("City or town").fill("Kochi");
-  await adminPage.getByRole("button", { name: "Create and invite owner" }).click();
+  await adminPage.getByRole("button", { name: "Create and invite the machine manager" }).click();
   await adminPage.waitForURL(/\/super-admin\/spaces\/[a-z0-9]+$/);
 
   const ownerPage = await fresh(browser);
@@ -103,7 +103,7 @@ test("a super admin creates a space and its owner accepts the emailed invite", a
   await expect(ownerPage.getByRole("link", { name: "Machine settings" }).first()).toBeVisible();
 });
 
-test("a maker signs in with an emailed link and asks to join, and the owner approves", async ({ browser }) => {
+test("a maker signs in with an emailed link and asks to join, and a machine manager approves", async ({ browser }) => {
   const makerPage = await fresh(browser);
   await signUp(makerPage, maker);
   await makerPage.goto("/login", { waitUntil: "networkidle" });

@@ -20,7 +20,7 @@ export type JoinOutcome = "joined" | "requested" | "already" | "blocked" | "invi
 
 /**
  * A signed-in person asks to join a space as a maker. OPEN joins at once, APPROVAL waits as PENDING for a
- * space manager, INVITE_ONLY refuses (invites go through acceptSpaceInviteToken). Runs inside the caller's
+ * machine manager, INVITE_ONLY refuses (invites go through acceptSpaceInviteToken). Runs inside the caller's
  * transaction, which holds a row lock on the space so limits can't be overrun by a burst of joins.
  */
 export async function joinAsMaker(tx: Tx, userId: string, spaceId: string): Promise<JoinOutcome> {

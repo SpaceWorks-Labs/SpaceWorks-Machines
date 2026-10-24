@@ -67,7 +67,7 @@ describe("job guards and injected payment effects", () => {
     await expect(f.act(job.id, { kind: "start", poolId: f.home.pool.id, paymentOverrideReason: " " })).rejects.toThrow("reason");
     await prisma.spaceMember.updateMany({ where: { spaceId: f.home.space.id, userId: f.home.user.id }, data: { role: "OPERATOR" } });
     await expect(f.act(job.id, { kind: "start", poolId: f.home.pool.id, paymentOverrideReason: "Authorised" })).rejects.toThrow("payments.manage");
-    await prisma.spaceMember.updateMany({ where: { spaceId: f.home.space.id, userId: f.home.user.id }, data: { role: "OWNER" } });
+    await prisma.spaceMember.updateMany({ where: { spaceId: f.home.space.id, userId: f.home.user.id }, data: { role: "MACHINE_MANAGER" } });
     await f.act(job.id, { kind: "start", poolId: f.home.pool.id, paymentOverrideReason: "Invoice approved" });
     await f.act(job.id, { kind: "complete", actualMinutes: 10 });
     await expect(f.act(job.id, { kind: "collect" })).rejects.toThrow("not paid");
@@ -96,9 +96,9 @@ describe("job guards and injected payment effects", () => {
     await f.settings({ paymentsEnabled: true });
     const { job } = await f.submit();
     await expect(f.act(job.id, { kind: "approve", priceOverride: 123 })).rejects.toThrow("reason");
-    await prisma.spaceMember.updateMany({ where: { userId: f.home.user.id, spaceId: f.home.space.id }, data: { role: "MACHINE_MANAGER" } });
+    await prisma.spaceMember.updateMany({ where: { userId: f.home.user.id, spaceId: f.home.space.id }, data: { role: "OPERATOR" } });
     await expect(f.act(job.id, { kind: "approve", priceOverride: 123, reason: "Special price" })).rejects.toThrow("payments.manage");
-    await prisma.spaceMember.updateMany({ where: { userId: f.home.user.id, spaceId: f.home.space.id }, data: { role: "OWNER" } });
+    await prisma.spaceMember.updateMany({ where: { userId: f.home.user.id, spaceId: f.home.space.id }, data: { role: "MACHINE_MANAGER" } });
     expect((await f.act(job.id, { kind: "approve", priceOverride: 123, reason: "Special price" })).job).toMatchObject({ quotedAmount: 123, priceOverrideReason: "Special price" });
   });
   it("rejects invalid actuals and failure inputs without usage or pool changes", async () => {

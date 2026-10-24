@@ -7,6 +7,7 @@ import { createSafeWebpDerivative } from "@/lib/imageValidation";
 import { can, spaceAllows } from "@/lib/permissionRoles";
 import { downloadJobFile } from "@/lib/storage/jobFiles";
 import { JobGuardError, JobNotFoundError } from "./context";
+import { inScope, scopeForRole } from "@/lib/typeScope";
 
 export async function prepareJobFiles(uploads: readonly JobUpload[], policy: FilePolicy) {
   let files: ReturnType<typeof validateJobFiles>;
@@ -33,6 +34,7 @@ export async function jobFilesForRequester(spaceId: string, jobId: string, actor
   if (job.requesterId !== actorId) {
     const member = await prisma.spaceMember.findFirst({ where: { spaceId, userId: actorId }, include: { user: true } });
     if (member?.status !== "ACTIVE" || !member.user.mfaEnabledAt || !can(member.role, "jobs.view")) throw new JobNotFoundError();
+    if (!inScope(await scopeForRole(prisma, spaceId, actorId, member.role), job.typeId)) throw new JobNotFoundError();
   }
   return prisma.jobFile.findMany({ where: { spaceId, jobId: job.reprintOfId ?? job.id } });
 }

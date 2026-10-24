@@ -34,14 +34,16 @@ type FieldProps = {
 /** Label above, control, then helper or error text, all wired with ids and ARIA. */
 export function Field({ label, optional, helperText, error, hideLabel, className, id, required, children }: FieldProps) {
   const generatedId = useId();
-  const controlId = id ?? (children.props.id as string | undefined) ?? generatedId;
+  // A child that crossed the server/client boundary can arrive as a lazy reference rather than an element.
+  const childProps: Record<string, unknown> = isValidElement(children) ? children.props : {};
+  const controlId = id ?? (childProps.id as string | undefined) ?? generatedId;
   const describedBy = error || helperText ? `${controlId}-description` : undefined;
   const control = isValidElement(children)
     ? cloneElement(children, {
         id: controlId,
-        "aria-invalid": error ? true : (children.props["aria-invalid"] as boolean | undefined),
-        "aria-describedby": [children.props["aria-describedby"], describedBy].filter(Boolean).join(" ") || undefined,
-        required: required ?? (children.props.required as boolean | undefined),
+        "aria-invalid": error ? true : (childProps["aria-invalid"] as boolean | undefined),
+        "aria-describedby": [childProps["aria-describedby"], describedBy].filter(Boolean).join(" ") || undefined,
+        required: required ?? (childProps.required as boolean | undefined),
       })
     : children;
   return (

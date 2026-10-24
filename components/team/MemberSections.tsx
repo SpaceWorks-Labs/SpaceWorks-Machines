@@ -28,7 +28,7 @@ export function MemberStat({ label, value, hint, dots }: { label: string; value:
 
 /* ---------- Roles ---------- */
 
-const ROLE_ORDER: SpaceRole[] = ["OWNER", "MANAGER", "MACHINE_MANAGER", "OPERATOR", "TECHNICIAN", "VIEWER", "MEMBER"];
+const ROLE_ORDER: SpaceRole[] = ["MACHINE_MANAGER", "TYPE_MANAGER", "OPERATOR", "TECHNICIAN", "VIEWER", "MEMBER"];
 
 export function RolesCard() {
   return (

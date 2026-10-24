@@ -7,7 +7,7 @@
 web
 
 ## Users
-- **Space managers:** the people who run a makerspace, fab lab or college workshop (owners and space managers).
+- **Machine managers:** the people who run a makerspace, fab lab or college workshop (the top role).
   They look after the space as a whole: its profile, who may join, staff, payments, email and notifications.
   Today they juggle sign-up sheets, chat groups and UPI screenshots.
 - **Machine staff:** machine managers, operators and technicians. They review and run jobs, keep consumables
@@ -34,8 +34,8 @@ many spaces, each reviewed before it opens.
 
 ## Operating Context
 - Spaces apply at `/start`; the platform super admin approves, asks for changes or declines. The super admin can
-  also set a space up directly and invite its owner, and decides which spaces are listed publicly at `/spaces`.
-- Staff roles: owner, space manager, machine manager, operator, technician, viewer. Makers ("Maker", the
+  also set a space up directly and invite its machine manager, and decides which spaces are listed publicly at `/spaces`.
+- Staff roles: machine manager, machine type manager (scoped to assigned types), operator, technician, viewer. Makers ("Maker", the
   `MEMBER` role) join through the space's join policy: open, approval or invite only.
 - Staff must use an authenticator app; makers sign in with a password or an emailed link.
 - Runs on a VPS (bundled PostgreSQL, Redis, Silo storage, a BullMQ worker and beat) or a cloud stack, with the

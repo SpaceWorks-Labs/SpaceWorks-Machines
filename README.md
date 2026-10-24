@@ -87,8 +87,9 @@ Grouped the way a workshop's week actually goes.
 
 - Each person has one account across spaces. They sign in with a password or an emailed link, and staff need
   an authenticator app.
-- Roles: owner, space manager, machine manager, operator, technician, viewer and maker. Makers join a space
-  freely, by approval or by invitation.
+- Roles: machine manager (runs the whole makerspace, the team and the money), machine type manager (full
+  access to the machine types they are given, nothing else), operator, technician, viewer and maker. A space
+  always keeps at least one machine manager. Makers join a space freely, by approval or by invitation.
 - A super admin reviews space applications, sets limits and watches instance health.
 
 ## A look around
@@ -225,7 +226,7 @@ The details are in [docs/DESIGN.md](docs/DESIGN.md).
 | [docs/SECURITY.md](docs/SECURITY.md) | Accounts, sign-in and data protection |
 | [docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | Email and chat alerts |
 | [docs/DESIGN.md](docs/DESIGN.md) | Brand, components, Patch and the easter eggs |
-| [docs/HANDOFF.md](docs/HANDOFF.md) | Project status and how to continue |
+| [docs/DECISIONS.md](docs/DECISIONS.md) | Every decision: locked, the owner's, defaults and checks still to do |
 | [CHANGELOG.md](CHANGELOG.md) | What changed in each version |
 
 ## Common commands
@@ -248,7 +249,8 @@ npm run readme:screens     # retake the README screenshots from the seeded demo
 Issues and pull requests are welcome. Branch from `dev` and open pull requests into `dev`; only the
 maintainer merges into `main`. Keep files under 300 lines, scope every query to its space, check
 capabilities rather than role names, and run the checks above before you push. [CLAUDE.md](CLAUDE.md) (the
-same as [AGENTS.md](AGENTS.md)) has the full conventions.
+same as [AGENTS.md](AGENTS.md)) has the full conventions, and [docs/DECISIONS.md](docs/DECISIONS.md) records why
+things are the way they are.
 
 ## Credits
 

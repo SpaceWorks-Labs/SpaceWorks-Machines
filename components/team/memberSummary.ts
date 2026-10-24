@@ -10,6 +10,8 @@ export type SpaceMemberRow = {
   role: SpaceRole;
   joinedLabel: string;
   isYou: boolean;
+  /** Machine type managers: the types they look after. */
+  typeIds?: string[];
 };
 
 export type TeamFilter = "everyone" | "managers" | "machines";
@@ -18,18 +20,17 @@ export type RoleCounts = Record<StaffRole, number>;
 
 export { ROLE_LABELS } from "@/lib/permissionRoles";
 
-export const EMPTY_ROLE_COUNTS: RoleCounts = { OWNER: 0, MANAGER: 0, MACHINE_MANAGER: 0, OPERATOR: 0, TECHNICIAN: 0, VIEWER: 0 };
+export const EMPTY_ROLE_COUNTS: RoleCounts = { MACHINE_MANAGER: 0, TYPE_MANAGER: 0, OPERATOR: 0, TECHNICIAN: 0, VIEWER: 0 };
 
 const NOUNS: Record<StaffRole, [string, string]> = {
-  OWNER: ["owner", "owners"],
-  MANAGER: ["space manager", "space managers"],
   MACHINE_MANAGER: ["machine manager", "machine managers"],
+  TYPE_MANAGER: ["machine type manager", "machine type managers"],
   OPERATOR: ["operator", "operators"],
   TECHNICIAN: ["technician", "technicians"],
   VIEWER: ["viewer", "viewers"],
 };
 
-/** "1 owner · 2 space managers · 3 operators", skipping roles nobody holds. */
+/** "1 machine manager · 2 machine type managers · 3 operators", skipping roles nobody holds. */
 export function roleBreakdown(counts: RoleCounts) {
   const parts = STAFF_ROLES.filter((role) => counts[role] > 0).map((role) => `${counts[role]} ${counts[role] === 1 ? NOUNS[role][0] : NOUNS[role][1]}`);
   return parts.length ? parts.join(" · ") : "No one yet";
@@ -54,10 +55,10 @@ export function roleDots(counts: RoleCounts, cap = 24): StaffRole[] {
   return STAFF_ROLES.flatMap((role, index) => Array.from({ length: allocation[index] }, () => role));
 }
 
-/** "managers" is the whole-space side (owners, space managers); "machines" the machine side. */
+/** "managers" runs the whole space (machine managers); "machines" is everyone else on staff. */
 export function matchesFilter(role: SpaceRole, filter: TeamFilter) {
-  if (filter === "managers") return role === "OWNER" || role === "MANAGER";
-  if (filter === "machines") return role === "MACHINE_MANAGER" || role === "OPERATOR" || role === "TECHNICIAN" || role === "VIEWER";
+  if (filter === "managers") return role === "MACHINE_MANAGER";
+  if (filter === "machines") return role === "TYPE_MANAGER" || role === "OPERATOR" || role === "TECHNICIAN" || role === "VIEWER";
   return true;
 }
 

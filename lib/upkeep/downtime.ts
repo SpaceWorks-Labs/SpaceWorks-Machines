@@ -13,7 +13,7 @@ function assertNotBusy(machine: Machine) {
 export async function startDowntime(tx: Prisma.TransactionClient, actor: Actor, input: {
   machineId: string; reason: DowntimeReason; note?: string; faultId?: string | null; status?: "MAINTENANCE" | "OFFLINE";
 }) {
-  const machine = await lockMachine(tx, actor.spaceId, input.machineId);
+  const machine = await lockMachine(tx, actor.spaceId, input.machineId, actor.actorId);
   if (machine.retiredAt) throw new UpkeepError("A retired machine is already out of service.");
   assertNotBusy(machine);
   if (await tx.downtime.findFirst({ where: { spaceId: actor.spaceId, machineId: machine.id, endedAt: null }, select: { id: true } })) {
@@ -43,7 +43,7 @@ export async function closeOpenDowntime(tx: Prisma.TransactionClient, actor: Act
 }
 
 export async function endDowntime(tx: Prisma.TransactionClient, actor: Actor, input: { machineId: string }) {
-  const machine = await lockMachine(tx, actor.spaceId, input.machineId);
+  const machine = await lockMachine(tx, actor.spaceId, input.machineId, actor.actorId);
   if (!await tx.downtime.findFirst({ where: { spaceId: actor.spaceId, machineId: machine.id, endedAt: null }, select: { id: true } })) {
     throw new UpkeepError("This machine has no open downtime.");
   }

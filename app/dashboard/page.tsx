@@ -30,7 +30,7 @@ export default async function DashboardPage() {
       {teams.length === 0 ? (
         <EmptyState patch title="No spaces yet" action={apply}>
           Apply to run your makerspace&rsquo;s machines here. A platform admin reviews every application, or ask a
-          space owner to invite you to their staff. Spaces you use as a maker are under Account.
+          machine manager to invite you to their staff. Spaces you use as a maker are under Account.
         </EmptyState>
       ) : (
         <section aria-label="Your spaces" className="grid grid-cols-1 gap-4 sm:grid-cols-2">

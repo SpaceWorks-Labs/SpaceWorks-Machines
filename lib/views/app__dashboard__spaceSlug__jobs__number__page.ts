@@ -3,14 +3,15 @@ import { prisma } from "@/lib/db";
 import { can, requireSpaceCapability, spaceAllows } from "@/lib/permissions";
 import { jobDetail } from "@/lib/jobs/viewQueries";
 import { JOB_DEFAULTS } from "@/lib/jobs/settingsDefaults";
+import { inScope } from "@/lib/typeScope";
 
 export async function loadStaffJobView({ params }: { params: Promise<{ spaceSlug: string; number: string }> }) {
   const { spaceSlug, number } = await params;
-  const { space, membership, userId } = await requireSpaceCapability(spaceSlug, "jobs.view");
+  const { space, membership, userId, typeScope } = await requireSpaceCapability(spaceSlug, "jobs.view");
   if (!/^\d{1,10}$/.test(number) || +number > 2147483647) notFound();
   const canMoney = can(membership.role, "payments.view");
   const job = await jobDetail(space.id, +number, true, canMoney);
-  if (!job) notFound();
+  if (!job || !inScope(typeScope, job.typeId)) notFound();
   const [profile, machines, pools, settings, requester] = await Promise.all([
     prisma.space.findUniqueOrThrow({ where: { id: space.id }, select: { logoUrl: true } }),
     prisma.machine.findMany({ where: { spaceId: space.id, typeId: job.typeId, retiredAt: null, acceptsJobs: true }, select: { id: true, name: true, status: true } }),

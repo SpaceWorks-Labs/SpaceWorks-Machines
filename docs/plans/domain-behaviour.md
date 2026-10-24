@@ -9,8 +9,8 @@ checks a capability from `lib/permissionRoles.ts`; foreign rows return 404. Ever
 `AuditEvent` (`<area>.<verb>`, metadata without secrets or PII bodies). Notifications, webhooks, chat
 alerts and gateway calls never fail a state change: enqueue them after commit (outbox / BullMQ). Money
 is integer minor units; quantities are Decimal(14,3). Nothing is hardcoded that a manager might want
-to change: it is a setting with a sensible default, edited in Space settings (space managers) or
-Machine settings (machine managers), and every settings change is audited with before/after values.
+to change: it is a setting with a sensible default, edited in Space settings or Machine settings
+(machine managers; machine type managers for their own types), and every settings change is audited with before/after values.
 
 ## 1. Machine types and machines (phase 2)
 

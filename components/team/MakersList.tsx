@@ -12,7 +12,7 @@ export type MakerRow = { id: string; userId: string; name: string | null; email:
 
 type Decision = "approve" | "decline" | "block" | "unblock";
 
-/** Makers: requests waiting for a space manager first, then everyone else. */
+/** Makers: requests waiting for a machine manager first, then everyone else. */
 export function MakersList({ spaceSlug, rows, canManage, total }: { spaceSlug: string; rows: MakerRow[]; canManage: boolean; total: number }) {
   const router = useRouter();
   const { showToast } = useToast();

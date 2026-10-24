@@ -20,7 +20,7 @@ const sections: LegalSection[] = [
     title: "What we collect",
     body: [
       "Your account. Your name, email address, password if you set one (stored only as a one-way hash), profile picture if you add one, whether you have verified your email, your two-step verification settings and the browsers you have signed in from.",
-      "Spaces you join. Which spaces you belong to, your role in each (for example maker, operator or space manager), when you joined, and whether your request to join is waiting for approval.",
+      "Spaces you join. Which spaces you belong to, your role in each (for example maker, operator or machine manager), when you joined, and whether your request to join is waiting for approval.",
       "Jobs and files. When you send a job to a space, such as a 3D print, a laser cut or a CNC job, we store the request, the design files you upload, the machine and materials it is for, its place in the queue, its status, the price and any notes between you and the space’s staff.",
       "Payments. When you pay for a job, we store the amount, what it was for, how you paid (online through the space’s own payment provider, or offline by cash, UPI or bank transfer recorded by the space’s staff) and reference numbers such as a UPI transaction reference (UTR). Card and bank details are entered with the payment provider, not on this site, and are never stored here.",
       "Machines and workshop records. For each space we store its machines, consumables, maintenance work, fault reports and usage logs, including who reported a fault or used a machine and when.",
@@ -41,7 +41,7 @@ const sections: LegalSection[] = [
     id: "who-can-see-it",
     title: "Who can see it",
     body: [
-      "Spaces. A space’s staff can see what their role allows: owners and space managers see and manage the space, its staff and its makers; machine managers, operators and technicians see the machines, jobs, queue and workshop records they work with; viewers can look but not change anything. Staff can export records they are allowed to see, and every export is logged.",
+      "Spaces. A space’s staff can see what their role allows: machine managers see and manage the space, its staff and its makers; machine type managers, operators and technicians see the machines, jobs, queue and workshop records they work with; viewers can look but not change anything. Staff can export records they are allowed to see, and every export is logged.",
       "Job files. Files you upload with a job can be downloaded only by you and that space’s staff. They are never shown publicly.",
       "The public. Public space and machine pages show only what the space publishes about itself and its machines. They never show makers’ contact details or job files.",
       "Payment providers. If you pay online, the space’s own payment provider (for example Razorpay or Stripe) processes the payment under its own privacy policy and receives the details it needs to do so.",

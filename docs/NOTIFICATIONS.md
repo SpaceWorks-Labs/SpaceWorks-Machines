@@ -15,9 +15,9 @@ once sent, and the short-lived ones are dropped rather than sent after they expi
 | `magic-link` | someone asks for an emailed sign-in link (15 minutes, single use) | platform |
 | `login-code` | an account without an authenticator signs in with a password from a new browser | platform |
 | `login-alert` | the first sign-in from a new device | platform |
-| `space-notice` | a space's application is received, approved, sent back for changes, rejected, suspended, reactivated or created by the super admin (to its owners) | platform |
+| `space-notice` | a space's application is received, approved, sent back for changes, rejected, suspended, reactivated or created by the super admin (to its machine managers) | platform |
 | `space-application-alert` | a space applies or resubmits (to super admins) | platform |
-| `owner-invite` | the super admin invites a space's owner | platform |
+| `owner-invite` | the super admin invites a space's first machine manager | platform |
 | `member-notice` | a maker is invited, or their request to join is approved or declined | the space's own SMTP when set up and on; otherwise the platform's, in the space's name |
 | `chat-notice` | a chat alert (see below); not an email, but delivered through the same outbox | the chat provider |
 
@@ -26,7 +26,7 @@ Later phases add job, payment and maintenance emails as new kinds in `lib/outbox
 **The platform's email** is set in Super admin → Settings (sender, SMTP service or host, port, login), which
 overrides the `EMAIL_FROM` and `SMTP_*` variables. Account emails always use it and never pass a `spaceId`.
 
-**A space's own email** lives in Space settings → Email (space managers): sender name and address, reply-to,
+**A space's own email** lives in Space settings → Email (machine managers): sender name and address, reply-to,
 SMTP host, port (587 or 2525 STARTTLS, 465 TLS, 25 STARTTLS), login and password. The password is stored
 encrypted (`PAYMENT_SECRETS_KEY`, a key derived for email and bound to the space). **Send test email** sends to
 the person testing and records when it last went through. In production TLS is required and the host must
@@ -40,13 +40,13 @@ Code: `sendBrandedEmail({ spaceId, … })` in `lib/email/message.ts` picks the r
 
 ## Chat alerts
 
-Space settings → Notifications (space managers) holds up to ten chat channels per space. Each picks its
+Space settings → Notifications (machine managers) holds up to ten chat channels per space. Each picks its
 alerts from `CHAT_EVENTS` in `lib/chat/events.ts`:
 
 | Alert | Event | When |
 |---|---|---|
 | A maker asked to join | `join-request` | a maker asks to join a space whose join policy is Approval |
-| A maker joined | `member-joined` | a maker joins an Open space, or a space manager approves their request |
+| A maker joined | `member-joined` | a maker joins an Open space, or a machine manager approves their request |
 | A maker left | `member-left` | an active maker leaves from their account |
 
 Later phases add job, payment and maintenance alerts to the same list.

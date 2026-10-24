@@ -85,7 +85,7 @@ its vocabulary with the sister Space Works site:
   ("Maker", "Machine manager"…), and "Waiting for approval" or "Blocked" where it applies. Staff go to the
   dashboard; makers go to the space's public page. With no spaces yet, an empty state points to `/spaces`.
 - **Tabs.** Spaces, Profile, Security, Data and privacy. Jobs and payments join this page in later phases.
-- **Irreversible steps** (leaving a space) always confirm. A space's only owner cannot leave it.
+- **Irreversible steps** (leaving a space) always confirm. A space's only machine manager cannot leave it.
 
 ## Public space pages (`/s/[spaceSlug]`)
 
@@ -102,8 +102,8 @@ its vocabulary with the sister Space Works site:
   only its Application page; suspended and archived spaces show a Status page.
 - **Placeholders.** Areas that later phases build keep their real route and header and show an empty state
   (`ComingSoon`) naming what will arrive, never an error or an empty table.
-- **Space settings** has four tabs (Profile, Payments, Email, Notifications) for space managers. Machine
-  settings is its own page for machine managers.
+- **Space settings** has four tabs (Profile, Payments, Email, Notifications) for machine managers. Machine
+  settings is its own page, shared with machine type managers for their own types.
 
 ## Patch, the mascot
 

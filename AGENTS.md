@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-> **Start here:** `docs/HANDOFF.md` explains what this repo is (a standalone app split out of SpaceWorks, part of the SpaceWorks-HQ family), the decisions already made, what is done, the work in progress and what is left.
+> **Start here:** `docs/DECISIONS.md` explains what this repo is (a standalone app split out of SpaceWorks, part of the SpaceWorks-HQ family) and holds every decision: the locked ones, the owner's, the defaults taken while building and the checks still waiting on the owner.
 
 Guidance for Claude Code (and other agents, via `AGENTS.md`) in this repository. `CLAUDE.md` is a byte-identical
 copy of `AGENTS.md` (`tests/unit/agent-guide.test.ts`); edit `AGENTS.md` and copy it over.
@@ -87,17 +87,25 @@ Run one unit test file: `npx vitest run tests/unit/permission-roles.test.ts`.
   - A space's status gates what it can do (`spaceAllows`): nothing before approval; suspended and archived
     spaces keep read access and settling money already received.
 - **Roles and capabilities** (`lib/permissionRoles.ts`, the only place they are defined):
-  - `SpaceRole`: OWNER, MANAGER ("Space manager"), MACHINE_MANAGER ("Machine manager"), OPERATOR, TECHNICIAN,
-    VIEWER are staff; MEMBER ("Maker") submits jobs and holds no staff capability.
-  - Space managers (OWNER, MANAGER) own the whole makerspace: `space.settings`, `team.manage`,
-    `members.manage`, `payments.*`, `integrations.manage` (API keys, webhooks). Machine managers own the
-    machine side: `machines.manage`, `machine.settings`, `printers.manage`, `consumables.manage`,
-    `maintenance.manage`, plus jobs, reports and audit. Operators run jobs and consumables; technicians run
-    maintenance; viewers read.
-  - Space managers never manage owners or other managers (`canManageTeamMember`, `assignableRoles`).
+  - `SpaceRole`: MACHINE_MANAGER ("Machine manager"), TYPE_MANAGER ("Machine type manager"), OPERATOR,
+    TECHNICIAN, VIEWER are staff; MEMBER ("Maker") submits jobs and holds no staff capability. There is no
+    owner or space manager role, and copy never calls a role "owner".
+  - The Machine manager is the top role and holds every capability: settings, money (`payments.*`), the team
+    (other machine managers too), integrations, `machine.settings` (job settings, space-default prices,
+    creating, archiving and ordering types) and `space.delete`. Only machine managers manage anyone
+    (`canManageTeamMember`, `assignableRoles`).
+  - The last active machine manager can't be removed, demoted or leave (`isLastActiveManager` in
+    `lib/lastManager.ts`, which locks the space row; call it inside the change's transaction).
+  - Machine type managers hold the machine side (`machines.manage`, `type.settings`, `printers.manage`, jobs,
+    `maintenance.manage`, reports, audit) only for the types in `TypeManagerAssignment`, set on the Team page.
+    `lib/typeScope.ts` is the one place for scope: access contexts carry `typeScope` (null = every type);
+    loaders filter with `typeWhere`/`machineTypeWhere` and 404 outside it; domain functions that take an
+    `actorId` check `actorMayUseType`/`actorMayUseMachine` and throw their not-found error. Pick assignees and
+    alert recipients with `rolesForType`. Operators run jobs and consumables; technicians run maintenance;
+    viewers read.
   - `SpaceMember` holds one row per person and space, with `status` ACTIVE, PENDING or BLOCKED (only makers
     are ever PENDING or BLOCKED; a check constraint enforces it). Makers join through the space's
-    `joinPolicy` (`joinAsMaker` in `lib/spaceMembers.ts`): OPEN joins at once, APPROVAL waits for a space
+    `joinPolicy` (`joinAsMaker` in `lib/spaceMembers.ts`): OPEN joins at once, APPROVAL waits for a machine
     manager, INVITE_ONLY only through `SpaceInvite`. `memberLimit` and `staffLimit` are checked with `hasSeat`.
   - Dashboard navigation (`SPACE_NAV` in `components/chrome/AppShell.tsx`) shows an entry when the role holds
     any of its capabilities; every route re-checks on the server.
@@ -168,7 +176,10 @@ Run one unit test file: `npx vitest run tests/unit/permission-roles.test.ts`.
 - **Copy:** sentence case, en-GB, buttons named after their action, no "Oops" or exclamation marks on errors,
   and the product is "Space Works Machines" (never "SpaceWorks") in anything a person reads.
 - **Line endings:** LF everywhere (see `.gitattributes`). Never commit `.env*` files except the `*.example` ones.
-- **Branches:** work on `dev`. Only @Shaan-Shoukath merges to `main`.
+- **Branches and releases:** two long-lived branches only. Work lands on `dev` (pushes publish gated `dev` test
+  images); `dev` merges to `main`, which publishes the release images and the GitHub Release, and the one-line
+  install installs from `main`. Only @Shaan-Shoukath pushes or merges to `main` (branch protection,
+  `.github/CODEOWNERS`). No feature or phase branches are kept.
 - **Commit trailers:**
   ```
   Co-Authored-By: Shaan-Shoukath <shaanshoukath4522@gmail.com>

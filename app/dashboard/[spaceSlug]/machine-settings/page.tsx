@@ -13,7 +13,10 @@ export default async function MachineSettingsPage({ params }: { params: Promise<
   return <div className="flex flex-col gap-7 pb-4">
     <SpacePageHeader space={view.space} title="Machine settings" description="Types, specifications, file policies and queue rules."
       actions={view.canManage ? <NewTypeDialog spaceSlug={view.space.slug} types={view.types} /> : null} />
-    {view.canManage ? <nav aria-label="Job configuration" className="flex flex-wrap gap-3"><Link className={buttonClasses({ variant: "secondary" })} href={`/dashboard/${view.space.slug}/machine-settings/jobs`}>Job settings</Link><Link className={buttonClasses({ variant: "secondary" })} href={`/dashboard/${view.space.slug}/machine-settings/pricing`}>Pricing rules</Link><Link className={buttonClasses({ variant: "secondary" })} href={`/dashboard/${view.space.slug}/machine-settings/printers`}>Printer connections</Link></nav> : null}
+    {view.canPricing || view.canPrinters ? <nav aria-label="Job configuration" className="flex flex-wrap gap-3">
+      {view.canManage ? <Link className={buttonClasses({ variant: "secondary" })} href={`/dashboard/${view.space.slug}/machine-settings/jobs`}>Job settings</Link> : null}
+      {view.canPricing ? <Link className={buttonClasses({ variant: "secondary" })} href={`/dashboard/${view.space.slug}/machine-settings/pricing`}>Pricing rules</Link> : null}
+      {view.canPrinters ? <Link className={buttonClasses({ variant: "secondary" })} href={`/dashboard/${view.space.slug}/machine-settings/printers`}>Printer connections</Link> : null}</nav> : null}
     <TypesTable spaceSlug={view.space.slug} types={view.types} canManage={view.canManage} />
   </div>;
 }

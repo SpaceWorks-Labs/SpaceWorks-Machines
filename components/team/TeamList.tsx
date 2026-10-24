@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { SpaceRole } from "@prisma/client";
 import { MemberRoleActions } from "@/components/team/MemberRoleActions";
+import { TypeAssignmentsDialog } from "@/components/team/TypeAssignmentsDialog";
 import { filterTeam, matchesFilter, type TeamFilter, type SpaceMemberRow } from "@/components/team/memberSummary";
 import { Avatar, Chip, EmptyState } from "@/components/ui/display";
 import { SearchInput } from "@/components/ui/field";
@@ -10,23 +11,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const FILTERS: Array<{ value: TeamFilter; label: string }> = [
   { value: "everyone", label: "Everyone" },
-  { value: "managers", label: "Owners and space managers" },
+  { value: "managers", label: "Machine managers" },
   { value: "machines", label: "Machine side" },
 ];
 
-const AVATAR_TONES: Record<SpaceRole, "ink" | "warning" | "success" | "accent" | "neutral"> = { OWNER: "ink", MANAGER: "warning", MACHINE_MANAGER: "accent", OPERATOR: "neutral", TECHNICIAN: "success", VIEWER: "neutral", MEMBER: "neutral" };
+const AVATAR_TONES: Record<SpaceRole, "ink" | "warning" | "success" | "accent" | "neutral"> = { MACHINE_MANAGER: "ink", TYPE_MANAGER: "warning", OPERATOR: "neutral", TECHNICIAN: "success", VIEWER: "neutral", MEMBER: "neutral" };
 
 export function TeamList({
   spaceSlug,
   actorRole,
   rows,
   showEmail,
+  types,
+  canAssignTypes,
 }: {
   spaceSlug: string;
   actorRole: SpaceRole;
   rows: SpaceMemberRow[];
   showEmail: boolean;
+  types: { id: string; name: string }[];
+  canAssignTypes: boolean;
 }) {
+  const typeNames = (ids: string[]) => types.filter((type) => ids.includes(type.id)).map((type) => type.name).join(", ") || "No machine types yet";
   const [filter, setFilter] = useState<TeamFilter>("everyone");
   const [query, setQuery] = useState("");
 
@@ -80,8 +86,11 @@ export function TeamList({
                       <span className="truncate text-caption text-ink-muted">
                         {showEmail && row.email ? `${row.email} · ` : ""}Joined {row.joinedLabel}
                       </span>
+                      {row.role === "TYPE_MANAGER" && row.typeIds ? <span className="truncate text-caption text-ink-muted">Looks after: {typeNames(row.typeIds)}</span> : null}
                     </div>
                     <div className="ml-auto flex min-w-0 max-w-full flex-wrap justify-end gap-2">
+                      {canAssignTypes && row.role === "TYPE_MANAGER" ? <TypeAssignmentsDialog spaceSlug={spaceSlug} targetUserId={row.userId}
+                        memberName={row.name ?? row.email ?? undefined} types={types} assigned={row.typeIds ?? []} /> : null}
                       <MemberRoleActions
                         spaceSlug={spaceSlug}
                         targetUserId={row.userId}

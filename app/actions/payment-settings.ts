@@ -15,7 +15,7 @@ const revalidatePath = trackedRevalidation(nextRevalidatePath);
 const slug = z.string().trim().min(1).max(64);
 const optionalText = (max: number) => z.string().trim().max(max).optional().nullable().transform((value) => value || null);
 
-/** Payment settings belong to space managers (payments.settings); every save is audited. */
+/** Payment settings belong to machine managers (payments.settings); every save is audited. */
 async function paymentSettingsAccess(spaceSlug: unknown) {
   const access = await spaceActionAccess(spaceSlug, "payments.settings");
   if (!access.ok) return access;

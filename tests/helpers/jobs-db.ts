@@ -12,7 +12,7 @@ export async function jobsFixture() {
   const maker = await prisma.user.create({ data: { email: `maker-${suffix}@example.test`, emailVerified: new Date() } });
   const outsider = await prisma.user.create({ data: { email: `outside-${suffix}@example.test`, emailVerified: new Date() } });
   await prisma.spaceMember.create({ data: { userId: maker.id, spaceId: h.space.id, role: "MEMBER" } });
-  await prisma.spaceMember.updateMany({ where: { spaceId: h.space.id, userId: h.user.id }, data: { role: "OWNER" } });
+  await prisma.spaceMember.updateMany({ where: { spaceId: h.space.id, userId: h.user.id }, data: { role: "MACHINE_MANAGER" } });
   await prisma.machineType.update({ where: { id: h.type.id }, data: { allocationPolicy: "FIRST_IDLE", consumableUnit: "GRAMS", requesterPicksMachine: true } });
   await prisma.spaceJobSettings.create({ data: { spaceId: h.space.id, maxOpenJobsPerRequester: 100 } });
   await transaction((tx) => restockPool(tx, { spaceId: h.space.id, poolId: h.pool.id, actorId: h.user.id, quantity: "100" }));

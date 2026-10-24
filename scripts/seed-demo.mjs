@@ -50,25 +50,25 @@ const spaces = [
     slug: "tinkerspace", name: "Tinkerspace", status: "ACTIVE", city: "Kochi", joinPolicy: "APPROVAL", visibility: "PUBLIC",
     description: "A shared workshop with 3D printers, a laser cutter and a CNC router, open to makers around Kochi.",
     contactEmail: "hello@tinkerspace.demo.test",
-    team: [[owner, "OWNER"], [machines, "MACHINE_MANAGER"], [viewer, "VIEWER"], [maker, "MEMBER"]],
+    team: [[owner, "MACHINE_MANAGER"], [machines, "TYPE_MANAGER"], [viewer, "VIEWER"], [maker, "MEMBER"]],
     reviews: [["SUBMITTED", owner, null], ["APPROVED", admin, null]],
   },
   {
     slug: "kunj-lab", name: "Kunj Lab", status: "PENDING_REVIEW", city: "Kozhikode",
     description: "A college fab lab with printers and a vinyl cutter for students and alumni, open on weekends.",
-    contactEmail: "office@kunj-lab.demo.test", team: [[applicant, "OWNER"]],
+    contactEmail: "office@kunj-lab.demo.test", team: [[applicant, "MACHINE_MANAGER"]],
     reviews: [["SUBMITTED", applicant, null]],
   },
   {
     slug: "ideologists", name: "Ideologists Workshop", status: "CHANGES_REQUESTED", city: "Thrissur",
     description: "A workshop for people who turn ideas into prototypes, with mentoring and an annual showcase.",
-    contactEmail: "hello@ideologists.demo.test", team: [[applicant, "OWNER"]],
+    contactEmail: "hello@ideologists.demo.test", team: [[applicant, "MACHINE_MANAGER"]],
     reviews: [["SUBMITTED", applicant, null], ["CHANGES_REQUESTED", admin, "Please add your full address and a contact phone number."]],
   },
   {
     slug: "spaceworks", name: "SpaceWorks Makerspace", status: "SUSPENDED", city: "Alappuzha",
     description: "Build nights, a laser cutter and a resin printer for makers around Alappuzha.",
-    contactEmail: "hello@spaceworks.demo.test", team: [[owner, "OWNER"]],
+    contactEmail: "hello@spaceworks.demo.test", team: [[owner, "MACHINE_MANAGER"]],
     reviews: [["SUBMITTED", owner, null], ["APPROVED", admin, null], ["SUSPENDED", admin, "Suspended while we confirm the workshop's insurance cover."]],
   },
 ];
@@ -133,6 +133,15 @@ if (!await prisma.maintenanceSchedule.findFirst({ where: { spaceId: tinkerspace.
 }
 
 await seedWorkshop(prisma, { space: tinkerspace, staff: machines, maker });
+
+// machines@ is a machine type manager for the workshop types; "Prototype printing" stays outside their scope.
+for (const slug of ["workshop-equipment", "fdm-printer", "laser-cutter"]) {
+  const type = await prisma.machineType.findUniqueOrThrow({ where: { spaceId_slug: { spaceId: tinkerspace.id, slug } } });
+  await prisma.typeManagerAssignment.upsert({
+    where: { spaceId_machineTypeId_userId: { spaceId: tinkerspace.id, machineTypeId: type.id, userId: machines.id } },
+    create: { spaceId: tinkerspace.id, machineTypeId: type.id, userId: machines.id, createdById: owner.id }, update: {},
+  });
+}
 
 await prisma.$disconnect();
 console.log(`seed-demo: ${spaces.length} spaces and 6 accounts (admin, owner, machines, viewer, maker, applicant @demo.test) ready.`);

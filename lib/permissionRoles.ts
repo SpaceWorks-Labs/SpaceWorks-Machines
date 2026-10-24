@@ -1,42 +1,48 @@
 import type { SpaceMember, SpaceRole, SpaceStatus } from "@prisma/client";
 
 /** Every staff role, most senior first. MEMBER (a maker) is not staff. */
-export const STAFF_ROLES = ["OWNER", "MANAGER", "MACHINE_MANAGER", "OPERATOR", "TECHNICIAN", "VIEWER"] as const satisfies readonly SpaceRole[];
+export const STAFF_ROLES = ["MACHINE_MANAGER", "TYPE_MANAGER", "OPERATOR", "TECHNICIAN", "VIEWER"] as const satisfies readonly SpaceRole[];
 export type StaffRole = (typeof STAFF_ROLES)[number];
 const ALL_STAFF = STAFF_ROLES;
-const SPACE_MANAGERS = ["OWNER", "MANAGER"] as const;
-const MACHINE_MANAGERS = ["OWNER", "MANAGER", "MACHINE_MANAGER"] as const;
+/** The whole makerspace (owner decisions 2026-10-24: no Owner or Space manager role; the Machine manager is top). */
+const SPACE_MANAGERS = ["MACHINE_MANAGER"] as const;
+/** The machine side; TYPE_MANAGER holds these only for its assigned machine types (lib/typeScope.ts). */
+const MACHINE_SIDE = ["MACHINE_MANAGER", "TYPE_MANAGER"] as const;
 
 /**
- * What each space role may do. Space managers (OWNER, MANAGER) run the whole makerspace: settings, money,
- * people and integrations. Machine managers run the machine side: machines, consumables, maintenance,
- * machine settings and printers. Operators run jobs; technicians keep machines working; viewers read.
- * MEMBER (a maker) holds no staff capability. Unknown capabilities grant nothing.
+ * What each space role may do. The Machine manager is the top role and runs the whole makerspace, including
+ * the team, other machine managers and deleting the space. A machine-type manager has the machine-side capabilities below, but
+ * every loader and action narrows them to the types assigned to them (lib/typeScope.ts): other types answer
+ * 404. Operators run jobs; technicians keep machines working; viewers read. MEMBER (a maker) holds no staff
+ * capability. Unknown capabilities grant nothing.
  */
 export const CAPABILITIES = {
   "space.view": ALL_STAFF,
   "space.settings": SPACE_MANAGERS,
-  "space.delete": ["OWNER"],
+  "space.delete": SPACE_MANAGERS,
   "team.manage": SPACE_MANAGERS,
   "members.manage": SPACE_MANAGERS,
   "machines.view": ALL_STAFF,
-  "machines.manage": MACHINE_MANAGERS,
+  "machines.manage": MACHINE_SIDE,
   /** Set a machine's status by hand (idle, reserved, maintenance, offline) with a note. */
-  "machines.status": [...MACHINE_MANAGERS, "OPERATOR", "TECHNICIAN"],
-  "machine.settings": MACHINE_MANAGERS,
-  "printers.manage": MACHINE_MANAGERS,
+  "machines.status": [...MACHINE_SIDE, "OPERATOR", "TECHNICIAN"],
+  /** Makerspace-wide machine settings: job settings, space-default prices, creating, archiving and ordering types. */
+  "machine.settings": SPACE_MANAGERS,
+  /** One type's settings (fields, file policy, queue rules) and its type and machine prices. */
+  "type.settings": MACHINE_SIDE,
+  "printers.manage": MACHINE_SIDE,
   "jobs.view": ALL_STAFF,
-  "jobs.review": [...MACHINE_MANAGERS, "OPERATOR"],
-  "jobs.operate": [...MACHINE_MANAGERS, "OPERATOR"],
+  "jobs.review": [...MACHINE_SIDE, "OPERATOR"],
+  "jobs.operate": [...MACHINE_SIDE, "OPERATOR"],
   "consumables.view": ALL_STAFF,
-  "consumables.manage": [...MACHINE_MANAGERS, "OPERATOR"],
+  "consumables.manage": [...SPACE_MANAGERS, "OPERATOR"],
   "maintenance.view": ALL_STAFF,
-  "maintenance.manage": [...MACHINE_MANAGERS, "TECHNICIAN"],
+  "maintenance.manage": [...MACHINE_SIDE, "TECHNICIAN"],
   "payments.view": SPACE_MANAGERS,
   "payments.manage": SPACE_MANAGERS,
   "payments.settings": SPACE_MANAGERS,
-  "reports.view": [...MACHINE_MANAGERS, "VIEWER"],
-  "audit.view": MACHINE_MANAGERS,
+  "reports.view": [...MACHINE_SIDE, "VIEWER"],
+  "audit.view": MACHINE_SIDE,
   "integrations.manage": SPACE_MANAGERS,
 } as const satisfies Record<string, readonly SpaceRole[]>;
 
@@ -63,28 +69,30 @@ export function spaceAllows(status: SpaceStatus, capability: Capability): boolea
   return false;
 }
 
-/** Seniority, only for who may change whose role. Machine managers outrank operators, technicians and viewers. */
-const roleRank: Record<SpaceRole, number> = { MEMBER: 0, VIEWER: 1, TECHNICIAN: 2, OPERATOR: 2, MACHINE_MANAGER: 3, MANAGER: 4, OWNER: 5 };
+/** Seniority, only for who may change whose role. */
+const roleRank: Record<SpaceRole, number> = { MEMBER: 0, VIEWER: 1, TECHNICIAN: 2, OPERATOR: 2, TYPE_MANAGER: 3, MACHINE_MANAGER: 4 };
 
 export function hasRoleAtLeast(role: SpaceRole, min: SpaceRole): boolean {
   return roleRank[role] >= roleRank[min];
 }
 
+/** Whoever runs the whole makerspace: the Machine manager. */
 export function isSpaceManager(role: SpaceRole | null | undefined): boolean {
-  return role === "OWNER" || role === "MANAGER";
+  return role === "MACHINE_MANAGER";
 }
 
-/** Owners manage everyone; space managers manage every role below theirs, never owners or other managers. */
+/**
+ * Machine managers manage everyone, other machine managers included; nobody else manages the team. Removing,
+ * demoting or the leaving of the last active machine manager is refused separately (lib/lastManager.ts).
+ */
 export function canManageTeamMember(actor: SpaceRole, target: SpaceRole): boolean {
-  if (actor === "OWNER") return true;
-  return actor === "MANAGER" && roleRank[target] < roleRank.MANAGER;
+  void target;
+  return actor === "MACHINE_MANAGER";
 }
 
 /** The roles an actor may hand out (on an invite or a role change). */
 export function assignableRoles(actor: SpaceRole): SpaceRole[] {
-  if (actor === "OWNER") return [...STAFF_ROLES, "MEMBER"];
-  if (actor === "MANAGER") return ["MACHINE_MANAGER", "OPERATOR", "TECHNICIAN", "VIEWER", "MEMBER"];
-  return [];
+  return actor === "MACHINE_MANAGER" ? [...STAFF_ROLES, "MEMBER"] : [];
 }
 
 export function canManageTeam(m: Pick<SpaceMember, "role"> | null): boolean {
@@ -96,9 +104,8 @@ export function canDeleteSpace(m: Pick<SpaceMember, "role"> | null): boolean {
 }
 
 export const ROLE_LABELS: Record<SpaceRole, string> = {
-  OWNER: "Owner",
-  MANAGER: "Space manager",
   MACHINE_MANAGER: "Machine manager",
+  TYPE_MANAGER: "Machine type manager",
   OPERATOR: "Operator",
   TECHNICIAN: "Technician",
   VIEWER: "Viewer",
@@ -106,9 +113,8 @@ export const ROLE_LABELS: Record<SpaceRole, string> = {
 };
 
 export const ROLE_DESCRIPTIONS: Record<SpaceRole, string> = {
-  OWNER: "Everything, including the team, owners and deleting the space.",
-  MANAGER: "The whole makerspace: settings, payments, join policy, notifications, branding and the team.",
-  MACHINE_MANAGER: "The machine side: machines, file and queue rules, pricing per machine, consumables, maintenance and printers.",
+  MACHINE_MANAGER: "Everything: machines and every machine setting, jobs, payments, the team (other machine managers too), integrations, settings and deleting the space.",
+  TYPE_MANAGER: "Only the machine types they're given: those types' settings and prices, their machines, jobs and upkeep.",
   OPERATOR: "Reviews and runs jobs, and records consumables.",
   TECHNICIAN: "Maintenance, faults and service history.",
   VIEWER: "Reads machines, jobs, maintenance and reports.",

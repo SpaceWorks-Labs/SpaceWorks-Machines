@@ -19,7 +19,7 @@ const VARIANTS: Record<ReviewDecision, ButtonVariant> = {
   archive: "neutral",
 };
 
-/** The platform admin's decisions for this space's current status, with a note the owners receive. */
+/** The platform admin's decisions for this space's current status, with a note the machine managers receive. */
 export function SpaceDecisionPanel({ spaceId, status }: { spaceId: string; status: SpaceStatus }) {
   const router = useRouter();
   const decisions = decisionsFor(status);
@@ -34,7 +34,7 @@ export function SpaceDecisionPanel({ spaceId, status }: { spaceId: string; statu
   const run = (decision: ReviewDecision) => {
     setError(null);
     if (REVIEW_DECISIONS[decision].reasonRequired && !reason.trim()) {
-      setError(`Add a note before you choose “${REVIEW_DECISIONS[decision].label}”. The owners are told it.`);
+      setError(`Add a note before you choose “${REVIEW_DECISIONS[decision].label}”. The machine managers are told it.`);
       return;
     }
     startTransition(async () => {
@@ -51,11 +51,11 @@ export function SpaceDecisionPanel({ spaceId, status }: { spaceId: string; statu
 
   return (
     <Card as="section" className="rounded-xl">
-      <CardHeader title="Decision" description={status === "PENDING_REVIEW" || status === "CHANGES_REQUESTED" ? "Read the application, then decide. Owners are emailed every decision." : "Owners are emailed when you suspend or reactivate."} />
+      <CardHeader title="Decision" description={status === "PENDING_REVIEW" || status === "CHANGES_REQUESTED" ? "Read the application, then decide. Machine managers are emailed every decision." : "Machine managers are emailed when you suspend or reactivate."} />
       <div className="flex flex-col gap-4">
         {error ? <Callout tone="danger" role="alert">{error}</Callout> : null}
         {needsNote ? (
-          <Field label="Note to the space" optional helperText="Required to ask for changes, decline or suspend. Shown to the owners as written.">
+          <Field label="Note to the space" optional helperText="Required to ask for changes, decline or suspend. Shown to the machine managers as written.">
             <Textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={3} maxLength={2000} disabled={pending} />
           </Field>
         ) : null}

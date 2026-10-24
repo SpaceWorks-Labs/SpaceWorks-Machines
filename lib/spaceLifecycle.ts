@@ -1,6 +1,6 @@
 import type { SpaceReviewAction, SpaceStatus } from "@prisma/client";
 
-/** Lifecycle decisions a space's owners are told about by email. */
+/** Lifecycle decisions a space's machine managers are told about by email. */
 export type SpaceNotice = "received" | "approved" | "changes-requested" | "rejected" | "suspended" | "reactivated" | "created";
 
 export const SPACE_NOTICES: readonly SpaceNotice[] = ["received", "approved", "changes-requested", "rejected", "suspended", "reactivated", "created"];
@@ -12,9 +12,9 @@ type Transition = {
   from: readonly SpaceStatus[];
   to: SpaceStatus;
   action: SpaceReviewAction;
-  /** Email to the owners, or null for a silent change. */
+  /** Email to the machine managers, or null for a silent change. */
   notice: SpaceNotice | null;
-  /** The owners are always told why a refusal, change request or suspension happened. */
+  /** The machine managers are always told why a refusal, change request or suspension happened. */
   reasonRequired: boolean;
   label: string;
   /** Shown before a decision that takes access away. */
@@ -116,7 +116,7 @@ export const REVIEW_ACTION_LABELS: Record<SpaceReviewAction, string> = {
 export const STATUS_EXPLANATIONS: Record<SpaceStatus, { title: string; body: string }> = {
   PENDING_REVIEW: {
     title: "Your application is being reviewed",
-    body: "A platform admin will look at it. We'll email the owners when there is a decision.",
+    body: "A platform admin will look at it. We'll email the machine managers when there is a decision.",
   },
   CHANGES_REQUESTED: {
     title: "A few changes are needed",

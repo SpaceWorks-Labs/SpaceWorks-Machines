@@ -7,7 +7,11 @@ import { createTypeSchema, typeSectionSchema } from "@/lib/machines/schemas";
 import { createMachineType, reorderMachineTypes, setMachineTypeArchived, TypeNotFoundError, updateMachineType } from "@/lib/machines/types";
 import type { ActionResult } from "./space";
 
-/** Machine types are machine settings: machine managers (and space managers) only, every change audited. */
+/**
+ * Creating, archiving and reordering types are space-wide machine settings (machine managers only). Editing one
+ * type is type.settings, so a machine type manager may edit the types assigned to them; updateMachineType checks
+ * the scope and answers not-found outside it. Every change is audited.
+ */
 
 const NOT_FOUND = { ok: false as const, error: "Machine type not found." };
 
@@ -30,7 +34,7 @@ const sectionInput = z.object({ typeId: z.string().trim().min(1).max(64) }).and(
 
 /** Save one section of a type (details, spec fields, request fields, file policy, catalogue or queue rules). */
 export async function updateMachineTypeSection(input: unknown): Promise<ActionResult> {
-  const access = await staffAction(slugOf(input), "machine.settings");
+  const access = await staffAction(slugOf(input), "type.settings");
   if (!access.ok) return access;
   const parsed = sectionInput.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);

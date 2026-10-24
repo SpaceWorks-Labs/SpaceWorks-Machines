@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Callout, Card, CardHeader } from "@/components/ui/display";
 import { Field, Input } from "@/components/ui/field";
 
-/** Set up an active space and invite its owner by email. */
+/** Set up an active space and invite its machine manager by email. */
 export function CreateSpaceForm() {
   const router = useRouter();
   const [values, setValues] = useState<ProfileValues>(EMPTY_PROFILE);
@@ -39,8 +39,8 @@ export function CreateSpaceForm() {
     <form className="flex flex-col gap-6" onSubmit={submit}>
       {formError ? <Callout tone="danger" role="alert">{formError}</Callout> : null}
       <Card as="section" className="rounded-xl">
-        <CardHeader title="Owner" description="They get an email invite that only works for this address. The space is active straight away." />
-        <Field label="Owner's email" required error={errors.ownerEmail?.[0]}>
+        <CardHeader title="Machine manager" description="They get an email invite that only works for this address. The space is active straight away." />
+        <Field label="Machine manager's email" required error={errors.ownerEmail?.[0]}>
           <Input type="email" value={ownerEmail} onChange={(event) => setOwnerEmail(event.target.value)} autoComplete="off" maxLength={320} disabled={pending} />
         </Field>
       </Card>
@@ -66,7 +66,7 @@ export function CreateSpaceForm() {
         </div>
       </Card>
       <div className="flex justify-end">
-        <Button type="submit" variant="primary" size="lg" loading={pending}>Create and invite owner</Button>
+        <Button type="submit" variant="primary" size="lg" loading={pending}>Create and invite the machine manager</Button>
       </div>
     </form>
   );

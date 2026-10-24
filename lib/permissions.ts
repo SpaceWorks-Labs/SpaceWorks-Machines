@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import type { Session } from "next-auth";
+import { scopeForRole, type TypeScope } from "@/lib/typeScope";
 
 /** A person's row in a space (staff or maker), whatever its status. */
 export async function getMembership(userId: string, spaceId: string): Promise<SpaceMember | null> {
@@ -40,6 +41,8 @@ export type SpaceAccessContext = {
   space: { id: string; slug: string; name: string; status: SpaceStatus; };
   membership: SpaceMember;
   userId: string;
+  /** Machine types a TYPE_MANAGER may act on; null = every type (lib/typeScope.ts). */
+  typeScope: TypeScope;
 };
 
 const SPACE_SELECT = { id: true, slug: true, name: true, status: true } as const;
@@ -61,7 +64,7 @@ export async function requireSpaceTeam(spaceSlug: string): Promise<SpaceAccessCo
   const membership = await getMembership(session.user.id, space.id);
   if (!isActiveStaff(membership)) notFound();
   if (!(await hasAuthenticator(session.user.id))) redirect(STAFF_AUTHENTICATOR_SETUP);
-  return { space, membership, userId: session.user.id };
+  return { space, membership, userId: session.user.id, typeScope: await scopeForRole(prisma, space.id, session.user.id, membership.role) };
 }
 
 /** Staff (any role except MEMBER) must use an authenticator app; makers and super admins need not. */
@@ -86,7 +89,7 @@ export async function requireSpaceCapability(spaceSlug: string, capability: Capa
 }
 
 export type SpaceActionAccess =
-  | { ok: true; space: SpaceAccessContext["space"]; membership: SpaceMember; userId: string }
+  | { ok: true; space: SpaceAccessContext["space"]; membership: SpaceMember; userId: string; typeScope: TypeScope }
   | { ok: false; error: string };
 
 /**
@@ -106,7 +109,7 @@ export async function spaceActionAccess(spaceSlug: unknown, capability: Capabili
   }
   if (!can(membership.role, capability)) return { ok: false, error: "Your role doesn't allow this." };
   if (!(await hasAuthenticator(session.user.id))) return { ok: false, error: STAFF_AUTHENTICATOR_MESSAGE };
-  return { ok: true, space, membership, userId: session.user.id };
+  return { ok: true, space, membership, userId: session.user.id, typeScope: await scopeForRole(prisma, space.id, session.user.id, membership.role) };
 }
 
 export { can, hasRoleAtLeast, isSpaceManager, isStaffRole, canManageTeam, canManageTeamMember, canDeleteSpace, spaceAllows, STAFF_AUTHENTICATOR_MESSAGE, STAFF_AUTHENTICATOR_SETUP } from "@/lib/permissionRoles";

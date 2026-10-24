@@ -1,3 +1,5 @@
+"use client";
+
 import { CheckboxField } from "@/components/ui/choice";
 import { Field, Input } from "@/components/ui/field";
 import { API_SCOPES, API_SCOPE_LABELS } from "@/lib/apiScopes";

@@ -5,12 +5,13 @@ import { can, spaceAllows } from "@/lib/permissionRoles";
 import { machineFileUrl } from "@/lib/machines/fileAccess";
 import { readFields, validateSpecs } from "@/lib/machines/fields";
 import { isCurrencyCode, toInputValue } from "@/lib/money/currencies";
+import { typeWhere } from "@/lib/typeScope";
 
-/** Resolve by both space and slug; foreign and unknown machines share the same 404. */
+/** Resolve by both space and slug; foreign, unknown and (for a type manager) out-of-scope machines share the same 404. */
 export async function loadMachineView({ params }: { params: Promise<{ spaceSlug: string; machineSlug: string }> }) {
   const { spaceSlug, machineSlug } = await params;
-  const { space, membership } = await requireSpaceCapability(spaceSlug, "machines.view");
-  const row = await prisma.machine.findFirst({ where: { spaceId: space.id, slug: machineSlug },
+  const { space, membership, typeScope } = await requireSpaceCapability(spaceSlug, "machines.view");
+  const row = await prisma.machine.findFirst({ where: { spaceId: space.id, slug: machineSlug, ...typeWhere(typeScope) },
     include: {
       type: { select: { id: true, name: true, icon: true, archivedAt: true, specFields: true, materials: true, colours: true } },
       photos: { where: { spaceId: space.id }, orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },

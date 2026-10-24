@@ -5,12 +5,13 @@ import { ADAPTERS } from "@/lib/printers/adapters";
 import { readPrinterSettings } from "@/lib/printers/connections";
 import { simTelemetry, readSimState } from "@/lib/printers/simulated";
 import { EMPTY_TELEMETRY, type Telemetry } from "@/lib/printers/types";
+import { typeWhere } from "@/lib/typeScope";
 
 /** A machine's printer connection: adapter choice, settings (never the secret), live telemetry and the command log. */
 export async function loadMachinePrinterView({ params }: { params: Promise<{ spaceSlug: string; machineSlug: string }> }) {
   const { spaceSlug, machineSlug } = await params;
-  const { space } = await requireSpaceCapability(spaceSlug, "printers.manage");
-  const machine = await prisma.machine.findFirst({ where: { spaceId: space.id, slug: machineSlug }, select: { id: true, slug: true, name: true, status: true } });
+  const { space, typeScope } = await requireSpaceCapability(spaceSlug, "printers.manage");
+  const machine = await prisma.machine.findFirst({ where: { spaceId: space.id, slug: machineSlug, ...typeWhere(typeScope) }, select: { id: true, slug: true, name: true, status: true } });
   if (!machine) notFound();
   const [profile, connection] = await Promise.all([
     prisma.space.findUniqueOrThrow({ where: { id: space.id }, select: { logoUrl: true, timezone: true } }),

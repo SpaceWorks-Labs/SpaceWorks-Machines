@@ -46,13 +46,13 @@ Space settings (profile, payments, email, notifications) and the application sta
   lifecycle `status` and `source`, the super admin's `visibility` (`PUBLIC` or `UNLISTED`), `memberLimit` and
   `staffLimit`, the `joinPolicy` and the offline-payment rule `offlineConfirmationRequired`.
 - A space starts as `PENDING_REVIEW` (applied at `/start`) or is created directly by the super admin, who
-  invites its owner. Review moves it to `ACTIVE`, `CHANGES_REQUESTED` or `REJECTED`; it may later be
+  invites its machine manager. Review moves it to `ACTIVE`, `CHANGES_REQUESTED` or `REJECTED`; it may later be
   `SUSPENDED` or `ARCHIVED`. `spaceAllows` gates capabilities by status: nothing before approval, and only
   reading and settling money already received while suspended or archived.
-- `SpaceMember` holds one row per person and space with a `SpaceRole`: `OWNER`, `MANAGER` ("Space manager"),
-  `MACHINE_MANAGER` ("Machine manager"), `OPERATOR`, `TECHNICIAN` and `VIEWER` are staff; `MEMBER` ("Maker")
-  is not. Only makers can be `PENDING` or `BLOCKED` (a check constraint enforces it).
-- Makers join through the space's `joinPolicy`: `OPEN` joins at once, `APPROVAL` waits for a space manager,
+- `SpaceMember` holds one row per person and space with a `SpaceRole`: `MACHINE_MANAGER` ("Machine manager", the top
+  role), `TYPE_MANAGER` ("Machine type manager", scoped to the types in `TypeManagerAssignment`), `OPERATOR`,
+  `TECHNICIAN` and `VIEWER` are staff; `MEMBER` ("Maker") is not. Only makers can be `PENDING` or `BLOCKED` (a check constraint enforces it).
+- Makers join through the space's `joinPolicy`: `OPEN` joins at once, `APPROVAL` waits for a machine manager,
   `INVITE_ONLY` works only through a `SpaceInvite`. Seat limits are checked with `hasSeat`.
 
 ### Background jobs

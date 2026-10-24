@@ -85,7 +85,7 @@ describe.sequential("space application lifecycle", () => {
     expect(space.status).toBe("PENDING_REVIEW");
     expect(space.source).toBe("SELF_SIGNUP");
     expect(space.region).toBe("Kerala");
-    expect(space.members).toEqual([expect.objectContaining({ userId: users.applicant.id, role: "OWNER" })]);
+    expect(space.members).toEqual([expect.objectContaining({ userId: users.applicant.id, role: "MACHINE_MANAGER" })]);
     expect(space.reviews).toEqual([expect.objectContaining({ action: "SUBMITTED", actorUserId: users.applicant.id, applicationSnapshot: expect.objectContaining({ name: "Kochi Makers Lab", slug }) })]);
     const messages = await outboxFor(space.id);
     expect(messages).toEqual(expect.arrayContaining([
@@ -106,7 +106,7 @@ describe.sequential("space application lifecycle", () => {
     expect(invite.ok).toBe(false);
   });
 
-  it("needs a note to ask for changes, then tells the owners", async () => {
+  it("needs a note to ask for changes, then tells the machine managers", async () => {
     signIn(users.admin);
     expect(await reviewSpace({ spaceId: spaceId, decision: "request-changes" })).toMatchObject({ ok: false });
     expect(await reviewSpace({ spaceId: spaceId, decision: "request-changes", reason: "Add your PIN code and full address." })).toEqual({ ok: true });
@@ -115,7 +115,7 @@ describe.sequential("space application lifecycle", () => {
     expect(notices.at(-1)?.payload).toMatchObject({ notice: "changes-requested", reason: "Add your PIN code and full address." });
   });
 
-  it("lets the owner fix and resend, back into review", async () => {
+  it("lets the machine manager fix and resend, back into review", async () => {
     signIn(users.applicant);
     const result = await resubmitSpaceApplication({ ...application({ addressLine: "12 Marine Drive" }), spaceSlug: slug });
     expect(result).toEqual({ ok: true });
@@ -168,7 +168,7 @@ describe.sequential("space application lifecycle", () => {
 });
 
 describe.sequential("platform admin tools", () => {
-  it("creates an active space whose owner joins by an email-bound invite", async () => {
+  it("creates an active space whose machine manager joins by an email-bound invite", async () => {
     signIn(users.admin);
     const result = await createSpaceForOwner({ ...application({ slug: `direct-${suffix}`, name: "Direct Club" }), ownerEmail: users.owner.email });
     expect(result.ok).toBe(true);
@@ -179,12 +179,12 @@ describe.sequential("platform admin tools", () => {
     expect(space.reviews).toEqual([expect.objectContaining({ action: "CREATED" })]);
     expect(space.members).toEqual([]);
     const [invite] = space.invites;
-    expect(invite).toMatchObject({ role: "OWNER", email: users.owner.email });
+    expect(invite).toMatchObject({ role: "MACHINE_MANAGER", email: users.owner.email });
     expect((await outboxFor(spaceId)).map((message) => message.kind)).toEqual(["owner-invite"]);
 
     expect(await acceptSpaceInviteToken(invite.token, { id: users.applicant.id, email: users.applicant.email, emailVerified: true })).toEqual({ ok: false, reason: "wrong-account" });
     expect(await acceptSpaceInviteToken(invite.token, { id: users.owner.id, email: users.owner.email, emailVerified: true })).toEqual({ ok: true, href: `/dashboard/direct-${suffix}` });
-    expect(await prisma.spaceMember.findFirst({ where: { spaceId, userId: users.owner.id } })).toMatchObject({ role: "OWNER" });
+    expect(await prisma.spaceMember.findFirst({ where: { spaceId, userId: users.owner.id } })).toMatchObject({ role: "MACHINE_MANAGER" });
   });
 
 });

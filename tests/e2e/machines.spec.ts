@@ -25,7 +25,7 @@ async function signIn(page: Page) {
   await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 60_000 });
 }
 
-test("a machine manager publishes a machine and photo for anonymous visitors", async ({ page, browser, baseURL }) => {
+test("a machine type manager publishes a machine and photo for anonymous visitors", async ({ page, browser, baseURL }) => {
   test.setTimeout(120_000);
   const suffix = randomUUID().slice(0, 8);
   const name = `Demo machine ${suffix}`;

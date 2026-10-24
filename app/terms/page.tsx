@@ -36,7 +36,7 @@ const sections: LegalSection[] = [
       "Spaces either apply and are reviewed by the operator, or are added by the operator directly. The operator may approve, ask for changes to, or decline an application, and may suspend or archive a space that breaks these terms or the law.",
       "You are responsible for your space and everything you publish or send through Space Works Machines, including machine pages, prices, decisions on jobs and requests to join, payment records, alerts and emails. Keep your details accurate and tell makers promptly if prices or rules change.",
       "You are responsible for your machines and how they are used: safety, training, supervision, maintenance and the materials you supply. Space Works Machines helps you keep track of these but does not make a machine safe to use.",
-      "Owners decide who joins the staff and what each person can do, and are responsible for their actions. Remove access promptly when someone leaves, and look after the API keys, webhooks and connections you set up. Deleting a space permanently deletes its machines, jobs, files and staff, except records the law requires to be kept.",
+      "Machine managers decide who joins the staff and what each person can do, and are responsible for their actions. Remove access promptly when someone leaves, and look after the API keys, webhooks and connections you set up. Deleting a space permanently deletes its machines, jobs, files and staff, except records the law requires to be kept.",
     ],
   },
   {

@@ -17,6 +17,7 @@ describe("README", () => {
   });
   it("has the banner in both modes and the sections the family READMEs share", () => {
     expect(readme).toContain('srcset="docs/readme/banner-dark.png"');
+    expect(readme).toContain("(docs/DECISIONS.md)");
     for (const heading of ["## What you can do", "## A look around", "## Host it on a VPS with Docker", "### Install in one line", "## Run it in the cloud",
       "## Quick start (local)", "## Design system", "## Documentation", "## Common commands", "## Contributing", "## Credits", "## Licence"]) expect(readme).toContain(heading);
   });

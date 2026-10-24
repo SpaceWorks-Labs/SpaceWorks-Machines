@@ -25,7 +25,7 @@ export type ActionResult<T = void> =
     needsForce?: boolean;
   };
 
-/** Space settings: space managers only, rate limited, and every change audited (lib/audit.ts recordSettingsChange). */
+/** Space settings: machine managers only, rate limited, and every change audited (lib/audit.ts recordSettingsChange). */
 async function settingsAccess(spaceSlug: unknown) {
   const access = await spaceActionAccess(spaceSlug, "space.settings");
   if (!access.ok) return access;

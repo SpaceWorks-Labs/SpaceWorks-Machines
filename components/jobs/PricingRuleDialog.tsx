@@ -13,8 +13,10 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogBody, DialogF
 import { useMachineMutation } from "@/components/machines/useMachineMutation";
 
 type Rule = z.infer<typeof pricingRuleSchema>;
-export function PricingRuleDialog({ spaceSlug, currency, types, machines, rule }: {
+export function PricingRuleDialog({ spaceSlug, currency, types, machines, rule, allowSpaceDefault = true }: {
   spaceSlug: string; currency: string; types: { id: string; name: string }[]; machines: { id: string; name: string; typeId: string }[]; rule?: Rule;
+  /** Machine type managers price only their own types and machines, never the space default. */
+  allowSpaceDefault?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const mutation = useMachineMutation();
@@ -36,7 +38,7 @@ export function PricingRuleDialog({ spaceSlug, currency, types, machines, rule }
         mutation.run(() => savePricingRuleAction({ spaceSlug, ...values }), "Pricing rule saved", () => setOpen(false));
       }}><DialogBody><fieldset disabled={mutation.pending} className="flex flex-col gap-5">
         {mutation.error ? <Callout tone="danger" role="alert">{mutation.error}</Callout> : null}
-        <Field label="Applies to"><Dropdown name="scope" defaultValue={rule?.machineId ? `machine:${rule.machineId}` : rule?.typeId ? `type:${rule.typeId}` : "space"}><option value="space">Space default</option>{types.map((t) => <option key={t.id} value={`type:${t.id}`}>Type: {t.name}</option>)}{machines.map((m) => <option key={m.id} value={`machine:${m.id}`}>Machine: {m.name}</option>)}</Dropdown></Field>
+        <Field label="Applies to"><Dropdown name="scope" defaultValue={rule?.machineId ? `machine:${rule.machineId}` : rule?.typeId ? `type:${rule.typeId}` : allowSpaceDefault ? "space" : `type:${types[0]?.id ?? ""}`}>{allowSpaceDefault ? <option value="space">Space default</option> : null}{types.map((t) => <option key={t.id} value={`type:${t.id}`}>Type: {t.name}</option>)}{machines.map((m) => <option key={m.id} value={`machine:${m.id}`}>Machine: {m.name}</option>)}</Dropdown></Field>
         <Field label="Audience"><Dropdown name="audience" defaultValue={rule?.audience ?? "MEMBER"}><option value="MEMBER">Members</option><option value="PUBLIC">Public</option></Dropdown></Field>
         <Field label="Pricing mode"><Dropdown name="mode" defaultValue={rule?.mode ?? "FREE"}>{["FREE", "FLAT", "TIME", "MATERIAL", "TIME_AND_MATERIAL"].map((v) => <option key={v} value={v}>{words(v)}</option>)}</Dropdown></Field>
         {(["flatFee", "timeRatePerHour", "setupFee", "minimumCharge"] as const).map((key) => <Field key={key} label={`${({ flatFee: "Flat fee", timeRatePerHour: "Hourly rate", setupFee: "Setup fee", minimumCharge: "Minimum charge" })[key]} (${currency})`}><Input name={key} inputMode="decimal" defaultValue={inputAmount(rule?.[key] ?? 0)} required /></Field>)}

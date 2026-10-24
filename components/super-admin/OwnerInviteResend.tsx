@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Callout, Card, CardHeader } from "@/components/ui/display";
 import { Field, Input } from "@/components/ui/field";
 
-/** Shown while a space set up by a platform admin has no owner yet. */
+/** Shown while a space set up by a platform admin has no machine manager yet. */
 export function OwnerInviteResend({ spaceId, defaultEmail }: { spaceId: string; defaultEmail: string }) {
   const router = useRouter();
   const [email, setEmail] = useState(defaultEmail);
@@ -26,9 +26,9 @@ export function OwnerInviteResend({ spaceId, defaultEmail }: { spaceId: string; 
 
   return (
     <Card as="section" className="rounded-xl">
-      <CardHeader title="No owner yet" description="The owner joins by accepting the invite emailed to them. Send a new one if it expired or went to the wrong address." />
+      <CardHeader title="No machine manager yet" description="The machine manager joins by accepting the invite emailed to them. Send a new one if it expired or went to the wrong address." />
       <form className="flex flex-col gap-4 sm:flex-row sm:items-end" onSubmit={submit}>
-        <Field label="Owner's email" required className="flex-1">
+        <Field label="Machine manager's email" required className="flex-1">
           <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} disabled={pending} autoComplete="off" />
         </Field>
         <Button type="submit" variant="secondary" loading={pending}>Send new invite</Button>

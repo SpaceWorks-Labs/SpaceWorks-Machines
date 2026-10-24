@@ -18,7 +18,7 @@ const INVITE_DAYS = 7;
 
 /**
  * A single-use invite link for one role. Staff roles need team.manage; maker invites need members.manage
- * (both are space managers today). With an email, only that verified address may accept and the link is
+ * (machine managers). With an email, only that verified address may accept and the link is
  * emailed in the space's name.
  */
 export async function createSpaceInvite(input: unknown): Promise<ActionResult<{ token: string; inviteId: string; }>> {

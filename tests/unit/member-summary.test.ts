@@ -15,25 +15,25 @@ const counts = (values: Partial<RoleCounts>): RoleCounts => ({ ...EMPTY_ROLE_COU
 
 describe("team summary helpers", () => {
   it("describes the role mix, skipping empty roles", () => {
-    expect(roleBreakdown(counts({ OWNER: 1, MANAGER: 2, MACHINE_MANAGER: 1, OPERATOR: 3 }))).toBe("1 owner · 2 space managers · 1 machine manager · 3 operators");
-    expect(roleBreakdown(counts({ OWNER: 1, VIEWER: 1 }))).toBe("1 owner · 1 viewer");
+    expect(roleBreakdown(counts({ MACHINE_MANAGER: 1, TYPE_MANAGER: 2, OPERATOR: 3 }))).toBe("1 machine manager · 2 machine type managers · 3 operators");
+    expect(roleBreakdown(counts({ MACHINE_MANAGER: 2, VIEWER: 1 }))).toBe("2 machine managers · 1 viewer");
     expect(roleBreakdown(counts({}))).toBe("No one yet");
   });
 
   it("draws one dot per person up to the cap, most senior first", () => {
-    expect(roleDots(counts({ OWNER: 1, MANAGER: 2, TECHNICIAN: 1, VIEWER: 2 }))).toEqual(["OWNER", "MANAGER", "MANAGER", "TECHNICIAN", "VIEWER", "VIEWER"]);
-    const capped = roleDots(counts({ OWNER: 1, MANAGER: 4, OPERATOR: 1, VIEWER: 194 }), 24);
+    expect(roleDots(counts({ MACHINE_MANAGER: 1, TYPE_MANAGER: 2, TECHNICIAN: 1, VIEWER: 2 }))).toEqual(["MACHINE_MANAGER", "TYPE_MANAGER", "TYPE_MANAGER", "TECHNICIAN", "VIEWER", "VIEWER"]);
+    const capped = roleDots(counts({ MACHINE_MANAGER: 1, TYPE_MANAGER: 4, OPERATOR: 1, VIEWER: 194 }), 24);
     expect(capped).toHaveLength(24);
-    expect(capped[0]).toBe("OWNER");
+    expect(capped[0]).toBe("MACHINE_MANAGER");
     expect(capped.filter((r) => r === "OPERATOR")).toHaveLength(1);
     expect(roleDots(counts({}))).toEqual([]);
   });
 
   it("filters by side and searches email only when it was sent", () => {
     const rows = [
-      row({ id: "1", name: "Anand Nair", role: "OWNER", email: "anand@example.org" }),
-      row({ id: "2", name: "Riya Kapoor", role: "MANAGER", email: "riya@example.org" }),
-      row({ id: "3", name: "Jo Thomas", role: "MACHINE_MANAGER" }),
+      row({ id: "1", name: "Anand Nair", role: "MACHINE_MANAGER", email: "anand@example.org" }),
+      row({ id: "2", name: "Riya Kapoor", role: "MACHINE_MANAGER", email: "riya@example.org" }),
+      row({ id: "3", name: "Jo Thomas", role: "TYPE_MANAGER" }),
       row({ id: "4", name: "Sam Varghese", role: "TECHNICIAN" }),
     ];
     expect(filterTeam(rows, "managers", "").map((r) => r.id)).toEqual(["1", "2"]);
