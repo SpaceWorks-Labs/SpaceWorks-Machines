@@ -122,7 +122,7 @@ jobs:
         with:
           images: ghcr.io/${{ needs.prepare.outputs.registry_owner }}/${{ matrix.image }}
           labels: |
-            space.opencontainers.image.licenses=AGPL-3.0-or-later
+            org.opencontainers.image.licenses=AGPL-3.0-or-later
 
       - name: Build ${{ matrix.image }} for ${{ matrix.platform }}
         id: build
