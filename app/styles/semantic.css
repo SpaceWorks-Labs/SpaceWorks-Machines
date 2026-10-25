@@ -1,0 +1,121 @@
+/*
+ * App semantic layer: the role names the UI uses (canvas, panel, ink, primary, status pills…), each
+ * pointing at a SpaceWorks-Design token from app/styles/tokens.css. Components never use raw hex values.
+ *
+ * A handful of roles have no token of their own in the kit. They are integer mixes of brand
+ * neutrals (ui-brand-spec.md §A), marked "mix" below, and keep WCAG AA for every text pair.
+ *
+ * Colour mode: the class "dark" on <html> (set on the server from the swm.theme cookie). Light is the
+ * default; there is no "System" option (ui-brand-spec D11).
+ */
+
+:root {
+  color-scheme: light;
+
+  --sw-ui-canvas: var(--sw-color-bg);
+  --sw-ui-panel: var(--sw-color-panel);
+  --sw-ui-surface: var(--sw-color-surface);
+  --sw-ui-muted: var(--sw-color-hover);
+  --sw-ui-emphasis: 234 226 215; /* mix: Cream + 9% Ink */
+  --sw-ui-line: var(--sw-color-line);
+  --sw-ui-line-strong: var(--sw-color-outline);
+  --sw-ui-ink: var(--sw-color-ink);
+  --sw-ui-ink-secondary: 55 74 71; /* mix: Ink + 12% Cream */
+  --sw-ui-ink-muted: var(--sw-color-muted);
+  --sw-ui-ink-disabled: var(--sw-color-outline);
+
+  --sw-ui-primary: var(--sw-color-accent);
+  --sw-ui-primary-hover: var(--sw-color-accent-hover);
+  --sw-ui-primary-active: var(--sw-color-accent-active);
+  --sw-ui-on-primary: var(--sw-color-on-accent);
+  --sw-ui-primary-soft: var(--sw-color-accent-soft);
+  --sw-ui-primary-text: var(--sw-color-accent-ink);
+  --sw-ui-inverse: var(--sw-color-ink);
+  --sw-ui-on-inverse: var(--sw-color-bg);
+
+  --sw-ui-highlight: var(--sw-color-emphasis);
+  --sw-ui-highlight-hover: var(--sw-color-emphasis-hover);
+  --sw-ui-on-highlight: var(--sw-color-on-emphasis);
+  --sw-ui-highlight-soft: var(--sw-color-emphasis-soft);
+
+  --sw-ui-sidebar: var(--sw-color-sidebar);
+  --sw-ui-sidebar-hover: var(--sw-color-sidebar-hover);
+  --sw-ui-sidebar-active: var(--sw-color-sidebar-active);
+  --sw-ui-on-sidebar-active: var(--sw-color-on-accent);
+
+  /* Status pills (ui-brand-spec D6): solid pastel + ink in light, soft + tone-ink in dark. */
+  --sw-ui-success-bg: var(--sw-color-success);
+  --sw-ui-success-fg: var(--sw-color-on-success);
+  --sw-ui-success-solid: var(--sw-color-success-ink);
+  --sw-ui-on-success: var(--sw-color-on-accent);
+  --sw-ui-warning-bg: var(--sw-color-warn);
+  --sw-ui-warning-fg: var(--sw-color-on-warn);
+  --sw-ui-warning-solid: var(--sw-color-warn-ink);
+  --sw-ui-on-warning: var(--sw-color-on-accent);
+  --sw-ui-info-bg: var(--sw-color-info);
+  --sw-ui-info-fg: var(--sw-color-on-info);
+  --sw-ui-info-solid: var(--sw-color-info-ink);
+  --sw-ui-on-info: var(--sw-color-on-accent);
+  --sw-ui-danger-bg: 247 228 228; /* mix: Panel + 12% danger */
+  --sw-ui-danger-fg: var(--sw-color-danger);
+  --sw-ui-danger-solid: var(--sw-color-danger);
+  --sw-ui-danger-hover: var(--sw-color-danger-hover);
+  --sw-ui-on-danger: var(--sw-color-on-danger);
+  --sw-ui-danger-border: var(--sw-color-danger-line);
+
+  --sw-ui-focus: var(--sw-color-focus);
+
+  /* Raw brand colours (hex), for decoration and colour mixing. */
+  --sw-ink: var(--sw-brand-deep-ink);
+  --sw-teal: var(--sw-brand-maker-teal);
+  --sw-orange: var(--sw-brand-workshop-orange);
+  --sw-citron: var(--sw-brand-citron);
+  --sw-sky: var(--sw-brand-sky-blue);
+  --sw-yellow: var(--sw-brand-warm-yellow);
+  --sw-cream: var(--sw-brand-warm-cream);
+
+  /* Accent (full colour values): Maker Teal by default; .sw-accent-scope swaps in a space's own. */
+  --sw-accent: rgb(var(--sw-color-accent));
+  --sw-accent-soft: rgb(var(--sw-color-accent-soft));
+  --sw-on-accent: rgb(var(--sw-color-on-accent));
+  --sw-accent-text: rgb(var(--sw-color-accent-ink));
+
+  --sw-ui-shadow-float: 0 2px 6px rgb(var(--sw-shadow-color) / 0.06), 0 12px 32px rgb(var(--sw-shadow-color) / 0.1);
+}
+
+/* `.sw-dark-band` keeps one section dark on a light page (a closing call to action, for example). */
+:root.dark,
+.sw-dark-band {
+  color-scheme: dark;
+
+  --sw-ui-emphasis: 43 87 81; /* mix: Ink + 30% Teal */
+  --sw-ui-ink-secondary: 227 220 209; /* mix: Cream + 12% Ink */
+  --sw-ui-inverse: var(--sw-color-hover);
+  --sw-ui-on-inverse: var(--sw-color-ink);
+
+  --sw-ui-success-bg: var(--sw-color-success-soft);
+  --sw-ui-success-fg: var(--sw-color-success-ink);
+  --sw-ui-on-success: var(--sw-color-on-success);
+  --sw-ui-warning-bg: var(--sw-color-warn-soft);
+  --sw-ui-warning-fg: var(--sw-color-warn-ink);
+  --sw-ui-on-warning: var(--sw-color-on-warn);
+  --sw-ui-info-bg: var(--sw-color-info-soft);
+  --sw-ui-info-fg: var(--sw-color-info-ink);
+  --sw-ui-on-info: var(--sw-color-on-info);
+  --sw-ui-danger-bg: 58 79 75; /* mix: Panel + 20% danger */
+}
+
+/* A .sw-dark-band also needs the dark kit values, not only the derived roles. */
+.sw-dark-band {
+  --sw-color-bg: 20 44 42;
+  --sw-color-surface: 25 57 53;
+  --sw-color-panel: 31 67 63;
+  --sw-color-hover: 37 77 72;
+  --sw-color-line: 77 109 103;
+  --sw-color-outline: 147 161 152;
+  --sw-color-ink: 255 244 232;
+  --sw-color-muted: 199 196 186;
+  --sw-color-focus: 223 255 143;
+  --sw-color-accent-soft: 26 74 69;
+  --sw-color-accent-ink: 171 200 188;
+}

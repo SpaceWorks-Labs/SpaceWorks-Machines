@@ -1,0 +1,18 @@
+# No bundled storage and no dependency that could implicitly start it. Files live
+# in the external S3-compatible bucket configured by S3_* in .env.
+services:
+  minio:
+    profiles: [storage-disabled]
+  createbuckets:
+    profiles: [storage-disabled]
+  # Back up an external bucket with your storage provider (versioning, replication).
+  backup-storage:
+    profiles: [storage-disabled]
+  backend:
+    depends_on: !override
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully

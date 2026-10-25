@@ -1,0 +1,9 @@
+# Automatic HTTPS (HTTPS answer 2): Caddy obtains certificates from Let's Encrypt
+# for SITE_ADDRESS (the public domain) and also serves 443 over TCP and QUIC.
+services:
+  caddy:
+    environment:
+      CADDY_GLOBAL_OPTIONS: email ${TLS_EMAIL:?set TLS_EMAIL}
+    ports:
+      - "${TLS_HTTPS_PORT:-443}:443"
+      - "${TLS_HTTPS_PORT:-443}:443/udp"

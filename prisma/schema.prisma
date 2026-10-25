@@ -1,0 +1,1735 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // Runtime queries use DATABASE_URL, which may be a transaction pooler
+  // (for example Supabase Supavisor :6543 with ?pgbouncer=true). Migrations need a
+  // direct or session-mode connection, so the Prisma CLI uses DIRECT_URL.
+  // scripts/prisma.mjs defaults DIRECT_URL to DATABASE_URL when it is unset.
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Accounts ────────────────────────────────────────────────────────────────
+
+model User {
+  id                 String    @id @default(cuid())
+  name               String?
+  email              String?   @unique
+  emailVerified      DateTime?
+  image              String?
+  /// User-selected profile image.
+  profileImageUrl    String?
+  /// Bcrypt hash for email + password sign-in. Null until the person sets a password.
+  passwordHash       String?
+  /// Incremented to invalidate all issued JWT sessions after account recovery.
+  sessionVersion     Int       @default(0)
+  /// AES-GCM encrypted TOTP seed. Never expose or log this value.
+  mfaSecretEncrypted String?
+  mfaEnabledAt       DateTime?
+  recoveryCodeHashes String[]  @default([])
+  /// Platform operators, created only on the server (docker/ops/admin.mjs).
+  isSuperAdmin       Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+
+  knownDevices        KnownDevice[]
+  spaceMembers        SpaceMember[]
+  spaceInvitesCreated SpaceInvite[] @relation("SpaceInviteCreatedBy")
+  spaceInvitesUsed    SpaceInvite[] @relation("SpaceInviteUsedBy")
+  auditEvents         AuditEvent[]
+  spaceReviews        SpaceReview[]
+  machinesCreated     Machine[]     @relation("MachineCreatedBy")
+  jobsRequested       Job[]         @relation("JobRequester")
+}
+
+/// Short-lived, hashed, single-use tokens: email verification, password reset, sign-in codes and magic links.
+/// `identifier` names the purpose and the account ("magic-link:<userId>"); `token` is a SHA-256 hash.
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@index([identifier])
+}
+
+/// A browser that has signed in to an account before, recognised by a long-lived cookie stored only as a hash.
+/// A sign-in from anywhere else needs an emailed code (accounts without an authenticator) and sends an alert.
+model KnownDevice {
+  id          String   @id @default(cuid())
+  userId      String
+  tokenHash   String   @unique
+  label       String   @default("")
+  lastIp      String?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, lastSeenAt])
+}
+
+// ─── Spaces (tenants) ────────────────────────────────────────────────────────
+
+enum SpaceStatus {
+  PENDING_REVIEW
+  CHANGES_REQUESTED
+  ACTIVE
+  REJECTED
+  SUSPENDED
+  ARCHIVED
+}
+
+enum SpaceSource {
+  SELF_SIGNUP
+  SUPERADMIN
+}
+
+enum SpaceVisibility {
+  UNLISTED
+  PUBLIC
+}
+
+/// How makers join a space: OPEN joins at once, APPROVAL waits for a space manager, INVITE_ONLY needs an invite.
+enum JoinPolicy {
+  OPEN
+  APPROVAL
+  INVITE_ONLY
+}
+
+enum SpaceReviewAction {
+  SUBMITTED
+  RESUBMITTED
+  APPROVED
+  CHANGES_REQUESTED
+  REJECTED
+  SUSPENDED
+  REACTIVATED
+  ARCHIVED
+  CREATED
+}
+
+/// Roles in a space. Everyone except MEMBER is staff and needs an authenticator; MEMBER is a maker.
+/// Capabilities per role live in lib/permissionRoles.ts.
+enum SpaceRole {
+  /// The top role: the whole makerspace, including the team and deleting the space.
+  MACHINE_MANAGER
+  /// Manages only the machine types they are assigned to (TypeManagerAssignment).
+  TYPE_MANAGER
+  OPERATOR
+  TECHNICIAN
+  VIEWER
+  MEMBER
+}
+
+enum SpaceMemberStatus {
+  ACTIVE
+  PENDING
+  BLOCKED
+}
+
+/// A makerspace: the tenant. Only ACTIVE spaces run; see spaceAllows in lib/permissionRoles.ts.
+model Space {
+  id                          String          @id @default(cuid())
+  name                        String
+  slug                        String          @unique
+  description                 String          @default("")
+  logoUrl                     String?
+  /// Space accent for its public pages (validated #RRGGBB).
+  accentColor                 String?
+  status                      SpaceStatus     @default(PENDING_REVIEW)
+  source                      SpaceSource     @default(SELF_SIGNUP)
+  contactEmail                String?
+  contactPhone                String?
+  website                     String?
+  addressLine                 String?
+  city                        String?
+  /// State, province or region, free text.
+  region                      String?
+  postalCode                  String?
+  /// ISO 3166-1 alpha-2.
+  country                     String          @default("IN")
+  timezone                    String          @default("Asia/Kolkata")
+  /// ISO 4217; every amount in this space is in its minor units.
+  currency                    String          @default("INR")
+  /// Number formatting override, e.g. "en-IN"; null uses the currency's own locale.
+  locale                      String?
+  /// PUBLIC spaces are listed at /spaces; UNLISTED ones are reachable only by their address.
+  visibility                  SpaceVisibility @default(UNLISTED)
+  joinPolicy                  JoinPolicy      @default(APPROVAL)
+  /// Set by the platform super admin; null means no limit.
+  memberLimit                 Int?
+  staffLimit                  Int?
+  /// Maker-checker for offline payments: the confirmer must differ from the recorder.
+  offlineConfirmationRequired Boolean         @default(false)
+  createdAt                   DateTime        @default(now())
+  updatedAt                   DateTime        @updatedAt
+
+  members          SpaceMember[]
+  invites          SpaceInvite[]
+  reviews          SpaceReview[]
+  assets           Asset[]
+  auditEvents      AuditEvent[]
+  paymentSettings  SpacePaymentSettings?
+  emailSettings    SpaceEmailSettings?
+  chatChannels     ChatChannel[]
+  jobSettings      SpaceJobSettings?
+  machineTypes     MachineType[]
+  machines         Machine[]
+  consumablePools  ConsumablePool[]
+  pricingRules     PricingRule[]
+  jobs             Job[]
+  counters         SpaceCounter[]
+  payments         Payment[]
+  apiKeys          ApiKey[]
+  webhookEndpoints WebhookEndpoint[]
+  technicians      Technician[]
+  toBuyItems       ToBuyItem[]
+  financeEntries   FinanceEntry[]
+
+  @@index([status, createdAt])
+  @@index([visibility, status])
+}
+
+/// Append-only history of a space's application and lifecycle decisions.
+model SpaceReview {
+  id                  String            @id @default(cuid())
+  spaceId             String
+  action              SpaceReviewAction
+  actorUserId         String?
+  /// Required for REJECTED and CHANGES_REQUESTED; shown to the applicant.
+  reason              String?
+  /// The application as submitted at SUBMITTED/RESUBMITTED.
+  applicationSnapshot Json?
+  createdAt           DateTime          @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  actor User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([spaceId, createdAt])
+  @@index([action, createdAt])
+}
+
+/// A person's role in a space: staff (MACHINE_MANAGER … VIEWER) or a maker (MEMBER).
+model SpaceMember {
+  id        String            @id @default(cuid())
+  userId    String
+  spaceId   String
+  role      SpaceRole
+  status    SpaceMemberStatus @default(ACTIVE)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  user            User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  space           Space                   @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  typeAssignments TypeManagerAssignment[]
+
+  @@unique([userId, spaceId])
+  @@unique([spaceId, id])
+  @@index([spaceId, role, status])
+}
+
+/// A machine type a TYPE_MANAGER manages. Removing the member or the type removes the assignment.
+model TypeManagerAssignment {
+  id            String   @id @default(cuid())
+  spaceId       String
+  machineTypeId String
+  userId        String
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  type   MachineType @relation(fields: [spaceId, machineTypeId], references: [spaceId, id], onDelete: Cascade)
+  member SpaceMember @relation(fields: [userId, spaceId], references: [userId, spaceId], onDelete: Cascade)
+
+  @@unique([spaceId, machineTypeId, userId])
+  @@index([spaceId, userId])
+}
+
+/// A link that adds someone to a space with a role. With `email` set, only that verified address may accept.
+model SpaceInvite {
+  id              String    @id @default(cuid())
+  spaceId         String
+  token           String    @unique
+  role            SpaceRole @default(MEMBER)
+  createdByUserId String?
+  email           String?
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime?
+  usedAt          DateTime?
+  usedByUserId    String?
+
+  space     Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("SpaceInviteCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  usedBy    User? @relation("SpaceInviteUsedBy", fields: [usedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([spaceId, createdAt])
+  @@index([usedAt])
+}
+
+// ─── Operations ──────────────────────────────────────────────────────────────
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  SENT
+  FAILED
+}
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  action      String
+  actorUserId String?
+  spaceId     String?
+  targetType  String?
+  targetId    String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  actor User?  @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  space Space? @relation(fields: [spaceId], references: [id], onDelete: SetNull)
+
+  @@index([spaceId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+}
+
+/// Email and chat deliveries. SQL is the durable outbox; the queue carries only row ids.
+model OutboxMessage {
+  id          String       @id @default(cuid())
+  kind        String
+  payload     Json
+  status      OutboxStatus @default(PENDING)
+  attempts    Int          @default(0)
+  availableAt DateTime     @default(now())
+  lockedAt    DateTime?
+  sentAt      DateTime?
+  lastError   String?
+  createdAt   DateTime     @default(now())
+
+  @@index([status, availableAt])
+  @@index([createdAt])
+}
+
+/// One-row operational state for scheduled work, separate from the human audit trail.
+model OperationalHeartbeat {
+  key             String    @id
+  lastStartedAt   DateTime?
+  lastSucceededAt DateTime?
+  lastSent        Int       @default(0)
+  lastFailed      Int       @default(0)
+  lastError       String?
+  updatedAt       DateTime  @updatedAt
+}
+
+/// Instance-wide, super-admin-managed controls. The singleton row is created on first change.
+model InstanceSetting {
+  id                       String    @id
+  allowNewUserSignups      Boolean   @default(true)
+  /// Self-service space applications (/start). Super admins can always create spaces.
+  allowSpaceApplications   Boolean   @default(true)
+  emailFrom                String?
+  smtpService              String?
+  smtpHost                 String?
+  smtpPort                 Int?
+  smtpSecure               Boolean   @default(false)
+  smtpUser                 String?
+  smtpPasswordEncrypted    String?
+  smtpAllowUnauthenticated Boolean   @default(false)
+  backupProvider           String?
+  backupLastSuccessAt      DateTime?
+  backupRetentionDays      Int?
+  updatedAt                DateTime  @updatedAt
+}
+
+/// Stored files (Silo/S3/R2) for per-space storage accounting, or the database fallback.
+model Asset {
+  id          String   @id @default(cuid())
+  spaceId     String?
+  /// Provider-specific object key (or path).
+  key         String   @unique
+  publicUrl   String?
+  contentType String?
+  byteSize    BigInt?
+  provider    String   @default("unknown")
+  fileData    Bytes?
+  createdAt   DateTime @default(now())
+
+  space Space? @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@index([spaceId])
+  @@index([createdAt])
+  @@index([provider])
+}
+
+// ─── Payments (gateway settings only; Phase 3 adds payments for jobs) ───────
+
+enum GatewayProvider {
+  NONE
+  RAZORPAY
+  STRIPE
+}
+
+enum PaymentProvider {
+  RAZORPAY
+  STRIPE
+  OFFLINE
+}
+
+/// The space's own payment gateway. Secrets are AES-GCM encrypted with PAYMENT_SECRETS_KEY, bound to the space.
+model SpacePaymentSettings {
+  spaceId                String          @id
+  provider               GatewayProvider @default(NONE)
+  /// Razorpay key id (public). Stripe needs only the secret key.
+  keyId                  String?
+  secretEncrypted        String?
+  webhookSecretEncrypted String?
+  /// Unguessable code in the webhook URL that identifies the space.
+  webhookPublicCode      String          @unique
+  testMode               Boolean         @default(true)
+  verifiedAt             DateTime?
+  upiVpa                 String?
+  upiPayeeName           String?
+  offlineInstructions    String          @default("")
+  updatedAt              DateTime        @updatedAt
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+}
+
+/// Webhook idempotency: a provider event is applied once.
+model ProcessedWebhookEvent {
+  provider   PaymentProvider
+  eventId    String
+  spaceId    String
+  receivedAt DateTime        @default(now())
+
+  @@id([provider, eventId])
+  @@index([spaceId, receivedAt])
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+/// A space's own outgoing email for maker-facing emails. Without it (or while disabled) those emails go through
+/// the platform's SMTP, sent in the space's name with replies to its contact email. Account emails (sign-in,
+/// password reset, verification) always use the platform's.
+model SpaceEmailSettings {
+  spaceId               String    @id
+  enabled               Boolean   @default(false)
+  fromName              String    @default("")
+  fromAddress           String?
+  replyTo               String?
+  smtpHost              String?
+  smtpPort              Int       @default(587)
+  /// Implicit TLS (port 465); otherwise STARTTLS is required in production.
+  smtpSecure            Boolean   @default(false)
+  smtpUser              String?
+  smtpPasswordEncrypted String?
+  verifiedAt            DateTime?
+  updatedAt             DateTime  @updatedAt
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+}
+
+enum ChatChannelKind {
+  SLACK
+  DISCORD
+  MATTERMOST
+  TELEGRAM
+  WHATSAPP
+}
+
+/// A chat destination for staff alerts. Webhook URLs, bot tokens and WhatsApp credentials live encrypted in
+/// `configEncrypted`; `target` is a safe, non-secret description for the settings page.
+model ChatChannel {
+  id              String          @id @default(cuid())
+  spaceId         String
+  kind            ChatChannelKind
+  name            String
+  configEncrypted String
+  target          String          @default("")
+  events          String[]
+  includeNames    Boolean         @default(false)
+  enabled         Boolean         @default(true)
+  lastDeliveredAt DateTime?
+  lastError       String?
+  failures        Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, id])
+  @@index([spaceId])
+}
+
+// ─── Machines domain (phases 2–5) ───────────────────────────────────────────
+// Money is integer minor units (paise/cents) in the space's currency. Quantities are Decimal(14,3) in the
+// unit named next to them. Every row carries spaceId; composite (spaceId, id) uniques back the
+// tenant-safe composite foreign keys.
+
+enum MeteringUnit {
+  MINUTES
+  GRAMS
+  MILLILITERS
+  MILLIMETERS
+  SQUARE_CM
+  SHEETS
+  COUNT
+}
+
+enum MachineStatus {
+  IDLE
+  RUNNING
+  PAUSED
+  RESERVED
+  MAINTENANCE
+  OFFLINE
+}
+
+enum AllocationPolicy {
+  FIRST_IDLE
+  STAFF_SELECT
+}
+
+/// A kind of machine in one space. Presets (presetKey set) are copied into every new space and stay editable.
+model MachineType {
+  id                      String           @id @default(cuid())
+  spaceId                 String
+  slug                    String
+  name                    String
+  /// Lucide icon name from lib/machines/icons.ts allowlist.
+  icon                    String           @default("wrench")
+  description             String           @default("")
+  /// fdm_printer, resin_printer, laser_cutter, cnc_router, cnc_mill, vinyl_cutter, pcb_mill, soldering_station, other; null = custom.
+  presetKey               String?
+  /// Machine spec fields: [{ key, label, kind: number|text|select|multiselect|boolean|dimensions, unit?, options?, required?, public? }].
+  specFields              Json             @default("[]")
+  /// Fields a requester fills on a job: same shape as specFields plus kind "material" | "colour".
+  requestFields           Json             @default("[]")
+  /// { extensions: string[], maxBytes: number, maxFiles: number, required: boolean }.
+  filePolicy              Json
+  materials               String[]         @default([])
+  colours                 String[]         @default([])
+  meteringUnit            MeteringUnit     @default(MINUTES)
+  /// Unit the type's consumables are counted in; null = the type uses no consumable pools.
+  consumableUnit          MeteringUnit?
+  /// Queue rules (machine manager settings).
+  acceptsJobs             Boolean          @default(true)
+  requiresApproval        Boolean          @default(true)
+  allocationPolicy        AllocationPolicy @default(STAFF_SELECT)
+  /// Max RUNNING jobs across machines of this type; null = unlimited.
+  maxConcurrentJobs       Int?
+  /// Requesters may pick a specific machine instead of the pooled type queue.
+  requesterPicksMachine   Boolean          @default(false)
+  maxOpenJobsPerRequester Int?
+  sortOrder               Int              @default(0)
+  archivedAt              DateTime?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+
+  space        Space                   @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  machines     Machine[]
+  typeManagers TypeManagerAssignment[]
+  pools        ConsumablePool[]
+  pricing      PricingRule[]
+  jobs         Job[]
+
+  @@unique([spaceId, slug])
+  @@unique([spaceId, id])
+  @@index([spaceId, archivedAt, sortOrder])
+}
+
+model Machine {
+  id              String        @id @default(cuid())
+  spaceId         String
+  typeId          String
+  slug            String
+  name            String
+  manufacturer    String        @default("")
+  model           String        @default("")
+  serialNumber    String        @default("")
+  location        String        @default("")
+  description     String        @default("")
+  /// Staff-only notes.
+  notes           String        @default("")
+  status          MachineStatus @default(IDLE)
+  statusNote      String        @default("")
+  /// Values for the type's specFields, validated by lib/machines/specs.ts.
+  specs           Json          @default("{}")
+  firmwareVersion String        @default("")
+  isPublic        Boolean       @default(false)
+  acceptsJobs     Boolean       @default(true)
+  acquiredOn      DateTime?     @db.Date
+  purchaseCost    Int?
+  /// Running meters, maintained only through lib/usage (job completion, manual logs, adapters).
+  meterMinutes    Int           @default(0)
+  meterJobs       Int           @default(0)
+  retiredAt       DateTime?
+  createdById     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  space           Space                 @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  type            MachineType           @relation(fields: [spaceId, typeId], references: [spaceId, id], onDelete: NoAction)
+  createdBy       User?                 @relation("MachineCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  photos          MachinePhoto[]
+  documents       MachineDocument[]
+  pools           ConsumablePool[]
+  pricing         PricingRule[]
+  requestedJobs   Job[]                 @relation("JobRequestedMachine")
+  assignedJobs    Job[]                 @relation("JobAssignedMachine")
+  usageLogs       UsageLog[]
+  schedules       MaintenanceSchedule[]
+  maintenanceLogs MaintenanceLog[]
+  downtimes       Downtime[]
+  faults          FaultReport[]
+  warranty        Warranty?
+  connection      PrinterConnection?
+
+  toBuyItems ToBuyItem[]
+
+  @@unique([spaceId, slug])
+  @@unique([spaceId, id])
+  @@index([spaceId, typeId, retiredAt])
+  @@index([spaceId, status])
+}
+
+model MachinePhoto {
+  id         String   @id @default(cuid())
+  spaceId    String
+  machineId  String
+  storageKey String   @unique
+  alt        String   @default("")
+  width      Int?
+  height     Int?
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  machine Machine @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: Cascade)
+
+  @@index([spaceId, machineId, sortOrder])
+}
+
+enum MachineDocumentKind {
+  MANUAL
+  SOP
+  SAFETY
+  DATASHEET
+  OTHER
+}
+
+model MachineDocument {
+  id           String              @id @default(cuid())
+  spaceId      String
+  machineId    String
+  kind         MachineDocumentKind @default(MANUAL)
+  title        String
+  storageKey   String              @unique
+  filename     String
+  contentType  String
+  sizeBytes    Int
+  /// Shown on the public machine page.
+  isPublic     Boolean             @default(false)
+  uploadedById String?
+  createdAt    DateTime            @default(now())
+
+  machine Machine @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: Cascade)
+
+  @@index([spaceId, machineId])
+}
+
+// ─── Consumables ────────────────────────────────────────────────────────────
+
+/// Stock a machine consumes: a filament spool, resin bottle, vinyl roll, sheet stack. Bound to one machine,
+/// to every machine of a type, or shared by the whole space (both null).
+model ConsumablePool {
+  id                String       @id @default(cuid())
+  spaceId           String
+  machineId         String?
+  typeId            String?
+  material          String
+  colour            String       @default("")
+  colourHex         String       @default("")
+  brand             String       @default("")
+  lotCode           String       @default("")
+  unit              MeteringUnit
+  initialQuantity   Decimal      @db.Decimal(14, 3)
+  remainingQuantity Decimal      @db.Decimal(14, 3)
+  lowThreshold      Decimal?     @db.Decimal(14, 3)
+  /// Cost per unit in minor units, for reports only.
+  costPerUnit       Int?
+  /// Offered to requesters by material/colour (no quantities shown).
+  isPublic          Boolean      @default(true)
+  isActive          Boolean      @default(true)
+  lowAlertedAt      DateTime?
+  openedAt          DateTime?
+  createdById       String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  space       Space                  @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  machine     Machine?               @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: NoAction)
+  type        MachineType?           @relation(fields: [spaceId, typeId], references: [spaceId, id], onDelete: NoAction)
+  adjustments ConsumableAdjustment[]
+  jobs        Job[]
+
+  toBuyItems ToBuyItem[]
+
+  @@unique([spaceId, id])
+  @@index([spaceId, isActive])
+  @@index([spaceId, machineId])
+  @@index([spaceId, typeId])
+}
+
+enum ConsumableAdjustmentKind {
+  RESERVE
+  RECONCILE
+  RELEASE
+  MANUAL
+  CORRECTION
+  RESTOCK
+  RETIRE
+}
+
+/// Append-only pool ledger (trigger in the migration).
+model ConsumableAdjustment {
+  id           String                   @id @default(cuid())
+  spaceId      String
+  poolId       String
+  kind         ConsumableAdjustmentKind
+  /// Signed, never zero; negative takes stock out.
+  delta        Decimal                  @db.Decimal(14, 3)
+  balanceAfter Decimal                  @db.Decimal(14, 3)
+  jobId        String?
+  usageLogId   String?
+  reason       String                   @default("")
+  actorId      String?
+  createdAt    DateTime                 @default(now())
+
+  pool ConsumablePool @relation(fields: [spaceId, poolId], references: [spaceId, id], onDelete: Cascade)
+
+  @@index([spaceId, poolId, createdAt])
+  @@index([jobId])
+}
+
+// ─── Pricing ────────────────────────────────────────────────────────────────
+
+enum PricingMode {
+  FREE
+  FLAT
+  TIME
+  MATERIAL
+  TIME_AND_MATERIAL
+}
+
+enum PricingAudience {
+  MEMBER
+  PUBLIC
+}
+
+enum PaymentTiming {
+  /// Pay the quote after approval, before the job runs.
+  UPFRONT
+  /// Pay the final price after completion, before collection.
+  ON_COMPLETION
+  /// Collect anytime; the job shows "Payment pending" until settled.
+  PAY_LATER
+}
+
+enum DepositMode {
+  NONE
+  FIXED
+  PERCENT
+}
+
+/// Space default (typeId and machineId null), type override or machine override, one per audience.
+/// Resolution: machine → type → space default; PUBLIC falls back to MEMBER only when the space allows it.
+model PricingRule {
+  id                   String          @id @default(cuid())
+  spaceId              String
+  typeId               String?
+  machineId            String?
+  audience             PricingAudience @default(MEMBER)
+  mode                 PricingMode     @default(FREE)
+  flatFee              Int             @default(0)
+  /// Per hour of machine time, minor units.
+  timeRatePerHour      Int             @default(0)
+  /// Per one consumable unit (gram, ml, mm, sheet…), minor units, Decimal for sub-paise rates.
+  materialRate         Decimal         @default(0) @db.Decimal(14, 4)
+  /// Added to TIME and MATERIAL modes.
+  setupFee             Int             @default(0)
+  minimumCharge        Int             @default(0)
+  /// Billable time is rounded up to this many minutes (1 = exact).
+  timeIncrementMinutes Int             @default(1)
+  depositMode          DepositMode     @default(NONE)
+  /// FIXED: minor units; PERCENT: basis points of the quote.
+  depositValue         Int             @default(0)
+  /// Null = use the space default timing.
+  paymentTiming        PaymentTiming?
+  updatedById          String?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  space   Space        @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  type    MachineType? @relation(fields: [spaceId, typeId], references: [spaceId, id], onDelete: Cascade)
+  machine Machine?     @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: Cascade)
+
+  @@unique([spaceId, typeId, machineId, audience])
+  @@index([spaceId])
+}
+
+// ─── Jobs ───────────────────────────────────────────────────────────────────
+
+enum JobStatus {
+  SUBMITTED
+  APPROVED
+  RUNNING
+  PAUSED
+  COMPLETED
+  COLLECTED
+  REJECTED
+  FAILED
+  CANCELLED
+}
+
+enum JobPaymentState {
+  NOT_REQUIRED
+  QUOTED
+  PENDING
+  PARTIALLY_PAID
+  PAID
+  WAIVED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+model Job {
+  id                  String          @id @default(cuid())
+  spaceId             String
+  /// Per-space sequence, shown as J-0042.
+  number              Int
+  requesterId         String
+  /// Snapshot of whether the requester was an active space member at submission (drives the price audience).
+  audience            PricingAudience
+  typeId              String
+  /// Requested machine (when the type lets requesters pick one).
+  machineId           String?
+  assignedMachineId   String?
+  title               String
+  description         String          @default("")
+  sourceLink          String          @default("")
+  /// Values for the type's requestFields (material, colour, quantity, …).
+  requestData         Json            @default("{}")
+  quantity            Int             @default(1)
+  status              JobStatus       @default(SUBMITTED)
+  /// Staff ordering bump; higher first.
+  priority            Int             @default(0)
+  /// Last reason/note shown to the requester (rejection, failure, cancellation).
+  statusReason        String          @default("")
+  estimatedMinutes    Int?
+  estimatedQuantity   Decimal?        @db.Decimal(14, 3)
+  actualMinutes       Int?
+  actualQuantity      Decimal?        @db.Decimal(14, 3)
+  failPercent         Int?
+  poolId              String?
+  reservedQuantity    Decimal         @default(0) @db.Decimal(14, 3)
+  /// Run sheet taken at start: machine name/model, pool label, estimates. History survives later edits.
+  runSnapshot         Json?
+  progressPercent     Int?
+  /// Pricing.
+  currency            String
+  quotedAmount        Int?
+  finalAmount         Int?
+  depositAmount       Int             @default(0)
+  amountPaid          Int             @default(0)
+  amountRefunded      Int             @default(0)
+  paymentTiming       PaymentTiming?
+  paymentState        JobPaymentState @default(NOT_REQUIRED)
+  pricingSnapshot     Json?
+  priceOverrideReason String          @default("")
+  /// Opaque token for the requester's status link.
+  statusToken         String          @unique
+  reprintOfId         String?
+  submittedAt         DateTime        @default(now())
+  reviewedAt          DateTime?
+  reviewedById        String?
+  startedAt           DateTime?
+  startedById         String?
+  completedAt         DateTime?
+  completedById       String?
+  failedAt            DateTime?
+  collectedAt         DateTime?
+  collectedById       String?
+  cancelledAt         DateTime?
+  cancelledById       String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  space           Space           @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  requester       User            @relation("JobRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+  type            MachineType     @relation(fields: [spaceId, typeId], references: [spaceId, id], onDelete: NoAction)
+  machine         Machine?        @relation("JobRequestedMachine", fields: [spaceId, machineId], references: [spaceId, id], onDelete: NoAction)
+  assignedMachine Machine?        @relation("JobAssignedMachine", fields: [spaceId, assignedMachineId], references: [spaceId, id], onDelete: NoAction)
+  pool            ConsumablePool? @relation(fields: [spaceId, poolId], references: [spaceId, id], onDelete: NoAction)
+  reprintOf       Job?            @relation("JobReprint", fields: [reprintOfId], references: [id], onDelete: NoAction)
+  reprints        Job[]           @relation("JobReprint")
+  files           JobFile[]
+  events          JobEvent[]
+  notes           JobNote[]
+  payments        Payment[]
+  usageLogs       UsageLog[]
+
+  @@unique([spaceId, number])
+  @@unique([spaceId, id])
+  @@index([spaceId, status, priority, submittedAt])
+  @@index([spaceId, typeId, status])
+  @@index([spaceId, assignedMachineId, status])
+  @@index([requesterId, createdAt])
+}
+
+enum JobFileKind {
+  MODEL
+  ATTACHMENT
+  PREVIEW
+  RESULT
+}
+
+model JobFile {
+  id           String      @id @default(cuid())
+  spaceId      String
+  jobId        String
+  kind         JobFileKind @default(MODEL)
+  storageKey   String      @unique
+  filename     String
+  contentType  String
+  sizeBytes    Int
+  sha256       String
+  /// Parsed metadata where the format allows it (STL triangle count/bounding box, G-code estimates).
+  metadata     Json?
+  uploadedById String?
+  createdAt    DateTime    @default(now())
+
+  job Job @relation(fields: [spaceId, jobId], references: [spaceId, id], onDelete: Cascade)
+
+  @@index([spaceId, jobId])
+}
+
+/// Append-only job timeline.
+model JobEvent {
+  id         String     @id @default(cuid())
+  spaceId    String
+  jobId      String
+  kind       String
+  fromStatus JobStatus?
+  toStatus   JobStatus?
+  actorId    String?
+  note       String     @default("")
+  data       Json?
+  createdAt  DateTime   @default(now())
+
+  job Job @relation(fields: [spaceId, jobId], references: [spaceId, id], onDelete: Cascade)
+
+  @@index([spaceId, jobId, createdAt])
+}
+
+model JobNote {
+  id        String   @id @default(cuid())
+  spaceId   String
+  jobId     String
+  authorId  String?
+  /// Internal notes are staff-only; others are visible to the requester.
+  internal  Boolean  @default(false)
+  body      String
+  createdAt DateTime @default(now())
+
+  job Job @relation(fields: [spaceId, jobId], references: [spaceId, id], onDelete: Cascade)
+
+  @@index([spaceId, jobId, createdAt])
+}
+
+model SpaceCounter {
+  spaceId String
+  key     String
+  value   Int    @default(0)
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@id([spaceId, key])
+}
+
+// ─── Payments ───────────────────────────────────────────────────────────────
+
+enum PaymentKind {
+  DEPOSIT
+  CHARGE
+  BALANCE
+}
+
+enum PaymentMethod {
+  RAZORPAY
+  STRIPE
+  CASH
+  BANK_TRANSFER
+  UPI
+  CARD_TERMINAL
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  WAIVED
+}
+
+model Payment {
+  id                String         @id @default(cuid())
+  spaceId           String
+  jobId             String
+  kind              PaymentKind    @default(CHARGE)
+  amount            Int
+  currency          String
+  status            PaymentStatus  @default(PENDING)
+  method            PaymentMethod?
+  /// Gateway references: Razorpay order/payment-link id and payment id; Stripe session and intent id.
+  providerOrderId   String?
+  providerPaymentId String?
+  checkoutUrl       String?
+  checkoutExpiresAt DateTime?
+  /// Durable idempotency key and start time survive a lost provider response.
+  checkoutKey       String?
+  checkoutStartedAt DateTime?
+  reference         String         @default("")
+  note              String         @default("")
+  paidAt            DateTime?
+  recordedById      String?
+  /// Maker-checker for offline payments when the space requires it.
+  confirmedById     String?
+  confirmedAt       DateTime?
+  amountRefunded    Int            @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  space   Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  job     Job      @relation(fields: [spaceId, jobId], references: [spaceId, id], onDelete: NoAction)
+  refunds Refund[]
+
+  @@unique([spaceId, id])
+  @@unique([method, providerOrderId])
+  @@index([spaceId, status, createdAt])
+  @@index([spaceId, jobId])
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum RefundReason {
+  JOB_FAILED
+  JOB_CANCELLED
+  JOB_REJECTED
+  OVERPAYMENT
+  DUPLICATE
+  GOODWILL
+  OTHER
+}
+
+model Refund {
+  id                 String       @id @default(cuid())
+  spaceId            String
+  paymentId          String
+  amount             Int
+  reason             RefundReason
+  note               String       @default("")
+  status             RefundStatus @default(PENDING)
+  /// Gateway refunds go back through the provider; offline refunds are recorded as handed back.
+  viaGateway         Boolean      @default(false)
+  providerRefundId   String?
+  gatewayAttemptedAt DateTime?
+  failureReason      String       @default("")
+  createdById        String?
+  processedAt        DateTime?
+  createdAt          DateTime     @default(now())
+
+  payment Payment @relation(fields: [spaceId, paymentId], references: [spaceId, id], onDelete: NoAction)
+
+  @@index([spaceId, status, createdAt])
+}
+
+// ─── Settings (space manager and machine manager) ───────────────────────────
+
+enum JobEligibility {
+  /// Any signed-in account; non-members pay PUBLIC rates.
+  ANYONE
+  /// Only active space members.
+  MEMBERS_ONLY
+  /// Nobody submits; staff create jobs on behalf of people.
+  STAFF_ONLY
+}
+
+enum RefundRule {
+  FULL
+  PERCENT
+  NONE
+  MANUAL
+}
+
+/// Whole-space job, money and notification policy. Space managers edit it; every change is audited.
+model SpaceJobSettings {
+  spaceId                        String          @id
+  jobsEnabled                    Boolean         @default(true)
+  eligibility                    JobEligibility  @default(MEMBERS_ONLY)
+  /// Non-members fall back to MEMBER prices when no PUBLIC rule exists.
+  publicUsesMemberRates          Boolean         @default(false)
+  maxOpenJobsPerRequester        Int             @default(5)
+  allowRequesterCancel           Boolean         @default(true)
+  paymentsEnabled                Boolean         @default(false)
+  defaultPaymentTiming           PaymentTiming   @default(ON_COMPLETION)
+  allowPayLater                  Boolean         @default(true)
+  requirePaymentBeforeCollection Boolean         @default(true)
+  onlineMethods                  PaymentMethod[] @default([])
+  offlineMethods                 PaymentMethod[] @default([CASH, UPI, BANK_TRANSFER])
+  /// Tax in basis points (1800 = 18%); 0 = none.
+  taxRateBps                     Int             @default(0)
+  taxInclusive                   Boolean         @default(true)
+  taxLabel                       String          @default("GST")
+  refundOnFailure                RefundRule      @default(FULL)
+  refundOnFailurePercent         Int             @default(100)
+  refundOnCancel                 RefundRule      @default(FULL)
+  refundOnCancelPercent          Int             @default(100)
+  refundOnReject                 RefundRule      @default(FULL)
+  refundOnRejectPercent          Int             @default(100)
+  /// Requester email per event: { submitted, approved, rejected, started, completed, failed, cancelled, payment } booleans.
+  requesterEmails                Json            @default("{}")
+  /// Staff alerts per event, same shape; delivered by email to staff with jobs.review and to chat channels.
+  staffAlerts                    Json            @default("{}")
+  lowStockAlerts                 Boolean         @default(true)
+  maintenanceReminderDays        Int             @default(3)
+  warrantyReminderDays           Int             @default(30)
+  /// Days a repair request stays open before it expires.
+  repairRequestExpiryDays        Int             @default(14)
+  updatedById                    String?
+  updatedAt                      DateTime        @updatedAt
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+}
+
+// ─── Upkeep ─────────────────────────────────────────────────────────────────
+
+enum UsageSource {
+  JOB
+  MANUAL
+  ADAPTER
+}
+
+/// Append-only usage ledger; machine meters are its running totals.
+model UsageLog {
+  id              String        @id @default(cuid())
+  spaceId         String
+  machineId       String
+  source          UsageSource
+  jobId           String?
+  minutes         Int           @default(0)
+  quantity        Decimal?      @db.Decimal(14, 3)
+  unit            MeteringUnit?
+  poolId          String?
+  succeeded       Boolean       @default(true)
+  percentComplete Int           @default(100)
+  note            String        @default("")
+  startedAt       DateTime?
+  endedAt         DateTime?
+  loggedById      String?
+  createdAt       DateTime      @default(now())
+
+  machine Machine @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: Cascade)
+  job     Job?    @relation(fields: [spaceId, jobId], references: [spaceId, id], onDelete: NoAction)
+
+  @@index([spaceId, machineId, createdAt])
+}
+
+enum MaintenanceTrigger {
+  TIME
+  USAGE_HOURS
+  JOB_COUNT
+}
+
+model MaintenanceSchedule {
+  id                 String             @id @default(cuid())
+  spaceId            String
+  machineId          String
+  title              String
+  description        String             @default("")
+  checklist          String[]           @default([])
+  trigger            MaintenanceTrigger @default(TIME)
+  intervalDays       Int?
+  intervalHours      Int?
+  intervalJobs       Int?
+  /// TIME: next due date. Usage triggers: meter values at the last completion.
+  nextDueAt          DateTime?
+  lastDoneAt         DateTime?
+  meterMinutesAtLast Int                @default(0)
+  meterJobsAtLast    Int                @default(0)
+  /// Take the machine offline automatically when overdue.
+  blockWhenOverdue   Boolean            @default(false)
+  isActive           Boolean            @default(true)
+  lastNotifiedAt     DateTime?
+  createdById        String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  machine Machine          @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: Cascade)
+  logs    MaintenanceLog[]
+
+  @@unique([spaceId, id])
+  @@index([spaceId, isActive, nextDueAt])
+}
+
+enum MaintenanceKind {
+  PREVENTIVE
+  CORRECTIVE
+  INSPECTION
+  CALIBRATION
+  WARRANTY_REPAIR
+}
+
+/// Append-only service history entry.
+model MaintenanceLog {
+  id            String          @id @default(cuid())
+  spaceId       String
+  machineId     String
+  scheduleId    String?
+  faultId       String?
+  kind          MaintenanceKind @default(PREVENTIVE)
+  summary       String
+  details       String          @default("")
+  partsNote     String          @default("")
+  cost          Int?
+  /// How the cost was paid (posted to the finance ledger with the record).
+  costMethod    PayoutMethod?
+  vendor        String          @default("")
+  performedAt   DateTime        @default(now())
+  performedById String?
+  meterMinutes  Int             @default(0)
+  createdAt     DateTime        @default(now())
+
+  machine     Machine                 @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: Cascade)
+  schedule    MaintenanceSchedule?    @relation(fields: [spaceId, scheduleId], references: [spaceId, id], onDelete: NoAction)
+  attachments MaintenanceAttachment[]
+
+  @@unique([spaceId, id])
+  @@index([spaceId, machineId, performedAt])
+}
+
+model MaintenanceAttachment {
+  id           String   @id @default(cuid())
+  spaceId      String
+  logId        String
+  storageKey   String   @unique
+  filename     String
+  contentType  String
+  sizeBytes    Int
+  uploadedById String?
+  createdAt    DateTime @default(now())
+
+  log MaintenanceLog @relation(fields: [spaceId, logId], references: [spaceId, id], onDelete: Cascade)
+}
+
+enum DowntimeReason {
+  PLANNED_MAINTENANCE
+  FAULT
+  REPAIR
+  WAITING_PARTS
+  OTHER
+}
+
+model Downtime {
+  id          String         @id @default(cuid())
+  spaceId     String
+  machineId   String
+  reason      DowntimeReason
+  note        String         @default("")
+  faultId     String?
+  startedAt   DateTime       @default(now())
+  endedAt     DateTime?
+  startedById String?
+  endedById   String?
+  createdAt   DateTime       @default(now())
+
+  machine Machine @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: Cascade)
+
+  @@index([spaceId, machineId, startedAt])
+  @@index([spaceId, endedAt])
+}
+
+enum FaultSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum FaultStatus {
+  OPEN
+  ACKNOWLEDGED
+  IN_PROGRESS
+  /// The technician marked it fixed; a manager checks it.
+  FIXED
+  RESOLVED
+  WONT_FIX
+}
+
+model FaultReport {
+  id                 String        @id @default(cuid())
+  spaceId            String
+  machineId          String
+  number             Int
+  reportedById       String?
+  jobId              String?
+  severity           FaultSeverity @default(MEDIUM)
+  title              String
+  description        String        @default("")
+  status             FaultStatus   @default(OPEN)
+  assignedToId       String?
+  resolution         String        @default("")
+  resolvedAt         DateTime?
+  resolvedById       String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  /// Repairs: the directory technician who took it, their fix and the money (minor units, space currency).
+  technicianId       String?
+  fixRemarks         String        @default("")
+  fixParts           String        @default("")
+  amountAsked        Int?
+  fixedAt            DateTime?
+  reopenReason       String        @default("")
+  verifiedById       String?
+  approvedAmount     Int?
+  approvedById       String?
+  approvedAt         DateTime?
+  amountChangeReason String        @default("")
+  paidAmount         Int           @default(0)
+  payoutStatus       PayoutStatus  @default(UNPAID)
+
+  machine    Machine         @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: Cascade)
+  photos     FaultPhoto[]
+  technician Technician?     @relation(fields: [spaceId, technicianId], references: [spaceId, id], onDelete: NoAction)
+  requests   RepairRequest[]
+  payouts    RepairPayout[]
+  toBuyItems ToBuyItem[]
+
+  @@unique([spaceId, number])
+  @@unique([spaceId, id])
+  @@index([spaceId, status, severity])
+}
+
+enum FaultPhotoStage {
+  REPORT
+  FIX
+}
+
+model FaultPhoto {
+  id         String          @id @default(cuid())
+  spaceId    String
+  faultId    String
+  storageKey String          @unique
+  /// REPORT: sent with the report; FIX: the technician's photos of the repair.
+  stage      FaultPhotoStage @default(REPORT)
+  createdAt  DateTime        @default(now())
+
+  fault FaultReport @relation(fields: [spaceId, faultId], references: [spaceId, id], onDelete: Cascade)
+}
+
+model Warranty {
+  id             String    @id @default(cuid())
+  spaceId        String
+  machineId      String    @unique
+  vendorName     String    @default("")
+  vendorContact  String    @default("")
+  vendorEmail    String    @default("")
+  vendorPhone    String    @default("")
+  contractNumber String    @default("")
+  coverage       String    @default("")
+  purchasedOn    DateTime? @db.Date
+  startsOn       DateTime? @db.Date
+  expiresOn      DateTime? @db.Date
+  lastNotifiedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  machine   Machine            @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: Cascade)
+  documents WarrantyDocument[]
+
+  @@unique([spaceId, id])
+  @@unique([spaceId, machineId])
+  @@index([spaceId, expiresOn])
+}
+
+model WarrantyDocument {
+  id           String   @id @default(cuid())
+  spaceId      String
+  warrantyId   String
+  storageKey   String   @unique
+  filename     String
+  contentType  String
+  sizeBytes    Int
+  uploadedById String?
+  createdAt    DateTime @default(now())
+
+  warranty Warranty @relation(fields: [spaceId, warrantyId], references: [spaceId, id], onDelete: Cascade)
+}
+
+// ─── Integrations ───────────────────────────────────────────────────────────
+
+enum PrinterAdapterKind {
+  MANUAL
+  SIMULATED
+  OCTOPRINT
+  MOONRAKER
+  BAMBU
+  PRUSALINK
+}
+
+enum PrinterConnectionState {
+  UNCONFIGURED
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+model PrinterConnection {
+  id              String                 @id @default(cuid())
+  spaceId         String
+  machineId       String                 @unique
+  adapter         PrinterAdapterKind     @default(MANUAL)
+  enabled         Boolean                @default(true)
+  baseUrl         String                 @default("")
+  /// Bambu serial, PrusaLink username and similar non-secret identifiers.
+  deviceId        String                 @default("")
+  /// API key / access code, encrypted with the integration secrets key. Never returned to the browser.
+  secretEncrypted String?
+  /// { pollSeconds, syncMachineStatus, autoCompleteJobs, autoStartOnUpload }.
+  settings        Json                   @default("{}")
+  state           PrinterConnectionState @default(UNCONFIGURED)
+  lastSeenAt      DateTime?
+  lastError       String                 @default("")
+  /// Last telemetry snapshot: { state, nozzleC, nozzleTargetC, bedC, bedTargetC, progress, jobName, remainingSeconds }.
+  telemetry       Json?
+  /// Simulated adapter state.
+  simState        Json?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  machine  Machine             @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: Cascade)
+  commands PrinterCommandLog[]
+
+  @@unique([spaceId, id])
+  @@unique([spaceId, machineId])
+}
+
+model PrinterCommandLog {
+  id           String   @id @default(cuid())
+  spaceId      String
+  connectionId String
+  command      String
+  jobId        String?
+  ok           Boolean
+  message      String   @default("")
+  actorId      String?
+  createdAt    DateTime @default(now())
+
+  connection PrinterConnection @relation(fields: [spaceId, connectionId], references: [spaceId, id], onDelete: Cascade)
+
+  @@index([spaceId, connectionId, createdAt])
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  spaceId     String
+  name        String
+  /// First characters shown in the UI, e.g. swm_live_ab12.
+  prefix      String    @unique
+  secretHash  String
+  scopes      String[]
+  createdById String?
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@index([spaceId, revokedAt])
+}
+
+model WebhookEndpoint {
+  id                  String    @id @default(cuid())
+  spaceId             String
+  url                 String
+  description         String    @default("")
+  events              String[]
+  secretEncrypted     String
+  isActive            Boolean   @default(true)
+  consecutiveFailures Int       @default(0)
+  disabledAt          DateTime?
+  createdById         String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  space      Space             @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@unique([spaceId, id])
+  @@index([spaceId, isActive])
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+model WebhookDelivery {
+  id             String                @id @default(cuid())
+  spaceId        String
+  endpointId     String
+  event          String
+  eventId        String
+  payload        Json
+  status         WebhookDeliveryStatus @default(PENDING)
+  attempts       Int                   @default(0)
+  responseStatus Int?
+  lastError      String                @default("")
+  nextAttemptAt  DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime              @default(now())
+
+  endpoint WebhookEndpoint @relation(fields: [spaceId, endpointId], references: [spaceId, id], onDelete: Cascade)
+
+  @@index([spaceId, endpointId, createdAt])
+  @@index([status, nextAttemptAt])
+}
+
+// ─── Repairs, technicians, to-buy and finance (M8) ─────────────────────────────
+
+enum TechnicianKind {
+  STAFF
+  EXTERNAL
+}
+
+enum TechnicianChannel {
+  EMAIL
+  WHATSAPP
+  TELEGRAM
+}
+
+/// A makerspace's directory of people who fix things: staff technicians (linked to their membership) and
+/// external contacts. Managed by the machine manager, audited; deactivated rather than deleted.
+model Technician {
+  id               String            @id @default(cuid())
+  spaceId          String
+  kind             TechnicianKind
+  /// STAFF only: the member's account (a TECHNICIAN on this space's staff).
+  userId           String?
+  name             String
+  email            String            @default("")
+  phone            String            @default("")
+  whatsapp         String            @default("")
+  telegramChatId   String            @default("")
+  skills           String[]
+  preferredChannel TechnicianChannel @default(EMAIL)
+  notes            String            @default("")
+  isActive         Boolean           @default(true)
+  createdById      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  space    Space           @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  requests RepairRequest[]
+  faults   FaultReport[]
+  payouts  RepairPayout[]
+
+  @@unique([spaceId, id])
+  @@unique([spaceId, userId])
+  @@index([spaceId, isActive])
+}
+
+enum RepairRequestStatus {
+  SENT
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CLOSED
+}
+
+/// One technician asked to take one fault. First to accept is assigned; the rest close.
+model RepairRequest {
+  id           String              @id @default(cuid())
+  spaceId      String
+  faultId      String
+  technicianId String
+  status       RepairRequestStatus @default(SENT)
+  /// Channels it went out on (email, whatsapp, telegram, inbox).
+  channels     String[]
+  /// External technicians: SHA-256 of the link token (the token itself is only ever emailed or messaged).
+  tokenHash    String?             @unique
+  expiresAt    DateTime
+  sentById     String?
+  sentAt       DateTime            @default(now())
+  respondedAt  DateTime?
+  closedReason String              @default("")
+
+  fault      FaultReport @relation(fields: [spaceId, faultId], references: [spaceId, id], onDelete: Cascade)
+  technician Technician  @relation(fields: [spaceId, technicianId], references: [spaceId, id], onDelete: Cascade)
+
+  @@unique([spaceId, id])
+  @@index([spaceId, faultId])
+  @@index([spaceId, technicianId, status])
+}
+
+enum PayoutStatus {
+  UNPAID
+  PARTLY_PAID
+  PAID
+}
+
+enum PayoutMethod {
+  CASH
+  BANK_TRANSFER
+  UPI
+  OTHER
+}
+
+/// Append-only (trigger): money paid to a technician for one fault.
+model RepairPayout {
+  id           String       @id @default(cuid())
+  spaceId      String
+  faultId      String
+  technicianId String
+  amount       Int
+  currency     String
+  method       PayoutMethod
+  reference    String       @default("")
+  paidAt       DateTime
+  paidById     String?
+  note         String       @default("")
+  createdAt    DateTime     @default(now())
+
+  fault      FaultReport @relation(fields: [spaceId, faultId], references: [spaceId, id], onDelete: Cascade)
+  technician Technician  @relation(fields: [spaceId, technicianId], references: [spaceId, id], onDelete: Cascade)
+
+  @@unique([spaceId, id])
+  @@index([spaceId, faultId])
+}
+
+enum ToBuyKind {
+  PART
+  CONSUMABLE
+}
+
+enum ToBuyStatus {
+  REQUESTED
+  APPROVED
+  BOUGHT
+  RECEIVED
+  CANCELLED
+}
+
+/// Parts and consumables to buy: requested -> approved -> bought (amount, method, reference, supplier) -> received.
+model ToBuyItem {
+  id               String        @id @default(cuid())
+  spaceId          String
+  number           Int
+  kind             ToBuyKind     @default(PART)
+  title            String
+  quantity         Decimal       @db.Decimal(14, 3)
+  unit             String        @default("")
+  machineId        String?
+  poolId           String?
+  faultId          String?
+  maintenanceLogId String?
+  status           ToBuyStatus   @default(REQUESTED)
+  note             String        @default("")
+  amount           Int?
+  currency         String?
+  method           PayoutMethod?
+  reference        String        @default("")
+  supplier         String        @default("")
+  requestedById    String?
+  approvedById     String?
+  boughtById       String?
+  boughtAt         DateTime?
+  receivedById     String?
+  receivedAt       DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  space   Space           @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  machine Machine?        @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: NoAction)
+  pool    ConsumablePool? @relation(fields: [spaceId, poolId], references: [spaceId, id], onDelete: NoAction)
+  fault   FaultReport?    @relation(fields: [spaceId, faultId], references: [spaceId, id], onDelete: NoAction)
+
+  @@unique([spaceId, number])
+  @@unique([spaceId, id])
+  @@index([spaceId, status])
+}
+
+enum FinanceDirection {
+  IN
+  OUT
+}
+
+enum FinanceCategory {
+  JOB_PAYMENT
+  JOB_REFUND
+  REPAIR_PAYOUT
+  MAINTENANCE
+  PARTS
+  CONSUMABLES
+  OTHER_INCOME
+  OTHER_EXPENSE
+  REVERSAL
+}
+
+enum FinanceMethod {
+  GATEWAY_RAZORPAY
+  GATEWAY_STRIPE
+  CASH
+  BANK_TRANSFER
+  UPI
+  OTHER
+}
+
+/// Append-only (trigger) ledger of every money movement, posted in the same transaction as its source.
+/// Corrections are reversing entries with a reason; a source posts once ([sourceType, sourceId] is unique).
+model FinanceEntry {
+  id           String           @id @default(cuid())
+  spaceId      String
+  direction    FinanceDirection
+  category     FinanceCategory
+  amountMinor  Int
+  currency     String
+  method       FinanceMethod
+  reference    String           @default("")
+  occurredAt   DateTime
+  sourceType   String
+  sourceId     String
+  actorId      String?
+  note         String           @default("")
+  machineId    String?
+  typeId       String?
+  technicianId String?
+  supplier     String           @default("")
+  reversesId   String?          @unique
+  createdAt    DateTime         @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceType, sourceId])
+  @@unique([spaceId, id])
+  @@index([spaceId, occurredAt])
+  @@index([spaceId, machineId])
+}

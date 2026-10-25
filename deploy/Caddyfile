@@ -1,0 +1,31 @@
+# The web edge for the bundled stack (docker-compose.prod.yml). SITE_ADDRESS is
+# http://<host> for plain HTTP, or <domain> for automatic HTTPS, in which case
+# docker/compose.tls.yml publishes 443 and passes the certificate email.
+# An existing reverse proxy (docker/compose.proxy.yml) replaces this service.
+{
+	{$CADDY_GLOBAL_OPTIONS}
+	skip_install_trust
+	log default {
+		format filter {
+			wrap json
+			fields {
+				request>uri delete
+				request>headers delete
+			}
+		}
+	}
+}
+
+{$SITE_ADDRESS} {
+	encode zstd gzip
+	# External-cron hooks (outbox, jobs): inside the stack only, never from the internet.
+	handle /api/internal/* {
+		respond 404
+	}
+	# No access log: application URLs can carry bearer capabilities (invites, sign-in links).
+	reverse_proxy backend:3000 {
+		header_up X-Real-IP {remote_host}
+		header_up -CF-Connecting-IP
+		flush_interval -1
+	}
+}

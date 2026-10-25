@@ -1,0 +1,926 @@
+{
+  "readers": [
+    {
+      "module": "lib/views/app__account__jobs__page",
+      "name": "loadAccountJobsView",
+      "id": "app__account__jobs__page:loadAccountJobsView"
+    },
+    {
+      "module": "lib/views/app__account__layout",
+      "name": "loadAccountShell",
+      "id": "app__account__layout:loadAccountShell"
+    },
+    {
+      "module": "lib/views/app__account__page",
+      "name": "loadAccountSpacesView",
+      "id": "app__account__page:loadAccountSpacesView"
+    },
+    {
+      "module": "lib/views/app__account__profile__page",
+      "name": "loadAccountProfileView",
+      "id": "app__account__profile__page:loadAccountProfileView"
+    },
+    {
+      "module": "lib/views/app__account__security__page",
+      "name": "loadAccountSecurityView",
+      "id": "app__account__security__page:loadAccountSecurityView"
+    },
+    {
+      "module": "lib/views/app__auth__login__page",
+      "name": "loadLoginView",
+      "id": "app__auth__login__page:loadLoginView"
+    },
+    {
+      "module": "lib/views/app__dashboard__layout",
+      "name": "loadDashboardShell",
+      "id": "app__dashboard__layout:loadDashboardShell"
+    },
+    {
+      "module": "lib/views/app__dashboard__page",
+      "name": "loadDashboardView",
+      "id": "app__dashboard__page:loadDashboardView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__application__page",
+      "name": "loadSpaceApplicationView",
+      "id": "app__dashboard__spaceSlug__application__page:loadSpaceApplicationView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__audit__page",
+      "name": "loadAuditView",
+      "id": "app__dashboard__spaceSlug__audit__page:loadAuditView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__consumables__page",
+      "name": "loadConsumablesView",
+      "id": "app__dashboard__spaceSlug__consumables__page:loadConsumablesView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__consumables__poolId__page",
+      "name": "loadConsumablePoolView",
+      "id": "app__dashboard__spaceSlug__consumables__poolId__page:loadConsumablePoolView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__finance__page",
+      "name": "loadFinanceView",
+      "id": "app__dashboard__spaceSlug__finance__page:loadFinanceView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__integrations__page",
+      "name": "loadIntegrationsView",
+      "id": "app__dashboard__spaceSlug__integrations__page:loadIntegrationsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__integrations__webhooks__endpointId__page",
+      "name": "loadWebhookDeliveriesView",
+      "id": "app__dashboard__spaceSlug__integrations__webhooks__endpointId__page:loadWebhookDeliveriesView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__jobs__number__page",
+      "name": "loadStaffJobView",
+      "id": "app__dashboard__spaceSlug__jobs__number__page:loadStaffJobView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__jobs__page",
+      "name": "loadJobsView",
+      "id": "app__dashboard__spaceSlug__jobs__page:loadJobsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__layout",
+      "name": "loadSpaceSlugShell",
+      "id": "app__dashboard__spaceSlug__layout:loadSpaceSlugShell"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__machine-settings__jobs__page",
+      "name": "loadJobSettingsView",
+      "id": "app__dashboard__spaceSlug__machine-settings__jobs__page:loadJobSettingsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__machine-settings__page",
+      "name": "loadMachineSettingsView",
+      "id": "app__dashboard__spaceSlug__machine-settings__page:loadMachineSettingsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__machine-settings__pricing__page",
+      "name": "loadPricingRulesView",
+      "id": "app__dashboard__spaceSlug__machine-settings__pricing__page:loadPricingRulesView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__machine-settings__printers__page",
+      "name": "loadPrintersView",
+      "id": "app__dashboard__spaceSlug__machine-settings__printers__page:loadPrintersView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__machine-settings__types__typeSlug__page",
+      "name": "loadMachineTypeView",
+      "id": "app__dashboard__spaceSlug__machine-settings__types__typeSlug__page:loadMachineTypeView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__machines__machineSlug__page",
+      "name": "loadMachineView",
+      "id": "app__dashboard__spaceSlug__machines__machineSlug__page:loadMachineView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__machines__machineSlug__printer__page",
+      "name": "loadMachinePrinterView",
+      "id": "app__dashboard__spaceSlug__machines__machineSlug__printer__page:loadMachinePrinterView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__machines__machineSlug__upkeep__page",
+      "name": "loadMachineUpkeepView",
+      "id": "app__dashboard__spaceSlug__machines__machineSlug__upkeep__page:loadMachineUpkeepView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__machines__page",
+      "name": "loadMachinesView",
+      "id": "app__dashboard__spaceSlug__machines__page:loadMachinesView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__maintenance__faults__number__page",
+      "name": "loadFaultView",
+      "id": "app__dashboard__spaceSlug__maintenance__faults__number__page:loadFaultView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__maintenance__faults__page",
+      "name": "loadFaultsView",
+      "id": "app__dashboard__spaceSlug__maintenance__faults__page:loadFaultsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__maintenance__page",
+      "name": "loadMaintenanceView",
+      "id": "app__dashboard__spaceSlug__maintenance__page:loadMaintenanceView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__page",
+      "name": "loadSpaceOverviewView",
+      "id": "app__dashboard__spaceSlug__page:loadSpaceOverviewView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__payments__page",
+      "name": "loadPaymentsView",
+      "id": "app__dashboard__spaceSlug__payments__page:loadPaymentsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__payouts__page",
+      "name": "loadPayoutsView",
+      "id": "app__dashboard__spaceSlug__payouts__page:loadPayoutsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__repairs__page",
+      "name": "loadRepairsView",
+      "id": "app__dashboard__spaceSlug__repairs__page:loadRepairsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__reports__page",
+      "name": "loadReportsView",
+      "id": "app__dashboard__spaceSlug__reports__page:loadReportsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__settings__email__page",
+      "name": "loadSpaceEmailSettingsView",
+      "id": "app__dashboard__spaceSlug__settings__email__page:loadSpaceEmailSettingsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__settings__notifications__page",
+      "name": "loadSpaceNotificationsView",
+      "id": "app__dashboard__spaceSlug__settings__notifications__page:loadSpaceNotificationsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__settings__page",
+      "name": "loadSpaceSettingsView",
+      "id": "app__dashboard__spaceSlug__settings__page:loadSpaceSettingsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__settings__payments__page",
+      "name": "loadPaymentSettingsView",
+      "id": "app__dashboard__spaceSlug__settings__payments__page:loadPaymentSettingsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__team__page",
+      "name": "loadSpaceTeamView",
+      "id": "app__dashboard__spaceSlug__team__page:loadSpaceTeamView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__technicians__page",
+      "name": "loadTechniciansView",
+      "id": "app__dashboard__spaceSlug__technicians__page:loadTechniciansView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__to-buy__page",
+      "name": "loadToBuyView",
+      "id": "app__dashboard__spaceSlug__to-buy__page:loadToBuyView"
+    },
+    {
+      "module": "lib/views/app__j__token__page",
+      "name": "loadPublicJobView",
+      "id": "app__j__token__page:loadPublicJobView"
+    },
+    {
+      "module": "lib/views/app__join__space__token__page",
+      "name": "loadJoinSpaceView",
+      "id": "app__join__space__token__page:loadJoinSpaceView"
+    },
+    {
+      "module": "lib/views/app__r__token__page",
+      "name": "loadRepairLinkView",
+      "id": "app__r__token__page:loadRepairLinkView"
+    },
+    {
+      "module": "lib/views/app__s__spaceSlug__jobs__number__page",
+      "name": "loadRequesterJobView",
+      "id": "app__s__spaceSlug__jobs__number__page:loadRequesterJobView"
+    },
+    {
+      "module": "lib/views/app__s__spaceSlug__layout",
+      "name": "loadPublicSpaceLayout",
+      "id": "app__s__spaceSlug__layout:loadPublicSpaceLayout"
+    },
+    {
+      "module": "lib/views/app__s__spaceSlug__machines__machineSlug__page",
+      "name": "loadPublicMachineView",
+      "id": "app__s__spaceSlug__machines__machineSlug__page:loadPublicMachineView"
+    },
+    {
+      "module": "lib/views/app__s__spaceSlug__machines__page",
+      "name": "loadPublicMachinesView",
+      "id": "app__s__spaceSlug__machines__page:loadPublicMachinesView"
+    },
+    {
+      "module": "lib/views/app__s__spaceSlug__page",
+      "name": "loadPublicSpacePage",
+      "id": "app__s__spaceSlug__page:loadPublicSpacePage"
+    },
+    {
+      "module": "lib/views/app__s__spaceSlug__request__page",
+      "name": "loadJobRequestView",
+      "id": "app__s__spaceSlug__request__page:loadJobRequestView"
+    },
+    {
+      "module": "lib/views/app__sitemap",
+      "name": "loadSitemapSpaces",
+      "id": "app__sitemap:loadSitemapSpaces"
+    },
+    {
+      "module": "lib/views/app__spaces__page",
+      "name": "loadSpacesDirectory",
+      "id": "app__spaces__page:loadSpacesDirectory"
+    },
+    {
+      "module": "lib/views/app__start__page",
+      "name": "loadStartView",
+      "id": "app__start__page:loadStartView"
+    },
+    {
+      "module": "lib/views/app__super-admin__audit__page",
+      "name": "loadSuperAdminAuditView",
+      "id": "app__super-admin__audit__page:loadSuperAdminAuditView"
+    },
+    {
+      "module": "lib/views/app__super-admin__email__page",
+      "name": "loadSuperAdminEmailView",
+      "id": "app__super-admin__email__page:loadSuperAdminEmailView"
+    },
+    {
+      "module": "lib/views/app__super-admin__layout",
+      "name": "loadSuperAdminShell",
+      "id": "app__super-admin__layout:loadSuperAdminShell"
+    },
+    {
+      "module": "lib/views/app__super-admin__monitoring__page",
+      "name": "loadSuperAdminMonitoringView",
+      "id": "app__super-admin__monitoring__page:loadSuperAdminMonitoringView"
+    },
+    {
+      "module": "lib/views/app__super-admin__operations__page",
+      "name": "loadSuperAdminOperationsView",
+      "id": "app__super-admin__operations__page:loadSuperAdminOperationsView"
+    },
+    {
+      "module": "lib/views/app__super-admin__page",
+      "name": "loadSuperAdminOverviewView",
+      "id": "app__super-admin__page:loadSuperAdminOverviewView"
+    },
+    {
+      "module": "lib/views/app__super-admin__security__page",
+      "name": "loadSuperAdminSecurityView",
+      "id": "app__super-admin__security__page:loadSuperAdminSecurityView"
+    },
+    {
+      "module": "lib/views/app__super-admin__settings__page",
+      "name": "loadSuperAdminSettingsView",
+      "id": "app__super-admin__settings__page:loadSuperAdminSettingsView"
+    },
+    {
+      "module": "lib/views/app__super-admin__spaces__new__page",
+      "name": "loadSuperAdminNewSpaceView",
+      "id": "app__super-admin__spaces__new__page:loadSuperAdminNewSpaceView"
+    },
+    {
+      "module": "lib/views/app__super-admin__spaces__page",
+      "name": "loadSuperAdminSpacesView",
+      "id": "app__super-admin__spaces__page:loadSuperAdminSpacesView"
+    },
+    {
+      "module": "lib/views/app__super-admin__spaces__spaceId__page",
+      "name": "loadSuperAdminSpaceDetailView",
+      "id": "app__super-admin__spaces__spaceId__page:loadSuperAdminSpaceDetailView"
+    },
+    {
+      "module": "lib/views/app__super-admin__storage__page",
+      "name": "loadSuperAdminStorageView",
+      "id": "app__super-admin__storage__page:loadSuperAdminStorageView"
+    },
+    {
+      "module": "lib/views/app__super-admin__users__page",
+      "name": "loadSuperAdminUsersView",
+      "id": "app__super-admin__users__page:loadSuperAdminUsersView"
+    },
+    {
+      "module": "lib/views/app__super-admin__users__userId__page",
+      "name": "loadSuperAdminUserDetailView",
+      "id": "app__super-admin__users__userId__page:loadSuperAdminUserDetailView"
+    }
+  ],
+  "actions": [
+    {
+      "module": "app/actions/account-spaces",
+      "name": "leaveSpace",
+      "id": "account-spaces:leaveSpace"
+    },
+    {
+      "module": "app/actions/account-spaces",
+      "name": "joinSpace",
+      "id": "account-spaces:joinSpace"
+    },
+    {
+      "module": "app/actions/account",
+      "name": "updateAccountProfile",
+      "id": "account:updateAccountProfile"
+    },
+    {
+      "module": "app/actions/account",
+      "name": "updateAccountPassword",
+      "id": "account:updateAccountPassword"
+    },
+    {
+      "module": "app/actions/auth",
+      "name": "signUpWithPassword",
+      "id": "auth:signUpWithPassword"
+    },
+    {
+      "module": "app/actions/auth",
+      "name": "confirmEmailVerification",
+      "id": "auth:confirmEmailVerification"
+    },
+    {
+      "module": "app/actions/auth",
+      "name": "resendEmailVerification",
+      "id": "auth:resendEmailVerification"
+    },
+    {
+      "module": "app/actions/auth",
+      "name": "requestMagicLink",
+      "id": "auth:requestMagicLink"
+    },
+    {
+      "module": "app/actions/chat-channels",
+      "name": "saveChatChannel",
+      "id": "chat-channels:saveChatChannel"
+    },
+    {
+      "module": "app/actions/chat-channels",
+      "name": "deleteChatChannel",
+      "id": "chat-channels:deleteChatChannel"
+    },
+    {
+      "module": "app/actions/chat-channels",
+      "name": "testChatChannel",
+      "id": "chat-channels:testChatChannel"
+    },
+    {
+      "module": "app/actions/consumables",
+      "name": "createPoolAction",
+      "id": "consumables:createPoolAction"
+    },
+    {
+      "module": "app/actions/consumables",
+      "name": "updatePoolAction",
+      "id": "consumables:updatePoolAction"
+    },
+    {
+      "module": "app/actions/consumables",
+      "name": "restockPoolAction",
+      "id": "consumables:restockPoolAction"
+    },
+    {
+      "module": "app/actions/consumables",
+      "name": "correctPoolAction",
+      "id": "consumables:correctPoolAction"
+    },
+    {
+      "module": "app/actions/consumables",
+      "name": "retirePoolAction",
+      "id": "consumables:retirePoolAction"
+    },
+    {
+      "module": "app/actions/consumables",
+      "name": "setPoolPublicAction",
+      "id": "consumables:setPoolPublicAction"
+    },
+    {
+      "module": "app/actions/faults",
+      "name": "reportFaultAction",
+      "id": "faults:reportFaultAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "addFinanceEntryAction",
+      "id": "finance:addFinanceEntryAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "reverseFinanceEntryAction",
+      "id": "finance:reverseFinanceEntryAction"
+    },
+    {
+      "module": "app/actions/instance-settings",
+      "name": "setNewUserRegistrationEnabled",
+      "id": "instance-settings:setNewUserRegistrationEnabled"
+    },
+    {
+      "module": "app/actions/instance-settings",
+      "name": "setSpaceApplicationsEnabled",
+      "id": "instance-settings:setSpaceApplicationsEnabled"
+    },
+    {
+      "module": "app/actions/instance-settings",
+      "name": "saveInstanceServiceSettings",
+      "id": "instance-settings:saveInstanceServiceSettings"
+    },
+    {
+      "module": "app/actions/instance",
+      "name": "deliverInstanceOutbox",
+      "id": "instance:deliverInstanceOutbox"
+    },
+    {
+      "module": "app/actions/instance",
+      "name": "purgeExpiredVerificationTokens",
+      "id": "instance:purgeExpiredVerificationTokens"
+    },
+    {
+      "module": "app/actions/instance",
+      "name": "retryFailedOutboxMessages",
+      "id": "instance:retryFailedOutboxMessages"
+    },
+    {
+      "module": "app/actions/instance",
+      "name": "recordBackupRestoreVerification",
+      "id": "instance:recordBackupRestoreVerification"
+    },
+    {
+      "module": "app/actions/integrations",
+      "name": "createApiKeyAction",
+      "id": "integrations:createApiKeyAction"
+    },
+    {
+      "module": "app/actions/integrations",
+      "name": "revokeApiKeyAction",
+      "id": "integrations:revokeApiKeyAction"
+    },
+    {
+      "module": "app/actions/integrations",
+      "name": "createWebhookAction",
+      "id": "integrations:createWebhookAction"
+    },
+    {
+      "module": "app/actions/integrations",
+      "name": "updateWebhookAction",
+      "id": "integrations:updateWebhookAction"
+    },
+    {
+      "module": "app/actions/integrations",
+      "name": "rotateWebhookSecretAction",
+      "id": "integrations:rotateWebhookSecretAction"
+    },
+    {
+      "module": "app/actions/integrations",
+      "name": "deleteWebhookAction",
+      "id": "integrations:deleteWebhookAction"
+    },
+    {
+      "module": "app/actions/integrations",
+      "name": "testWebhookAction",
+      "id": "integrations:testWebhookAction"
+    },
+    {
+      "module": "app/actions/integrations",
+      "name": "redeliverWebhookAction",
+      "id": "integrations:redeliverWebhookAction"
+    },
+    {
+      "module": "app/actions/integrations",
+      "name": "savePrinterAction",
+      "id": "integrations:savePrinterAction"
+    },
+    {
+      "module": "app/actions/integrations",
+      "name": "printerCommandAction",
+      "id": "integrations:printerCommandAction"
+    },
+    {
+      "module": "app/actions/invite-acceptance",
+      "name": "acceptSpaceInvite",
+      "id": "invite-acceptance:acceptSpaceInvite"
+    },
+    {
+      "module": "app/actions/ip-blocks",
+      "name": "unblockAddress",
+      "id": "ip-blocks:unblockAddress"
+    },
+    {
+      "module": "app/actions/job-payments",
+      "name": "payNowAction",
+      "id": "job-payments:payNowAction"
+    },
+    {
+      "module": "app/actions/job-payments",
+      "name": "jobPaymentAction",
+      "id": "job-payments:jobPaymentAction"
+    },
+    {
+      "module": "app/actions/job-settings",
+      "name": "saveJobSettingsAction",
+      "id": "job-settings:saveJobSettingsAction"
+    },
+    {
+      "module": "app/actions/job-settings",
+      "name": "saveJobMoneySettingsAction",
+      "id": "job-settings:saveJobMoneySettingsAction"
+    },
+    {
+      "module": "app/actions/job-settings",
+      "name": "savePricingRuleAction",
+      "id": "job-settings:savePricingRuleAction"
+    },
+    {
+      "module": "app/actions/job-settings",
+      "name": "deletePricingRuleAction",
+      "id": "job-settings:deletePricingRuleAction"
+    },
+    {
+      "module": "app/actions/jobs",
+      "name": "submitJobAction",
+      "id": "jobs:submitJobAction"
+    },
+    {
+      "module": "app/actions/jobs",
+      "name": "createJobOnBehalfAction",
+      "id": "jobs:createJobOnBehalfAction"
+    },
+    {
+      "module": "app/actions/jobs",
+      "name": "transitionJobAction",
+      "id": "jobs:transitionJobAction"
+    },
+    {
+      "module": "app/actions/machine-files",
+      "name": "updateMachinePhotoAction",
+      "id": "machine-files:updateMachinePhotoAction"
+    },
+    {
+      "module": "app/actions/machine-files",
+      "name": "removeMachinePhotoAction",
+      "id": "machine-files:removeMachinePhotoAction"
+    },
+    {
+      "module": "app/actions/machine-files",
+      "name": "reorderMachinePhotosAction",
+      "id": "machine-files:reorderMachinePhotosAction"
+    },
+    {
+      "module": "app/actions/machine-files",
+      "name": "updateMachineDocumentAction",
+      "id": "machine-files:updateMachineDocumentAction"
+    },
+    {
+      "module": "app/actions/machine-files",
+      "name": "removeMachineDocumentAction",
+      "id": "machine-files:removeMachineDocumentAction"
+    },
+    {
+      "module": "app/actions/machine-types",
+      "name": "createMachineTypeAction",
+      "id": "machine-types:createMachineTypeAction"
+    },
+    {
+      "module": "app/actions/machine-types",
+      "name": "updateMachineTypeSection",
+      "id": "machine-types:updateMachineTypeSection"
+    },
+    {
+      "module": "app/actions/machine-types",
+      "name": "setMachineTypeArchivedAction",
+      "id": "machine-types:setMachineTypeArchivedAction"
+    },
+    {
+      "module": "app/actions/machine-types",
+      "name": "reorderMachineTypesAction",
+      "id": "machine-types:reorderMachineTypesAction"
+    },
+    {
+      "module": "app/actions/machines",
+      "name": "createMachineAction",
+      "id": "machines:createMachineAction"
+    },
+    {
+      "module": "app/actions/machines",
+      "name": "updateMachineAction",
+      "id": "machines:updateMachineAction"
+    },
+    {
+      "module": "app/actions/machines",
+      "name": "changeMachineStatusAction",
+      "id": "machines:changeMachineStatusAction"
+    },
+    {
+      "module": "app/actions/machines",
+      "name": "setMachineRetiredAction",
+      "id": "machines:setMachineRetiredAction"
+    },
+    {
+      "module": "app/actions/machines",
+      "name": "setMachineFlagsAction",
+      "id": "machines:setMachineFlagsAction"
+    },
+    {
+      "module": "app/actions/media",
+      "name": "uploadSpaceLogo",
+      "id": "media:uploadSpaceLogo"
+    },
+    {
+      "module": "app/actions/media",
+      "name": "uploadAccountProfileImage",
+      "id": "media:uploadAccountProfileImage"
+    },
+    {
+      "module": "app/actions/password-reset",
+      "name": "requestPasswordReset",
+      "id": "password-reset:requestPasswordReset"
+    },
+    {
+      "module": "app/actions/password-reset",
+      "name": "confirmPasswordReset",
+      "id": "password-reset:confirmPasswordReset"
+    },
+    {
+      "module": "app/actions/payment-settings",
+      "name": "savePaymentGateway",
+      "id": "payment-settings:savePaymentGateway"
+    },
+    {
+      "module": "app/actions/payment-settings",
+      "name": "testPaymentGateway",
+      "id": "payment-settings:testPaymentGateway"
+    },
+    {
+      "module": "app/actions/payment-settings",
+      "name": "saveOfflinePaymentSettings",
+      "id": "payment-settings:saveOfflinePaymentSettings"
+    },
+    {
+      "module": "app/actions/repair-link",
+      "name": "answerRepairLinkAction",
+      "id": "repair-link:answerRepairLinkAction"
+    },
+    {
+      "module": "app/actions/repair-link",
+      "name": "recordRepairLinkFixAction",
+      "id": "repair-link:recordRepairLinkFixAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "sendRepairRequestsAction",
+      "id": "repairs:sendRepairRequestsAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "assignTechnicianAction",
+      "id": "repairs:assignTechnicianAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "revokeRepairRequestAction",
+      "id": "repairs:revokeRepairRequestAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "answerRepairRequestAction",
+      "id": "repairs:answerRepairRequestAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "recordStaffFixAction",
+      "id": "repairs:recordStaffFixAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "verifyRepairAction",
+      "id": "repairs:verifyRepairAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "approveRepairAmountAction",
+      "id": "repairs:approveRepairAmountAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "recordRepairPayoutAction",
+      "id": "repairs:recordRepairPayoutAction"
+    },
+    {
+      "module": "app/actions/security",
+      "name": "beginMfaEnrollment",
+      "id": "security:beginMfaEnrollment"
+    },
+    {
+      "module": "app/actions/security",
+      "name": "confirmMfaEnrollment",
+      "id": "security:confirmMfaEnrollment"
+    },
+    {
+      "module": "app/actions/security",
+      "name": "disableMfa",
+      "id": "security:disableMfa"
+    },
+    {
+      "module": "app/actions/security",
+      "name": "revokeAllSessions",
+      "id": "security:revokeAllSessions"
+    },
+    {
+      "module": "app/actions/space-application",
+      "name": "checkSpaceSlug",
+      "id": "space-application:checkSpaceSlug"
+    },
+    {
+      "module": "app/actions/space-application",
+      "name": "submitSpaceApplication",
+      "id": "space-application:submitSpaceApplication"
+    },
+    {
+      "module": "app/actions/space-application",
+      "name": "resubmitSpaceApplication",
+      "id": "space-application:resubmitSpaceApplication"
+    },
+    {
+      "module": "app/actions/space-email",
+      "name": "saveSpaceEmailSettings",
+      "id": "space-email:saveSpaceEmailSettings"
+    },
+    {
+      "module": "app/actions/space-email",
+      "name": "sendSpaceTestEmail",
+      "id": "space-email:sendSpaceTestEmail"
+    },
+    {
+      "module": "app/actions/space-invites",
+      "name": "createSpaceInvite",
+      "id": "space-invites:createSpaceInvite"
+    },
+    {
+      "module": "app/actions/space-invites",
+      "name": "revokeSpaceInvite",
+      "id": "space-invites:revokeSpaceInvite"
+    },
+    {
+      "module": "app/actions/space-job-settings",
+      "name": "setLowStockAlerts",
+      "id": "space-job-settings:setLowStockAlerts"
+    },
+    {
+      "module": "app/actions/space",
+      "name": "updateSpace",
+      "id": "space:updateSpace"
+    },
+    {
+      "module": "app/actions/space",
+      "name": "updateSpaceDetails",
+      "id": "space:updateSpaceDetails"
+    },
+    {
+      "module": "app/actions/space",
+      "name": "setJoinPolicy",
+      "id": "space:setJoinPolicy"
+    },
+    {
+      "module": "app/actions/super-admin-spaces",
+      "name": "reviewSpace",
+      "id": "super-admin-spaces:reviewSpace"
+    },
+    {
+      "module": "app/actions/super-admin-spaces",
+      "name": "setSpaceLimits",
+      "id": "super-admin-spaces:setSpaceLimits"
+    },
+    {
+      "module": "app/actions/super-admin-spaces",
+      "name": "createSpaceForOwner",
+      "id": "super-admin-spaces:createSpaceForOwner"
+    },
+    {
+      "module": "app/actions/super-admin-spaces",
+      "name": "resendOwnerInvite",
+      "id": "super-admin-spaces:resendOwnerInvite"
+    },
+    {
+      "module": "app/actions/super-admin-spaces",
+      "name": "setSpaceVisibility",
+      "id": "super-admin-spaces:setSpaceVisibility"
+    },
+    {
+      "module": "app/actions/team",
+      "name": "updateSpaceRole",
+      "id": "team:updateSpaceRole"
+    },
+    {
+      "module": "app/actions/team",
+      "name": "setTypeAssignmentsAction",
+      "id": "team:setTypeAssignmentsAction"
+    },
+    {
+      "module": "app/actions/team",
+      "name": "removeSpaceMember",
+      "id": "team:removeSpaceMember"
+    },
+    {
+      "module": "app/actions/team",
+      "name": "decideMember",
+      "id": "team:decideMember"
+    },
+    {
+      "module": "app/actions/team",
+      "name": "deleteSpace",
+      "id": "team:deleteSpace"
+    },
+    {
+      "module": "app/actions/technicians",
+      "name": "saveTechnicianAction",
+      "id": "technicians:saveTechnicianAction"
+    },
+    {
+      "module": "app/actions/technicians",
+      "name": "importTechniciansAction",
+      "id": "technicians:importTechniciansAction"
+    },
+    {
+      "module": "app/actions/to-buy",
+      "name": "requestToBuyAction",
+      "id": "to-buy:requestToBuyAction"
+    },
+    {
+      "module": "app/actions/to-buy",
+      "name": "advanceToBuyAction",
+      "id": "to-buy:advanceToBuyAction"
+    },
+    {
+      "module": "app/actions/upkeep",
+      "name": "createScheduleAction",
+      "id": "upkeep:createScheduleAction"
+    },
+    {
+      "module": "app/actions/upkeep",
+      "name": "updateScheduleAction",
+      "id": "upkeep:updateScheduleAction"
+    },
+    {
+      "module": "app/actions/upkeep",
+      "name": "logMaintenanceAction",
+      "id": "upkeep:logMaintenanceAction"
+    },
+    {
+      "module": "app/actions/upkeep",
+      "name": "startDowntimeAction",
+      "id": "upkeep:startDowntimeAction"
+    },
+    {
+      "module": "app/actions/upkeep",
+      "name": "endDowntimeAction",
+      "id": "upkeep:endDowntimeAction"
+    },
+    {
+      "module": "app/actions/upkeep",
+      "name": "updateFaultAction",
+      "id": "upkeep:updateFaultAction"
+    },
+    {
+      "module": "app/actions/upkeep",
+      "name": "saveWarrantyAction",
+      "id": "upkeep:saveWarrantyAction"
+    },
+    {
+      "module": "app/actions/upkeep",
+      "name": "logManualUsageAction",
+      "id": "upkeep:logManualUsageAction"
+    }
+  ]
+}

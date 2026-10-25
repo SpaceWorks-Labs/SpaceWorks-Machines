@@ -1,0 +1,267 @@
+# The bundled production stack. Start it only through the wrapper, which picks the
+# overlays this installation needs and reads its private .env:
+#   scripts/spaceworks-compose.sh bundled up -d
+# Data services speak TLS only, signed by the install's private CA in tls/
+# (deploy/certificates.sh); the data network has no route to the internet.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+x-restart: &default-restart unless-stopped
+x-backend-image: &backend-image "${SWM_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-machines-backend}:${SWM_IMAGE_TAG:-latest}"
+x-database-url: &runtime-database-url "postgresql://swmach_app:${POSTGRES_APP_PASSWORD:?set POSTGRES_APP_PASSWORD}@db:5432/swmach?sslmode=require&sslcert=/tls/ca.crt&sslaccept=strict"
+x-app-env: &app-env
+  NODE_ENV: production
+  AUTH_URL: ${PUBLIC_APP_BASE_URL:?set PUBLIC_APP_BASE_URL}
+  NEXT_PUBLIC_BASE_URL: ${PUBLIC_APP_BASE_URL:?set PUBLIC_APP_BASE_URL}
+  ALLOW_PLAIN_HTTP: ${ALLOW_PLAIN_HTTP:-0}
+  DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-monolith}
+  FRONTEND_GATEWAY_SECRET: ${FRONTEND_GATEWAY_SECRET:-}
+  DATABASE_URL: *runtime-database-url
+  DIRECT_URL: *runtime-database-url
+  REDIS_URL: rediss://default:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379
+  NODE_EXTRA_CA_CERTS: /tls/ca.crt
+  AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET}
+  CRON_SECRET: ${CRON_SECRET:?set CRON_SECRET}
+  HEALTHCHECK_SECRET: ${HEALTHCHECK_SECRET:?set HEALTHCHECK_SECRET}
+  NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:?set NEXT_SERVER_ACTIONS_ENCRYPTION_KEY}
+  MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?set MFA_ENCRYPTION_KEY}
+  PAYMENT_SECRETS_KEY: ${PAYMENT_SECRETS_KEY:?set PAYMENT_SECRETS_KEY}
+  SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:?set SUPER_ADMIN_EMAIL}
+  PWNED_PASSWORDS_CHECK: ${PWNED_PASSWORDS_CHECK:-1}
+  TRUSTED_PROXY_IP_HEADER: x-real-ip
+  NEXT_PUBLIC_HOSTED_BY: ${NEXT_PUBLIC_HOSTED_BY:-}
+  EMAIL_FROM: ${EMAIL_FROM:?set EMAIL_FROM}
+  SMTP_HOST: ${SMTP_HOST:?set SMTP_HOST}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_SECURE: ${SMTP_SECURE:-false}
+  SMTP_USER: ${SMTP_USER:?set SMTP_USER}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:?set SMTP_PASSWORD}
+  OUTBOX_RETENTION_DAYS: ${OUTBOX_RETENTION_DAYS:-30}
+  JOBS_QUEUE_PREFIX: ${JOBS_QUEUE_PREFIX:-swm:jobs}
+  QUEUE_OUTBOX_CONCURRENCY: ${QUEUE_OUTBOX_CONCURRENCY:-5}
+  QUEUE_SCHEDULED_CONCURRENCY: ${QUEUE_SCHEDULED_CONCURRENCY:-2}
+  QUEUE_SYNC_CONCURRENCY: ${QUEUE_SYNC_CONCURRENCY:-2}
+  S3_BUCKET: ${S3_BUCKET:-spaceworks-machines}
+  S3_REGION: ${S3_REGION:-us-east-1}
+  S3_ENDPOINT: ${S3_ENDPOINT:-https://minio:9000}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-swmach-app}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-${S3_APP_PASSWORD:?set S3_APP_PASSWORD}}
+  S3_FORCE_PATH_STYLE: "1"
+  BACKUP_PROVIDER: ${BACKUP_PROVIDER:-local pg_dump (backups/)}
+  BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+x-tls-ca: &tls-ca "${SWM_TLS_DIR:-./tls}/ca.crt:/tls/ca.crt:ro"
+services:
+  db:
+    image: postgres:16-alpine
+    restart: *default-restart
+    logging: *default-logging
+    entrypoint: ["/bin/sh", "/bootstrap/postgres-start.sh"]
+    environment:
+      POSTGRES_USER: swmach
+      POSTGRES_DB: swmach
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_APP_PASSWORD: ${POSTGRES_APP_PASSWORD:?set POSTGRES_APP_PASSWORD}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    volumes:
+      - swmach_pgdata:/var/lib/postgresql/data
+      - ${SWM_TLS_DIR:-./tls}/db:/run/server-tls:ro
+      - ./deploy/postgres-start.sh:/bootstrap/postgres-start.sh:ro
+      - ./deploy/init-database.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
+      - ./deploy/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    healthcheck: {test: ["CMD", "pg_isready", "-h", "db", "-U", "swmach", "-d", "swmach"], interval: 5s, timeout: 5s, retries: 20}
+    networks: [data]
+  redis:
+    image: redis:7-alpine
+    restart: *default-restart
+    logging: *default-logging
+    entrypoint: ["/bin/sh", "/bootstrap/redis-start.sh"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+      - ${SWM_TLS_DIR:-./tls}/redis:/run/server-tls:ro
+      - *tls-ca
+      - ./deploy/redis-start.sh:/bootstrap/redis-start.sh:ro
+    # Proves TLS is up; authentication is checked by the app's own connection.
+    healthcheck: {test: ["CMD-SHELL", "redis-cli --tls --cacert /tls/ca.crt -h redis ping 2>&1 | grep -q NOAUTH"], interval: 5s, timeout: 5s, retries: 20}
+    networks: [data]
+  # Bundled Silo (the maintained MinIO fork); docker/compose.external-storage.yml turns it off.
+  minio:
+    image: pgsty/silo:${SILO_IMAGE_TAG:-RELEASE.2026-09-16T00-00-00Z}
+    restart: *default-restart
+    logging: *default-logging
+    command: ["server", "/data", "--certs-dir", "/server-tls", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+      - ${SWM_TLS_DIR:-./tls}/minio:/server-tls:ro
+      - *tls-ca
+    healthcheck: {test: ["CMD", "curl", "--fail", "--silent", "--cacert", "/tls/ca.crt", "https://minio:9000/minio/health/live"], interval: 5s, timeout: 5s, retries: 20}
+    networks: [data]
+  createbuckets:
+    image: pgsty/silo:${SILO_IMAGE_TAG:-RELEASE.2026-09-16T00-00-00Z}
+    restart: "no"
+    entrypoint: ["/bin/sh", "/bootstrap/createbuckets.sh"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+      S3_APP_PASSWORD: ${S3_APP_PASSWORD:?set S3_APP_PASSWORD}
+      SSL_CERT_FILE: /tls/ca.crt
+    volumes:
+      - ./deploy/createbuckets.sh:/bootstrap/createbuckets.sh:ro
+      - ./deploy/storage-policy.json:/bootstrap/storage-policy.json:ro
+      - *tls-ca
+    depends_on: {minio: {condition: service_healthy}}
+    networks: [data]
+  # The backend image's migrate role: applies pending Prisma migrations as the
+  # schema owner, then exits.
+  migrate:
+    image: *backend-image
+    command: ["--role", "migrate"]
+    restart: "no"
+    logging: *default-logging
+    environment:
+      DATABASE_URL: &owner-database-url "postgresql://swmach:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@db:5432/swmach?sslmode=require&sslcert=/tls/ca.crt&sslaccept=strict"
+      DIRECT_URL: *owner-database-url
+    volumes: [*tls-ca]
+    depends_on: {db: {condition: service_healthy}}
+    networks: [data]
+  backend:
+    image: *backend-image
+    command: ["--role", "backend", "node", "server.js"]
+    restart: *default-restart
+    logging: *default-logging
+    environment: *app-env
+    volumes: [*tls-ca]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      createbuckets: {condition: service_completed_successfully}
+      migrate: {condition: service_completed_successfully}
+    networks: [edge, data]
+  # BullMQ worker. Runs every queued job: outbox delivery, retention and the registry in lib/queue/registry.ts.
+  worker:
+    image: *backend-image
+    command: ["--role", "worker", "node", "dist/worker.js"]
+    restart: *default-restart
+    logging: *default-logging
+    stop_grace_period: 2m
+    environment:
+      <<: *app-env
+      JOBS_HEALTH_PORT: "3460"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3460/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    volumes: [*tls-ca]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    networks: [edge, data]
+
+  # BullMQ beat. Keeps the repeatable job schedules in Redis (one minute for the outbox, hourly retention, ...).
+  beat:
+    image: *backend-image
+    command: ["--role", "beat", "node", "dist/beat.js"]
+    restart: *default-restart
+    logging: *default-logging
+    stop_grace_period: 2m
+    environment:
+      <<: *app-env
+      JOBS_HEALTH_PORT: "3460"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3460/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    volumes: [*tls-ca]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    networks: [edge, data]
+  caddy:
+    image: caddy:2-alpine
+    restart: *default-restart
+    logging: *default-logging
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS}
+      CADDY_GLOBAL_OPTIONS: ${CADDY_GLOBAL_OPTIONS:-}
+    ports:
+      - "${HTTP_PORT_BIND:-0.0.0.0}:${HTTP_PORT:-80}:80"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: {backend: {condition: service_healthy}}
+    networks: [edge]
+  # Scheduled backups into backups/ (deploy/backup.sh): a database dump every
+  # BACKUP_INTERVAL_HOURS, kept BACKUP_RETENTION_DAYS, and a mirror of the bucket.
+  backup:
+    image: postgres:16-alpine
+    restart: *default-restart
+    logging: *default-logging
+    entrypoint: ["/bin/sh", "/bootstrap/backup.sh"]
+    command: ["schedule"]
+    environment:
+      PGHOST: db
+      PGUSER: swmach
+      PGDATABASE: swmach
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      PGSSLMODE: verify-full
+      PGSSLROOTCERT: /tls/ca.crt
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ${SWM_BACKUP_DIR:-./backups}:/backups
+      - ./deploy/backup.sh:/bootstrap/backup.sh:ro
+      - *tls-ca
+    depends_on: {db: {condition: service_healthy}}
+    networks: [data]
+  backup-storage:
+    image: pgsty/silo:${SILO_IMAGE_TAG:-RELEASE.2026-09-16T00-00-00Z}
+    restart: *default-restart
+    logging: *default-logging
+    entrypoint: ["/bin/sh", "/bootstrap/backup.sh"]
+    command: ["schedule-storage"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+      SSL_CERT_FILE: /tls/ca.crt
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+    volumes:
+      - ${SWM_BACKUP_DIR:-./backups}:/backups
+      - ./deploy/backup.sh:/bootstrap/backup.sh:ro
+      - *tls-ca
+    depends_on: {createbuckets: {condition: service_completed_successfully}}
+    networks: [data]
+  # Operator checks, run on demand: scripts/spaceworks-compose.sh bundled run --rm ops
+  ops:
+    image: *backend-image
+    profiles: [tools]
+    command: ["--role", "ops", "node", "docker/ops/check.mjs"]
+    environment:
+      <<: *app-env
+      SWM_TOPOLOGY: bundled
+    volumes: [*tls-ca]
+    networks: [edge, data]
+
+networks:
+  edge:
+  data:
+    internal: true
+
+volumes:
+  swmach_pgdata:
+  redis_data:
+  minio_data:
+  caddy_data:
+  caddy_config:

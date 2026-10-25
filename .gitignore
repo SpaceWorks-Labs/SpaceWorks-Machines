@@ -1,5 +1,121 @@
-node_modules/
-.next/
-.env
-.env.*
-!.env*.example
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# editors / IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS / file manager
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+/playwright-report/
+/test-results/
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+# worker and beat bundles (scripts/build-jobs.mjs)
+/dist/
+/backups/
+
+# misc
+*.pem
+*.log
+*.pid
+*.pid.lock
+*.seed
+*.tgz
+logs/
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# local caches
+.eslintcache
+.stylelintcache
+.cache/
+.parcel-cache/
+.turbo/
+.swc/
+
+# temp
+tmp/
+temp/
+*.tmp
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+!.env.staging.example
+!.env.production.example
+
+# Cloudflare Worker (deploy/cloudflare-cron) local state
+deploy/cloudflare-cron/node_modules/
+.wrangler/
+.dev.vars
+
+# direnv
+.direnv/
+.envrc
+
+# AI assistants / agents (local state only; the repo's .claude/ tooling is tracked on purpose)
+.claude/settings.local.json
+.claude/worktrees/
+.cursor/
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# prisma (local/dev artifacts)
+prisma/*.db
+prisma/*.db-journal
+prisma/.env
+
+# page screenshots (local only)
+/screenshots/
+
+# Local design-hook state (Impeccable).
+.impeccable/*
+# Design briefs are durable decisions; screenshots, decision pages and caches are not.
+!.impeccable/surfaces/
+
+# Generated rendering workspace (templates/configuration remain committed).
+/frontend/app/
+/frontend/components/
+/frontend/lib/
+/frontend/public/
+/frontend/.next/
+/frontend/postcss.config.mjs
+/frontend/node_modules/
+/frontend/next-env.d.ts
+
+
+# Self-hosted install state (scripts/spaceworks-compose.sh, setup.sh, update.sh)
+/tls/
+/.spaceworks-*
+/docker-compose.override.yml

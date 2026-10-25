@@ -1,0 +1,73 @@
+/*
+ * Report chart roles (dataviz method; palette validated with the dataviz validator against the chart
+ * surfaces: panel #ffffff light, #1f433f dark). Six categorical slots in a fixed order, led by Maker Teal.
+ * Light: all checks pass; slots 4 and 6 sit under 3:1, so every chart ships a table view and direct labels.
+ * Dark: all checks pass; slot 6 sits under 3:1, same relief. Never add a seventh slot: fold into "Other".
+ * Text never wears a series colour; marks do.
+ */
+:root {
+  --chart-1: #00897b;
+  --chart-2: #eb6834;
+  --chart-3: #2a78d6;
+  --chart-4: #eda100;
+  --chart-5: #6250d6;
+  --chart-6: #e87ba4;
+  /* De-emphasis ("Other", context series, sparkline history). */
+  --chart-muted: #9b9a92;
+  /* Ordinal ramp (ageing buckets, tenure bands, cohort heat): one hue, light to dark, light end ≥ 2:1. */
+  --chart-ord-1: #86b6ef;
+  --chart-ord-2: #5598e7;
+  --chart-ord-3: #2a78d6;
+  --chart-ord-4: #1c5cab;
+  --chart-ord-5: #0d366b;
+  /* Text set inside an ordinal cell, picked by the fill's luminance. */
+  --chart-ord-on-1: #142c2a;
+  --chart-ord-on-2: #142c2a;
+  --chart-ord-on-3: #ffffff;
+  --chart-ord-on-4: #ffffff;
+  --chart-ord-on-5: #ffffff;
+  --chart-grid: rgb(var(--sw-ui-line) / 0.7);
+  --chart-axis: rgb(var(--sw-ui-line-strong));
+  --chart-surface: rgb(var(--sw-ui-panel));
+}
+
+:root.dark {
+  --chart-1: #1fa08e;
+  --chart-2: #e8683a;
+  --chart-3: #4a8ee0;
+  --chart-4: #c98500;
+  --chart-5: #8579e6;
+  --chart-6: #d55181;
+  --chart-muted: #7f8f8a;
+  /* Dark flips the anchor: more is lighter. Validated --ordinal against #1f433f. */
+  --chart-ord-1: #256abf;
+  --chart-ord-2: #3987e5;
+  --chart-ord-3: #6da7ec;
+  --chart-ord-4: #9ec5f4;
+  --chart-ord-5: #cde2fb;
+  --chart-ord-on-1: #ffffff;
+  --chart-ord-on-2: #142c2a;
+  --chart-ord-on-3: #142c2a;
+  --chart-ord-on-4: #142c2a;
+  --chart-ord-on-5: #142c2a;
+  --chart-grid: rgb(var(--sw-ui-line) / 0.55);
+}
+
+/* Charts for forced colours and print: identity falls back to line style and labels. */
+@media (forced-colors: active) {
+  .sw-chart [data-series] { forced-color-adjust: none; }
+}
+
+/* The overview's PDF snapshot is the browser's print of /reports/print. */
+@media print {
+  @page { size: A4; margin: 14mm; }
+  html, body { background: #fff !important; }
+  .sw-print-hide { display: none !important; }
+  .sw-print-page { break-inside: avoid; }
+  .sw-chart { break-inside: avoid; }
+  /* On the snapshot page only the snapshot prints: no sidebar, header or toasts. */
+  body:has(.sw-print-root) * { visibility: hidden; }
+  body:has(.sw-print-root) .sw-print-root,
+  body:has(.sw-print-root) .sw-print-root * { visibility: visible; }
+  body:has(.sw-print-root) .sw-print-root { position: absolute; inset: 0 auto auto 0; width: 100%; }
+}

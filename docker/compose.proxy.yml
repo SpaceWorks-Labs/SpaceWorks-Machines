@@ -1,0 +1,10 @@
+# An existing reverse proxy on this server (HTTPS answer 3) terminates HTTPS
+# instead of Caddy. It must forward the public domain to 127.0.0.1:8080,
+# preserve Host, overwrite X-Real-IP with the client address, send
+# X-Forwarded-Proto: https, not buffer responses and block /api/internal/.
+services:
+  caddy:
+    profiles: [proxy-disabled]
+  backend:
+    ports:
+      - "${API_BIND:-127.0.0.1}:${API_PORT:-8080}:3000"

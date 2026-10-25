@@ -1,0 +1,37 @@
+# Keep local secrets, generated output, and developer-only files out of Docker
+# build contexts. Runtime secrets must be injected by the deployment platform.
+.env
+.env.*
+!.env.example
+.git
+.github
+.next
+node_modules
+backups/
+coverage
+playwright-report
+test-results
+*.log
+# Local Claude Code state, including agent worktrees (full repo copies).
+.claude
+.impeccable
+*.tsbuildinfo
+.DS_Store
+# Deployment tooling that is never part of the application image.
+deploy/
+charts/
+render.yaml
+.wrangler
+# Render copies secret files into the build context root. Read them only
+# through BuildKit secret mounts; never bake them into an image layer.
+NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+
+
+# Generated separate frontend and its instance-specific build output.
+frontend/app
+frontend/components
+frontend/lib
+frontend/public
+frontend/.next
+frontend/node_modules
+dist

@@ -1,0 +1,110 @@
+# Render Blueprint for the always-on cloud path (mirrors SpaceWorks' render.yaml).
+# Managed services stay outside Render: PostgreSQL with TLS (Supabase or any
+# provider; transaction pooler for DATABASE_URL, direct/session URL for
+# DIRECT_URL), Redis over TLS (rediss://, for example Upstash), an S3/R2 bucket
+# and an SMTP relay. Render's own Key Value speaks plain redis:// on its private
+# network, which the production checks refuse, so it is not used here.
+#
+# Render builds the Dockerfile's last stage (runner) and passes every service
+# variable as a build argument, so NEXT_PUBLIC_BASE_URL and the stable
+# NEXT_SERVER_ACTIONS_ENCRYPTION_KEY are compiled in. MIGRATE_ON_START=1 applies
+# migrations with DIRECT_URL before the web server starts. VPS deployment via
+# docker-compose.prod.yml (the curl installer) is the alternative.
+envVarGroups:
+  - name: swmach-prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: AUTH_URL
+        sync: false
+      - key: NEXT_PUBLIC_BASE_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: CRON_SECRET
+        generateValue: true
+      - key: HEALTHCHECK_SECRET
+        generateValue: true
+      # Base64 of exactly 32 bytes each (openssl rand -base64 32); Render's generated
+      # values are not base64 keys, so paste your own and keep an offline copy.
+      - key: NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+        sync: false
+      - key: MFA_ENCRYPTION_KEY
+        sync: false
+      - key: PAYMENT_SECRETS_KEY
+        sync: false
+      - key: SUPER_ADMIN_EMAIL
+        sync: false
+      # Render terminates TLS at its edge and appends the client to X-Forwarded-For.
+      - key: TRUSTED_PROXY_IP_HEADER
+        value: x-forwarded-for
+      - key: TRUSTED_PROXY_HOPS
+        value: "1"
+      - key: EMAIL_FROM
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: S3_REGION
+        value: auto
+      - key: S3_ENDPOINT
+        sync: false
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_FORCE_PATH_STYLE
+        value: "1"
+      - key: JOBS_QUEUE_PREFIX
+        value: "swm:jobs"
+
+services:
+  - type: web
+    name: swmach-backend
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - fromGroup: swmach-prod
+      - key: MIGRATE_ON_START
+        value: "1"
+
+  # BullMQ worker (as SpaceWorks Workspace does it): outbox delivery and every job in lib/queue/registry.ts.
+  # Render background workers need a paid plan; see docs/DEPLOYMENT_CLOUD.md for the cron fallback.
+  - type: worker
+    name: swmach-worker
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: --role worker node dist/worker.js
+    envVars:
+      - fromGroup: swmach-prod
+
+  # BullMQ beat: keeps the repeatable schedules (outbox every minute, retention hourly, ...) in Redis.
+  - type: worker
+    name: swmach-beat
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: --role beat node dist/beat.js
+    envVars:
+      - fromGroup: swmach-prod

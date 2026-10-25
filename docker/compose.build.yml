@@ -1,0 +1,27 @@
+# Build-from-source overlay (bash setup.sh --build, or SWM_COMPOSE_BUILD_LAYER=1):
+# builds the backend image from this checkout instead of pulling the
+# published ones. The public origin is a placeholder the entrypoint replaces at
+# start, and the Server Actions key used for the build is a throwaway that
+# scripts/spaceworks-compose.sh generates per run; containers get the
+# installation's own key at runtime.
+x-build-app: &build-app
+  context: .
+  target: runner
+  args:
+    NEXT_PUBLIC_BASE_URL: https://spaceworks-machines-origin.invalid
+  secrets: [NEXT_SERVER_ACTIONS_ENCRYPTION_KEY]
+services:
+  backend:
+    build: *build-app
+  worker:
+    build: *build-app
+  beat:
+    build: *build-app
+  ops:
+    build: *build-app
+  migrate:
+    build: *build-app
+
+secrets:
+  NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:
+    environment: SWM_BUILD_KEY

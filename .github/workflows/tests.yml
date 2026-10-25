@@ -1,0 +1,153 @@
+name: Tests
+
+# The suite every pull request must pass, and that the Continuous Release
+# workflow runs (workflow_call) before it publishes images for main or dev.
+on:
+  pull_request:
+    branches: [dev, main]
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  docs-drift:
+    name: CLAUDE.md and AGENTS.md are one document
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: diff CLAUDE.md AGENTS.md
+
+  quality:
+    name: Lint, typecheck, unit tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Prisma resolves datasource URLs while validating and generating, even
+      # though these steps never connect to a database.
+      DATABASE_URL: postgresql://build:build@localhost:5432/swmach
+      DIRECT_URL: postgresql://build:build@localhost:5432/swmach
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npx prisma validate
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run frontend:catalog -- --check
+      - run: npm run build
+      - run: npm run build:jobs
+
+  database:
+    name: Integration and end-to-end tests (PostgreSQL, Redis, browser)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: swmach
+          POSTGRES_PASSWORD: swmach
+          POSTGRES_DB: swmach_test
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U swmach" --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      # Disposable CI databases only; nothing here is a real secret.
+      TEST_DATABASE_URL: postgresql://swmach:swmach@localhost:5432/swmach_test
+      DATABASE_URL: postgresql://swmach:swmach@localhost:5432/swmach_e2e
+      DIRECT_URL: postgresql://swmach:swmach@localhost:5432/swmach_e2e
+      REDIS_URL: redis://localhost:6379
+      AUTH_TRUST_HOST: "true"
+      AUTH_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_BASE_URL: http://127.0.0.1:3000
+      SUPER_ADMIN_EMAIL: admin@demo.test
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Generate throwaway keys for this run
+        run: |
+          {
+            echo "AUTH_SECRET=$(openssl rand -base64 32)"
+            echo "CRON_SECRET=$(openssl rand -base64 32)"
+            echo "MFA_ENCRYPTION_KEY=$(openssl rand -base64 32)"
+            echo "PAYMENT_SECRETS_KEY=$(openssl rand -base64 32)"
+            echo "DEMO_PASSWORD=$(openssl rand -hex 16)"
+            mfa_secret=$(node -e 'console.log(new (require("otpauth").Secret)({ size: 20 }).base32)')
+            echo "DEMO_MFA_SECRET=$mfa_secret"
+          } >> "$GITHUB_ENV"
+      - name: Migrate the integration database
+        run: DATABASE_URL="$TEST_DATABASE_URL" DIRECT_URL="$TEST_DATABASE_URL" npx prisma migrate deploy
+      - run: npm run test:integration
+      - name: Create, migrate and seed the end-to-end database
+        run: |
+          PGPASSWORD=swmach psql -h localhost -U swmach -d swmach_test -c "CREATE DATABASE swmach_e2e"
+          npx prisma migrate deploy
+          npm run db:seed-demo
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
+
+  shell:
+    name: Shell scripts (shellcheck) and Compose files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          docker run --rm -v "$PWD:/mnt" -w /mnt koalaman/shellcheck:v0.10.0 -S warning -x \
+            install.sh setup.sh scripts/*.sh deploy/*.sh
+      - name: Compose files resolve in every layer
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          cp .env.production.example "$work/cloud.env"
+          for layer in none tls proxy; do
+            for storage in bundled external; do
+              printf "%s\n" "SWM_LAYER='$layer'" "SWM_STORAGE='$storage'" "TLS_EMAIL='ops@example.test'" > "$work/.env"
+              grep -v '^SWM_' .env.production.example >> "$work/.env"
+              SWM_STATIC_ENV_FILE="$work/.env" scripts/spaceworks-compose.sh bundled config --quiet
+              SWM_STATIC_ENV_FILE="$work/.env" SWM_COMPOSE_BUILD_LAYER=1 scripts/spaceworks-compose.sh bundled config --quiet
+            done
+          done
+          SWM_STATIC_ENV_FILE="$work/cloud.env" scripts/spaceworks-compose.sh cloud config --quiet
+
+  images:
+    name: Images build and the bundled stack runs (compose smoke)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build the frontend image
+        run: |
+          key=$(openssl rand -base64 32)
+          echo "::add-mask::$key"
+          SWM_BUILD_KEY="$key" docker buildx build --load --target frontend \
+            --secret id=NEXT_SERVER_ACTIONS_ENCRYPTION_KEY,env=SWM_BUILD_KEY \
+            --build-arg NEXT_PUBLIC_BASE_URL=https://spaceworks-machines-origin.invalid \
+            --build-arg NEXT_PUBLIC_BACKEND_ORIGIN=https://spaceworks-machines-backend.invalid \
+            --tag swmach-frontend:ci .
+      - name: Build the backend image and run the compose smoke test
+        run: SWM_COMPOSE_BUILD_LAYER=1 SWM_IMAGE_TAG=ci bash scripts/compose-smoke.sh

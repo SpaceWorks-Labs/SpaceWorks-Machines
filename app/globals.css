@@ -1,0 +1,263 @@
+@import "tailwindcss";
+@import "./styles/tokens.css";
+@import "./styles/semantic.css";
+@import "./styles/motion.css";
+@import "./styles/charts.css";
+@import "./styles/patch.css";
+@import "./styles/eggs.css";
+
+/* Dark utilities follow the class on <html> (set on the server from the swm.theme cookie). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Type: only the free Gilroy release (Radomir Tinkov Free Font EULA, see
+ * public/brand/fonts/LICENSES). Light carries all reading and interface text; ExtraBold carries
+ * headings and emphasis. Each face answers a weight range so nothing is ever synthesised:
+ * 100–549 resolve to Light, 550–900 to ExtraBold. Unbounded is for one accent phrase per layout.
+ */
+@font-face {
+  font-family: "Gilroy";
+  src: url("/brand/fonts/Gilroy-Light.woff2") format("woff2");
+  font-weight: 100 549;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gilroy";
+  src: url("/brand/fonts/Gilroy-ExtraBold.woff2") format("woff2");
+  font-weight: 550 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Unbounded";
+  src: url("/brand/fonts/Unbounded-Variable.woff2") format("woff2");
+  font-weight: 500 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+ * Tailwind theme mapped onto the semantic layer. `initial` removes Tailwind's default palette so no
+ * off-brand colour can reach a screen; `inline` keeps utilities pointing at the live variables, so
+ * light, dark and space accents switch without regenerating classes.
+ */
+@theme inline {
+  --color-*: initial;
+
+  --color-canvas: rgb(var(--sw-ui-canvas));
+  --color-panel: rgb(var(--sw-ui-panel));
+  --color-surface: rgb(var(--sw-ui-surface));
+  --color-subtle: rgb(var(--sw-ui-surface));
+  --color-muted: rgb(var(--sw-ui-muted));
+  --color-emphasis: rgb(var(--sw-ui-emphasis));
+  --color-track: rgb(var(--sw-ui-emphasis));
+  --color-line: rgb(var(--sw-ui-line));
+  --color-line-strong: rgb(var(--sw-ui-line-strong));
+  --color-ink: rgb(var(--sw-ui-ink));
+  --color-ink-secondary: rgb(var(--sw-ui-ink-secondary));
+  --color-ink-muted: rgb(var(--sw-ui-ink-muted));
+  --color-ink-disabled: rgb(var(--sw-ui-ink-disabled));
+
+  --color-primary: rgb(var(--sw-ui-primary));
+  --color-primary-hover: rgb(var(--sw-ui-primary-hover));
+  --color-primary-active: rgb(var(--sw-ui-primary-active));
+  --color-on-primary: rgb(var(--sw-ui-on-primary));
+  --color-inverse: rgb(var(--sw-ui-inverse));
+  --color-on-inverse: rgb(var(--sw-ui-on-inverse));
+
+  /* Space accent: Maker Teal unless a public page sets its own (see .sw-accent-scope). */
+  --color-accent: var(--sw-accent);
+  --color-accent-soft: var(--sw-accent-soft);
+  --color-on-accent: var(--sw-on-accent);
+  --color-accent-text: var(--sw-accent-text);
+
+  /* Workshop Orange emphasis: a fill with an ink label, never text. */
+  --color-highlight: rgb(var(--sw-ui-highlight));
+  --color-highlight-hover: rgb(var(--sw-ui-highlight-hover));
+  --color-on-highlight: rgb(var(--sw-ui-on-highlight));
+  --color-highlight-soft: rgb(var(--sw-ui-highlight-soft));
+
+  --color-sidebar: rgb(var(--sw-ui-sidebar));
+  --color-sidebar-hover: rgb(var(--sw-ui-sidebar-hover));
+  --color-sidebar-active: rgb(var(--sw-ui-sidebar-active));
+  --color-on-sidebar-active: rgb(var(--sw-ui-on-sidebar-active));
+
+  --color-success-bg: rgb(var(--sw-ui-success-bg));
+  --color-success-fg: rgb(var(--sw-ui-success-fg));
+  --color-success-solid: rgb(var(--sw-ui-success-solid));
+  --color-on-success: rgb(var(--sw-ui-on-success));
+  --color-warning-bg: rgb(var(--sw-ui-warning-bg));
+  --color-warning-fg: rgb(var(--sw-ui-warning-fg));
+  --color-warning-solid: rgb(var(--sw-ui-warning-solid));
+  --color-on-warning: rgb(var(--sw-ui-on-warning));
+  --color-info-bg: rgb(var(--sw-ui-info-bg));
+  --color-info-fg: rgb(var(--sw-ui-info-fg));
+  --color-info-solid: rgb(var(--sw-ui-info-solid));
+  --color-on-info: rgb(var(--sw-ui-on-info));
+  --color-danger-bg: rgb(var(--sw-ui-danger-bg));
+  --color-danger-fg: rgb(var(--sw-ui-danger-fg));
+  --color-danger-solid: rgb(var(--sw-ui-danger-solid));
+  --color-danger-hover: rgb(var(--sw-ui-danger-hover));
+  --color-on-danger: rgb(var(--sw-ui-on-danger));
+  --color-danger-border: rgb(var(--sw-ui-danger-border));
+
+  /* Raw brand colours, for decoration only. */
+  --color-sw-ink: var(--sw-ink);
+  --color-sw-teal: var(--sw-teal);
+  --color-sw-orange: var(--sw-orange);
+  --color-sw-citron: var(--sw-citron);
+  --color-sw-sky: var(--sw-sky);
+  --color-sw-yellow: var(--sw-yellow);
+  --color-sw-cream: var(--sw-cream);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  /* Functional only: colour-picker handles and image scrims. */
+  --color-white: #fff;
+  --color-black: #000;
+
+  --font-display: "Gilroy", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Gilroy", ui-sans-serif, system-ui, sans-serif;
+  --font-accent: "Unbounded", "Gilroy", ui-sans-serif, sans-serif;
+  /* Code, secrets and JSON only. IDs use Gilroy with tabular-nums. */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Controls are pills (owner decision J1); cards and windows 16px; tags fully round. */
+  --radius-control: 9999px;
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+
+  /* Cards and panels are flat; only overlays (menus, dialogs, toasts) float. */
+  --shadow-raised: none;
+  --shadow-float: var(--sw-ui-shadow-float);
+  --shadow-segment: 0 0 0 1px rgb(var(--sw-ui-line-strong));
+
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+
+  --ease-sw: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/*
+ * Public pages set a space accent inline with accentStyle() (lib/theme/accent.ts), which writes
+ * contrast-checked --sw-accent-*-light / -dark values; this scope picks the pair for the current mode.
+ */
+.sw-accent-scope {
+  --sw-accent: var(--sw-accent-light);
+  --sw-accent-soft: var(--sw-accent-soft-light);
+  --sw-on-accent: var(--sw-on-accent-light);
+  --sw-accent-text: var(--sw-accent-text-light);
+}
+
+:root.dark .sw-accent-scope {
+  --sw-accent: var(--sw-accent-dark);
+  --sw-accent-soft: var(--sw-accent-soft-dark);
+  --sw-on-accent: var(--sw-on-accent-dark);
+  --sw-accent-text: var(--sw-accent-text-dark);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background: rgb(var(--sw-ui-canvas));
+    color: rgb(var(--sw-ui-ink));
+    font-family: var(--font-sans);
+    font-weight: 300;
+    font-size: 16px;
+    line-height: 1.5;
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: rgb(var(--sw-ui-ink));
+  }
+
+  code, kbd, samp, pre {
+    font-family: var(--font-mono);
+  }
+
+  ::selection {
+    background: rgb(var(--sw-color-success));
+    color: rgb(var(--sw-color-on-success));
+  }
+
+  /* Visible focus everywhere: teal in light, citron in dark (contrast ≥ 3:1). */
+  :focus-visible {
+    outline: 2px solid rgb(var(--sw-ui-focus));
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Type scale (ui-brand-spec §D). Mobile first, desktop from 640px. Headings are ExtraBold. */
+  .text-display-xl { font-family: var(--font-display); font-weight: 800; font-size: 44px; line-height: 1.08; letter-spacing: -0.02em; }
+  .text-display-l { font-family: var(--font-display); font-weight: 800; font-size: 40px; line-height: 1.08; letter-spacing: -0.02em; }
+  .text-display-m { font-family: var(--font-display); font-weight: 800; font-size: 34px; line-height: 1.12; letter-spacing: -0.015em; }
+  .text-h1 { font-family: var(--font-display); font-weight: 800; font-size: 26px; line-height: 1.22; letter-spacing: -0.01em; }
+  .text-h2 { font-family: var(--font-display); font-weight: 800; font-size: 22px; line-height: 1.25; letter-spacing: -0.01em; }
+  .text-h3 { font-family: var(--font-display); font-weight: 800; font-size: 20px; line-height: 1.3; letter-spacing: -0.005em; }
+  .text-h4 { font-family: var(--font-display); font-weight: 800; font-size: 18px; line-height: 1.33; letter-spacing: -0.005em; }
+  .text-title { font-family: var(--font-sans); font-weight: 800; font-size: 16px; line-height: 1.5; }
+  .text-body-l { font-size: 17px; line-height: 1.55; }
+  .text-body { font-size: 16px; line-height: 1.5; }
+  .text-body-ui { font-size: 16px; line-height: 1.5; }
+  .text-label { font-size: 14px; line-height: 1.43; }
+  .text-caption { font-size: 14px; line-height: 1.4; letter-spacing: 0.01em; }
+  .text-overline { font-size: 12px; font-weight: 800; line-height: 1.33; letter-spacing: 0.08em; text-transform: uppercase; }
+  .text-mono { font-family: var(--font-mono); font-size: 13px; line-height: 1.5; }
+
+  @media (min-width: 640px) {
+    .text-display-xl { font-size: 72px; line-height: 1.06; }
+    .text-display-l { font-size: 64px; line-height: 1.06; }
+    .text-display-m { font-size: 48px; line-height: 1.08; }
+    .text-h1 { font-size: 32px; line-height: 1.19; }
+    .text-h2 { font-size: 28px; line-height: 1.2; }
+    .text-h3 { font-size: 24px; line-height: 1.25; }
+    .text-h4 { font-size: 20px; line-height: 1.4; }
+    .text-body-l { font-size: 19px; }
+  }
+
+  /* One short expressive phrase per public layout; never in staff chrome. */
+  .font-accent { font-family: var(--font-accent); font-weight: 500; letter-spacing: -0.01em; }
+
+  /* Quiet dotted band at the top of dashboard cards. */
+  .sw-dot-strip {
+    background-color: rgb(var(--sw-ui-muted));
+    background-image: radial-gradient(circle, rgb(var(--sw-ui-line-strong)) 1.5px, transparent 1.6px);
+    background-size: 16px 16px;
+  }
+}
+
+.skip-link {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+  z-index: 2000;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  color: rgb(var(--sw-ui-on-primary));
+  background: rgb(var(--sw-ui-primary));
+  font-weight: 800;
+  text-decoration: none;
+  transform: translateY(-160%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}

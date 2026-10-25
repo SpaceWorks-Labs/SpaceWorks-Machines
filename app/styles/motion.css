@@ -1,0 +1,92 @@
+/* Motion (ui-brand-spec §E): colour 120ms, expand 200ms, overlays 240/160ms; reduced motion respected. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes sw-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sw-dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes sw-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sw-success-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.sw-success-in {
+  animation: sw-success-in 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Colour-mode switch (components/providers.tsx): the new mode is revealed as a soft-edged circle
+   growing from the toggle; the old snapshot stays still. */
+@property --sw-reveal {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+.sw-theme-reveal::view-transition-old(root),
+.sw-theme-reveal::view-transition-new(root),
+.sw-theme-reveal-soft::view-transition-old(root),
+.sw-theme-reveal-soft::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+.sw-theme-reveal::view-transition-new(root),
+.sw-theme-reveal-soft::view-transition-new(root) {
+  z-index: 1;
+}
+
+.sw-theme-reveal-soft::view-transition-new(root) {
+  -webkit-mask-image: radial-gradient(circle at var(--sw-reveal-x) var(--sw-reveal-y), #000 calc(var(--sw-reveal) - 160px), transparent var(--sw-reveal));
+  mask-image: radial-gradient(circle at var(--sw-reveal-x) var(--sw-reveal-y), #000 calc(var(--sw-reveal) - 160px), transparent var(--sw-reveal));
+}
+
+/* During the reveal the new mode is already final: no element transitions (the toggle's icons still turn). */
+.sw-theme-switching *:not(.sw-mode-icon),
+.sw-theme-switching *::before,
+.sw-theme-switching *::after {
+  transition: none !important;
+}
+
+/* Fallback when View Transitions aren't available: a gentle colour cross-fade. */
+.sw-theme-fade,
+.sw-theme-fade *,
+.sw-theme-fade *::before,
+.sw-theme-fade *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
+  transition-duration: 420ms !important;
+  transition-timing-function: cubic-bezier(0.45, 0, 0.2, 1) !important;
+}
+
+.sw-mode-icon {
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms ease-out;
+}
+
+/* BrandLoader (components/brand/BrandLoader.tsx): the three dots hop one after the other;
+   with reduced motion they rest on the baseline. */
+@keyframes sw-dot-jump {
+  0%, 45%, 100% { transform: translateY(0); }
+  20% { transform: translateY(-80%); }
+}
+.sw-dot-loader-jump {
+  animation: sw-dot-jump 1.2s cubic-bezier(0.45, 0, 0.3, 1) infinite;
+}

@@ -1,0 +1,384 @@
+name: Continuous Release
+run-name: Release ${{ github.ref_name }}@${{ github.sha }}
+
+# Every commit that reaches main is a releasable build; dev is staging. VERSION
+# selects the release series shown to users; the run number and commit SHA keep
+# each image retry-safe, for example: 0.1.0-main.42.a1b2c3d4e5f6.
+#   main  publishes both images, a GitHub release, then promotes the images to
+#         latest, main and the series (0.1) and optionally deploys a server.
+#   dev   publishes both images tagged dev and <VERSION>-dev.<run>.<sha>; never
+#         latest, never a release, never a deploy.
+# Images (linux/amd64 and linux/arm64), the same for every installation:
+#   ghcr.io/<owner>/spaceworks-machines-backend   every backend role (app and
+#       API, migrate, worker, beat, ops) through scripts/docker-entrypoint.sh --role
+#   ghcr.io/<owner>/spaceworks-machines-frontend  the website alone, for the split
+# Public origins are placeholders the entrypoint replaces at start, and each
+# installation supplies its own NEXT_SERVER_ACTIONS_ENCRYPTION_KEY at runtime.
+on:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  prepare:
+    needs: tests
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    outputs:
+      base: ${{ steps.release.outputs.base }}
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      series: ${{ steps.release.outputs.series }}
+      short_sha: ${{ steps.release.outputs.short_sha }}
+      channel: ${{ steps.release.outputs.channel }}
+      registry_owner: ${{ steps.release.outputs.registry_owner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build release identifiers
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base="$(tr -d '[:space:]' < VERSION)"
+          if ! [[ "$base" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error file=VERSION::VERSION must be a semantic version like 1.0.0 (got '$base')"
+            exit 1
+          fi
+
+          channel="${GITHUB_REF_NAME}"
+          series="${base%.*}"
+          short_sha="${GITHUB_SHA:0:12}"
+          registry_owner="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          version="${base}-${channel}.${GITHUB_RUN_NUMBER}.${short_sha}"
+
+          {
+            echo "base=$base"
+            echo "version=$version"
+            echo "tag=v$version"
+            echo "series=$series"
+            echo "short_sha=$short_sha"
+            echo "channel=$channel"
+            echo "registry_owner=$registry_owner"
+          } >> "$GITHUB_OUTPUT"
+          echo "Preparing $version"
+
+  # Each platform builds on its own native runner (no emulation, which could stall for the whole
+  # job timeout), pushes by digest, and `publish` joins the two digests into one multi-platform
+  # image under every tag.
+  build:
+    permissions:
+      contents: read
+      packages: write
+    needs: prepare
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [runner, frontend]
+        platform: [linux/amd64, linux/arm64]
+        include:
+          - target: runner
+            image: spaceworks-machines-backend
+          - target: frontend
+            image: spaceworks-machines-frontend
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+            arch: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            arch: arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Next.js needs a Server Actions key to build. This one is random per build
+      # and never used: the image refuses to start without the installation's own key.
+      - name: Generate a throwaway build key
+        run: |
+          key=$(openssl rand -base64 32)
+          echo "::add-mask::$key"
+          echo "BUILD_ACTIONS_KEY=$key" >> "$GITHUB_ENV"
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/${{ needs.prepare.outputs.registry_owner }}/${{ matrix.image }}
+          labels: |
+            org.opencontainers.image.licenses=AGPL-3.0-or-later
+
+      - name: Build ${{ matrix.image }} for ${{ matrix.platform }}
+        id: build
+        uses: docker/build-push-action@v6
+        timeout-minutes: 30
+        env:
+          NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${{ env.BUILD_ACTIONS_KEY }}
+        with:
+          context: .
+          file: ./Dockerfile
+          target: ${{ matrix.target }}
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=ghcr.io/${{ needs.prepare.outputs.registry_owner }}/${{ matrix.image }},push-by-digest=true,name-canonical=true,push=true
+          build-args: |
+            NEXT_PUBLIC_BASE_URL=https://spaceworks-machines-origin.invalid
+            NEXT_PUBLIC_BACKEND_ORIGIN=https://spaceworks-machines-backend.invalid
+          secret-envs: |
+            NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+          cache-from: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}-${{ matrix.arch }}
+          # The throwaway key changes every run; never reuse a cached build stage.
+          no-cache-filters: builder,frontend-builder
+
+      - name: Record the digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.image }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    permissions:
+      contents: read
+      packages: write
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [spaceworks-machines-backend, spaceworks-machines-frontend]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digest-${{ matrix.image }}-*
+          merge-multiple: true
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/${{ needs.prepare.outputs.registry_owner }}/${{ matrix.image }}
+          tags: |
+            type=raw,value=${{ needs.prepare.outputs.version }}
+            type=raw,value=sha-${{ needs.prepare.outputs.short_sha }}
+            type=raw,value=dev,enable=${{ needs.prepare.outputs.channel == 'dev' }}
+
+      - name: Publish ${{ matrix.image }} for amd64 and arm64 under every tag
+        working-directory: ${{ runner.temp }}/digests
+        env:
+          IMAGE: ghcr.io/${{ needs.prepare.outputs.registry_owner }}/${{ matrix.image }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          digests=(*)
+          if [ "${#digests[@]}" -ne 2 ]; then
+            echo "::error::Expected an amd64 and an arm64 digest, found ${#digests[@]}."
+            exit 1
+          fi
+          tags=()
+          while IFS= read -r tag; do tags+=(-t "$tag"); done < <(jq -r '.tags[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          sources=()
+          for digest in "${digests[@]}"; do sources+=("$IMAGE@sha256:$digest"); done
+          docker buildx imagetools create "${tags[@]}" "${sources[@]}"
+          docker buildx imagetools inspect "$IMAGE:$VERSION"
+
+  github-release:
+    permissions:
+      contents: write
+    needs:
+      - prepare
+      - publish
+    if: needs.prepare.outputs.channel == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          # Product name then version, e.g. "Space Works Machines 0.1.0". The immutable
+          # `tag_name` keeps its full `v<base>-main.<run>.<sha>` form: the title is what a
+          # human reads on the releases page, the tag is what a deployment pins to.
+          name: Space Works Machines ${{ needs.prepare.outputs.base }}
+          generate_release_notes: true
+          make_latest: false
+          body: |
+            Continuous release from `main` at `${{ github.sha }}`.
+
+            Install or update a server:
+
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | bash
+            ```
+
+            Docker images (linux/amd64, linux/arm64):
+
+            - `ghcr.io/${{ needs.prepare.outputs.registry_owner }}/spaceworks-machines-backend:${{ needs.prepare.outputs.version }}` (app and API, migrations, worker and beat, operator checks)
+            - `ghcr.io/${{ needs.prepare.outputs.registry_owner }}/spaceworks-machines-frontend:${{ needs.prepare.outputs.version }}` (website only, for the split layout)
+
+  promote-latest:
+    permissions:
+      # write: marks the GitHub Release as latest (softprops/action-gh-release make_latest)
+      contents: write
+      packages: write
+    needs:
+      - prepare
+      - publish
+      - github-release
+    runs-on: ubuntu-latest
+    concurrency:
+      group: main-release-promotion
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check whether this is still the main branch head
+        id: head
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          current_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
+          if [[ "$current_sha" == "$GITHUB_SHA" ]]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "A newer main commit exists; leaving rolling tags unchanged."
+          fi
+
+      - if: steps.head.outputs.current == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - if: steps.head.outputs.current == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promote images to rolling tags
+        if: steps.head.outputs.current == 'true'
+        shell: bash
+        env:
+          OWNER: ${{ needs.prepare.outputs.registry_owner }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          SERIES: ${{ needs.prepare.outputs.series }}
+        run: |
+          set -euo pipefail
+          for package in spaceworks-machines-backend spaceworks-machines-frontend; do
+            image="ghcr.io/${OWNER}/${package}"
+            docker buildx imagetools create \
+              --tag "${image}:${SERIES}" \
+              --tag "${image}:main" \
+              --tag "${image}:latest" \
+              "${image}:${VERSION}"
+          done
+
+      - name: Mark this GitHub Release as latest
+        if: steps.head.outputs.current == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          make_latest: true
+
+      - name: Prune superseded container versions (release history is kept forever)
+        if: steps.head.outputs.current == 'true'
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_TAG: ${{ needs.prepare.outputs.tag }}
+          OWNER: ${{ needs.prepare.outputs.registry_owner }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          SERIES: ${{ needs.prepare.outputs.series }}
+          SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
+        run: |
+          set -euo pipefail
+          # Every published GitHub Release and its tag is kept forever; only container
+          # versions are pruned. The previous release's images stay for the rollback path.
+          if ! release_tags="$(gh release list --limit 1000 --json tagName --jq '.[].tagName')"; then
+            echo "::warning::Could not list releases; cleanup will run again on the next release."
+            exit 0
+          fi
+          previous_release_tag=""
+          while IFS= read -r tag; do
+            [[ -z "$tag" || "$tag" == "$CURRENT_TAG" ]] && continue
+            previous_release_tag="$tag"
+            break
+          done <<< "$release_tags"
+          python3 scripts/ghcr-retention.py \
+            --owner "$OWNER" \
+            --package spaceworks-machines-backend \
+            --package spaceworks-machines-frontend \
+            --version "$VERSION" \
+            --sha-tag "sha-${SHORT_SHA}" \
+            --series "$SERIES" \
+            --previous-version "${previous_release_tag#v}"
+
+      # Gated like every other step here: a superseded run must not fail because a
+      # newer run's retention has already aged this version out.
+      - name: Verify immutable release images are pullable
+        if: steps.head.outputs.current == 'true'
+        shell: bash
+        env:
+          GHCR_OWNER: ${{ needs.prepare.outputs.registry_owner }}
+        run: ./scripts/verify-release-images.sh "${{ needs.prepare.outputs.version }}"
+
+  # SECURITY: GitHub recommends self-hosted runners only for private repositories.
+  # This public repo's runner controls Docker (effectively host root).
+  # Require approval for ALL external contributors' workflow runs. Register it
+  # only to this repo; restrict its runner group to release.yml on refs/heads/main
+  # where available. Never target this runner from a pull_request workflow.
+  # No checkout or third-party actions run here. Keep runner auto-updates enabled.
+  # SWM_DEPLOY is opt-in so repos without a runner never queue this job.
+  deploy:
+    needs: [prepare, publish, github-release, promote-latest]
+    if: github.ref == 'refs/heads/main' && vars.SWM_DEPLOY == 'true'
+    runs-on: [self-hosted, spaceworks-machines-prod]
+    environment: production
+    concurrency: { group: spaceworks-machines-prod-deploy, cancel-in-progress: false }
+    permissions: {}
+    timeout-minutes: 60
+    steps:
+      - name: Deploy the published release
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          bash "${SWM_DIR:-/opt/spaceworks-machines}/scripts/update.sh" --force --version "$VERSION"

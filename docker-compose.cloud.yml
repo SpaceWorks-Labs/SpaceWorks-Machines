@@ -1,0 +1,118 @@
+# The cloud topology: the app, its migrations, the worker and beat on one host, with
+# managed PostgreSQL, Redis, S3/R2 and SMTP. Start it only through the wrapper:
+#   scripts/spaceworks-compose.sh cloud up -d
+# which reads the static settings from /etc/spaceworks-machines/cloud.env
+# (SWM_STATIC_ENV_FILE overrides; start from .env.production.example).
+# HTTPS is terminated in front of APP_PORT by your platform or reverse proxy.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+x-restart: &default-restart unless-stopped
+x-backend-image: &backend-image "${SWM_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-machines-backend}:${SWM_IMAGE_TAG:-latest}"
+x-app-env: &app-env
+  NODE_ENV: production
+  AUTH_URL: ${PUBLIC_APP_BASE_URL:?set PUBLIC_APP_BASE_URL}
+  NEXT_PUBLIC_BASE_URL: ${PUBLIC_APP_BASE_URL:?set PUBLIC_APP_BASE_URL}
+  DEPLOYMENT_MODE: ${DEPLOYMENT_MODE:-monolith}
+  FRONTEND_GATEWAY_SECRET: ${FRONTEND_GATEWAY_SECRET:-}
+  DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+  DIRECT_URL: ${DIRECT_URL:-}
+  REDIS_URL: ${REDIS_URL:?set REDIS_URL}
+  AUTH_SECRET: ${AUTH_SECRET:?set AUTH_SECRET}
+  CRON_SECRET: ${CRON_SECRET:?set CRON_SECRET}
+  HEALTHCHECK_SECRET: ${HEALTHCHECK_SECRET:?set HEALTHCHECK_SECRET}
+  NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:?set NEXT_SERVER_ACTIONS_ENCRYPTION_KEY}
+  MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?set MFA_ENCRYPTION_KEY}
+  PAYMENT_SECRETS_KEY: ${PAYMENT_SECRETS_KEY:?set PAYMENT_SECRETS_KEY}
+  SUPER_ADMIN_EMAIL: ${SUPER_ADMIN_EMAIL:?set SUPER_ADMIN_EMAIL}
+  PWNED_PASSWORDS_CHECK: ${PWNED_PASSWORDS_CHECK:-1}
+  TRUSTED_PROXY_IP_HEADER: ${TRUSTED_PROXY_IP_HEADER:?set TRUSTED_PROXY_IP_HEADER}
+  TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-}
+  NEXT_PUBLIC_HOSTED_BY: ${NEXT_PUBLIC_HOSTED_BY:-}
+  EMAIL_FROM: ${EMAIL_FROM:?set EMAIL_FROM}
+  SMTP_HOST: ${SMTP_HOST:?set SMTP_HOST}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_SECURE: ${SMTP_SECURE:-false}
+  SMTP_USER: ${SMTP_USER:?set SMTP_USER}
+  SMTP_PASSWORD: ${SMTP_PASSWORD:?set SMTP_PASSWORD}
+  OUTBOX_RETENTION_DAYS: ${OUTBOX_RETENTION_DAYS:-30}
+  JOBS_QUEUE_PREFIX: ${JOBS_QUEUE_PREFIX:-swm:jobs}
+  QUEUE_OUTBOX_CONCURRENCY: ${QUEUE_OUTBOX_CONCURRENCY:-5}
+  QUEUE_SCHEDULED_CONCURRENCY: ${QUEUE_SCHEDULED_CONCURRENCY:-2}
+  QUEUE_SYNC_CONCURRENCY: ${QUEUE_SYNC_CONCURRENCY:-2}
+  S3_BUCKET: ${S3_BUCKET:?set S3_BUCKET}
+  S3_REGION: ${S3_REGION:-auto}
+  S3_ENDPOINT: ${S3_ENDPOINT:?set S3_ENDPOINT}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?set S3_ACCESS_KEY_ID}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?set S3_SECRET_ACCESS_KEY}
+  S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-1}
+  BACKUP_PROVIDER: ${BACKUP_PROVIDER:-}
+  BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+services:
+  # The backend image's migrate role, on the direct (non-pooled) connection;
+  # DATABASE_URL may be a transaction pooler.
+  migrate:
+    image: *backend-image
+    command: ["--role", "migrate"]
+    restart: "no"
+    logging: *default-logging
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL}
+      DIRECT_URL: ${DIRECT_URL:-}
+  backend:
+    image: *backend-image
+    command: ["--role", "backend", "node", "server.js"]
+    restart: *default-restart
+    logging: *default-logging
+    environment: *app-env
+    ports:
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-8080}:3000"
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+  # BullMQ worker. Runs every queued job: outbox delivery, retention and the registry in lib/queue/registry.ts.
+  worker:
+    image: *backend-image
+    command: ["--role", "worker", "node", "dist/worker.js"]
+    restart: *default-restart
+    logging: *default-logging
+    stop_grace_period: 2m
+    environment:
+      <<: *app-env
+      JOBS_HEALTH_PORT: "3460"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3460/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+  # BullMQ beat. Keeps the repeatable job schedules in Redis (one minute for the outbox, hourly retention, ...).
+  beat:
+    image: *backend-image
+    command: ["--role", "beat", "node", "dist/beat.js"]
+    restart: *default-restart
+    logging: *default-logging
+    stop_grace_period: 2m
+    environment:
+      <<: *app-env
+      JOBS_HEALTH_PORT: "3460"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3460/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+  # Operator checks, run on demand: scripts/spaceworks-compose.sh cloud run --rm ops
+  ops:
+    image: *backend-image
+    profiles: [tools]
+    command: ["--role", "ops", "node", "docker/ops/check.mjs"]
+    environment:
+      <<: *app-env
+      SWM_TOPOLOGY: cloud

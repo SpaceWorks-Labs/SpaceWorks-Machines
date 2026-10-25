@@ -1,0 +1,81 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  requireAuth: vi.fn(),
+  recent: vi.fn(),
+  rateLimit: vi.fn(),
+  compare: vi.fn(),
+  hash: vi.fn(),
+  userFind: vi.fn(),
+  userUpdate: vi.fn(),
+  sessionDelete: vi.fn(),
+  auditCreate: vi.fn(),
+  transaction: vi.fn(),
+}));
+
+vi.mock("@/lib/permissions", () => ({ requireAuth: mocks.requireAuth }));
+vi.mock("@/lib/reauth", () => ({ hasRecentAuthentication: mocks.recent }));
+vi.mock("@/lib/actionRateLimit", () => ({ isActionRateLimited: mocks.rateLimit }));
+vi.mock("@/lib/audit", () => ({ recordAuditEvent: vi.fn() }));
+vi.mock("bcryptjs", () => ({ default: { compare: mocks.compare, hash: mocks.hash } }));
+vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+
+const tx = {
+  user: { update: mocks.userUpdate, updateMany: mocks.userUpdate },
+  verificationToken: { deleteMany: vi.fn() },
+  session: { deleteMany: mocks.sessionDelete },
+  auditEvent: { create: mocks.auditCreate },
+};
+vi.mock("@/lib/db", () => ({
+  prisma: {
+    user: { findUnique: mocks.userFind, update: mocks.userUpdate },
+    $transaction: mocks.transaction,
+  },
+}));
+
+import { updateAccountPassword } from "@/app/actions/account";
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.requireAuth.mockResolvedValue({ user: { id: "user_1" } });
+  mocks.recent.mockResolvedValue(true);
+  mocks.rateLimit.mockResolvedValue(false);
+  mocks.compare.mockResolvedValue(true);
+  mocks.hash.mockResolvedValue("new-hash");
+  mocks.userUpdate.mockResolvedValue({ count: 1 });
+  mocks.userFind.mockResolvedValue({ email: "person@example.com", passwordHash: "old-hash" });
+  mocks.transaction.mockImplementation(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx));
+});
+
+describe("account password actions", () => {
+  it("changes a password after verifying the current password and revokes sessions", async () => {
+    await expect(updateAccountPassword({ currentPassword: "current-password", newPassword: "new-password", confirmPassword: "new-password" })).resolves.toEqual({ ok: true, data: { passwordSet: true } });
+    expect(mocks.compare).toHaveBeenCalledWith("current-password", "old-hash");
+    expect(mocks.userUpdate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ passwordHash: "new-hash", sessionVersion: { increment: 1 } }) }));
+  });
+
+  it("lets a recently authenticated user without a password add one", async () => {
+    mocks.userFind.mockResolvedValue({ email: "person@example.com", passwordHash: null });
+    await expect(updateAccountPassword({ newPassword: "new-password", confirmPassword: "new-password" })).resolves.toEqual({ ok: true, data: { passwordSet: true } });
+    expect(mocks.compare).not.toHaveBeenCalled();
+    expect(mocks.auditCreate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ action: "ACCOUNT_PASSWORD_ADDED" }) }));
+  });
+
+  it("requires a fresh sign-in before adding a password", async () => {
+    mocks.userFind.mockResolvedValue({ email: "person@example.com", passwordHash: null });
+    mocks.recent.mockResolvedValue(false);
+    await expect(updateAccountPassword({ newPassword: "new-password", confirmPassword: "new-password" })).resolves.toEqual({ ok: false, error: "Sign in again with an emailed link before adding a password." });
+  });
+});
+
+it("does not overwrite credentials changed by a concurrent request", async () => {
+  mocks.userUpdate.mockResolvedValue({ count: 0 });
+  expect((await updateAccountPassword({ currentPassword: "current-password", newPassword: "new-password", confirmPassword: "new-password" })).ok).toBe(false);
+  expect(mocks.auditCreate).not.toHaveBeenCalled();
+});
+
+it("requires a fresh sign-in even when the current password is known", async () => {
+  mocks.recent.mockResolvedValue(false);
+  expect((await updateAccountPassword({ currentPassword: "current-password", newPassword: "new-password", confirmPassword: "new-password" })).ok).toBe(false);
+  expect(mocks.compare).not.toHaveBeenCalled();
+});

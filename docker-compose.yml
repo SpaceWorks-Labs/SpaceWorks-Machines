@@ -1,0 +1,30 @@
+# Local development services only. For a server, use the installer (scripts/spaceworks-compose.sh).
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: swmach
+      POSTGRES_PASSWORD: swmach_dev
+      POSTGRES_DB: swmach_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - swmach_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U swmach -d swmach_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  swmach_pgdata:

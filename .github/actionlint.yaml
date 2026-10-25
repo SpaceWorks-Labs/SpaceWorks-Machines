@@ -1,0 +1,4 @@
+# actionlint: the self-hosted deploy runner's custom label (see docs/DEPLOYMENT_VPS.md).
+self-hosted-runner:
+  labels:
+    - spaceworks-machines-prod
