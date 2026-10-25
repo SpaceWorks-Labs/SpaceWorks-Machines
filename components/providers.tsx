@@ -70,14 +70,19 @@ function transitionColorMode(commit: () => void, origin?: ColorModeOrigin) {
   const feathered = strategy === "reveal-soft";
   root.style.setProperty("--sw-reveal-x", `${x}px`);
   root.style.setProperty("--sw-reveal-y", `${y}px`);
-  // Colour transitions would otherwise run inside the live new view, so the revealed circle looks half-switched.
-  root.classList.add(feathered ? "sw-theme-reveal-soft" : "sw-theme-reveal", "sw-theme-switching");
+  root.classList.add(feathered ? "sw-theme-reveal-soft" : "sw-theme-reveal");
   const cleanUp = () => {
     root.classList.remove("sw-theme-reveal", "sw-theme-reveal-soft", "sw-theme-switching");
     root.style.removeProperty("--sw-reveal-x");
     root.style.removeProperty("--sw-reveal-y");
   };
-  const transition = doc.startViewTransition(commit);
+  const transition = doc.startViewTransition(() => {
+    // Colour transitions would otherwise run inside the live new view, so the revealed circle looks half-switched.
+    // Switched off here, in the update, after the old mode was captured: added before the capture (as it was), the
+    // production build snapshots a blank old view and the circle grows over an empty page.
+    root.classList.add("sw-theme-switching");
+    commit();
+  });
   // Hold the final frame: without fill the mask snaps back to 0 for a frame
   // before the transition tears down, flashing the old mode.
   const timing: KeyframeAnimationOptions = { ...REVEAL_TIMING, pseudoElement: "::view-transition-new(root)" };

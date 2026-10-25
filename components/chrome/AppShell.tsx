@@ -46,6 +46,7 @@ function AccountMenu({ user, onNavigate }: { user: ShellUser; onNavigate?: () =>
   const pathname = usePathname() ?? "";
   const { mode, toggleColorMode } = useAppColorMode();
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const byPointer = useRef(false);
   const name = user.name ?? user.email ?? "Account";
   return (
     <Menu>
@@ -63,7 +64,16 @@ function AccountMenu({ user, onNavigate }: { user: ShellUser; onNavigate?: () =>
         </span>
         <ChevronsUpDown aria-hidden className="size-4 shrink-0 text-ink-muted" />
       </MenuTrigger>
-      <MenuContent side="top" align="start" className="min-w-[232px]">
+      <MenuContent
+        side="top"
+        align="start"
+        className="min-w-[232px]"
+        onPointerDown={() => { byPointer.current = true; }}
+        onKeyDown={() => { byPointer.current = false; }}
+        // Keyboard users get focus back on the trigger; a pointer choice doesn't light up a focus ring in the middle
+        // of the colour switch.
+        onCloseAutoFocus={(event) => { if (byPointer.current) event.preventDefault(); byPointer.current = false; }}
+      >
         <MenuLabel>{name}</MenuLabel>
         <MenuItem asChild icon={<UserRound />}>
           <Link href="/account" onClick={onNavigate}>Account settings</Link>
