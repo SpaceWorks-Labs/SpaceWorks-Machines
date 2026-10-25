@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { Mail } from "lucide-react";
+import { buttonClasses } from "@/components/ui/button";
 import { VerifyEmailForm } from "@/components/account/VerifyEmailForm";
 import { Callout } from "@/components/ui/display";
 import type { Metadata } from "next";
@@ -21,7 +23,11 @@ export default async function VerifyEmailPage({
       {safeToken ? (
         <VerifyEmailForm token={safeToken} />
       ) : (
-        <Callout tone="danger" role="alert" className="w-full text-left">This verification link is invalid or has expired.</Callout>
+        <>
+          <Callout tone="danger" role="alert" className="w-full text-left">This verification link is invalid or has expired.</Callout>
+          <p className="text-body-ui text-ink-secondary">Sign in with your email and password to have a new link sent.</p>
+          <Link href="/login" className={buttonClasses({ variant: "secondary" })}>Back to sign in</Link>
+        </>
       )}
     </div>
   );

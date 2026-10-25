@@ -20,7 +20,7 @@ export function JoinSpaceCard({ slug, name, joinPolicy, takingMakers, viewer }: 
   if (viewer.role && viewer.status === "ACTIVE") {
     return isStaffRole(viewer.role)
       ? <Callout tone="success" title="You help run this space" action={<Link href={`/dashboard/${slug}`} className={buttonClasses({ variant: "secondary", size: "sm" })}>Open the dashboard</Link>}>Your staff role gives you the space dashboard.</Callout>
-      : <Callout tone="success" title={`You're a maker at ${name}`}>Booking machines and submitting jobs arrive in the next release.</Callout>;
+      : <Callout tone="success" title={`You're a maker at ${name}`}>Browse the machines and request a job from any machine&apos;s page.</Callout>;
   }
   if (viewer.status === "PENDING") return <Callout tone="info" title="Request sent">A machine manager will look at it. We&apos;ll email you when they decide.</Callout>;
   if (viewer.status === "BLOCKED") return <Callout tone="warning" title="You can't join this space">Ask the space if you think this is a mistake.</Callout>;
@@ -29,7 +29,7 @@ export function JoinSpaceCard({ slug, name, joinPolicy, takingMakers, viewer }: 
   if (!viewer.signedIn) {
     return (
       <div className="flex flex-wrap items-center gap-3">
-        <Link href={`/login?callbackUrl=${encodeURIComponent(`/s/${slug}`)}`} className={buttonClasses({ variant: "primary" })}>Sign in to join</Link>
+        <Link href={`/login?callbackUrl=${encodeURIComponent(`/s/${slug}`)}`} className={buttonClasses({ variant: "accent" })}>Sign in to join</Link>
         <span className="text-body-ui text-ink-muted">New here? You can create an account on the same page.</span>
       </div>
     );
@@ -41,7 +41,7 @@ export function JoinSpaceCard({ slug, name, joinPolicy, takingMakers, viewer }: 
       {error ? <Callout tone="danger" role="alert">{error}</Callout> : null}
       <div className="flex flex-wrap items-center gap-3">
         <Button
-          variant="primary"
+          variant="accent"
           loading={pending}
           onClick={() => startTransition(async () => {
             setError(null);

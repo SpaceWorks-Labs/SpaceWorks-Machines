@@ -11,6 +11,7 @@ import { Field, Input, Dropdown } from "@/components/ui/field";
 import { Callout } from "@/components/ui/display";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { useMachineMutation } from "@/components/machines/useMachineMutation";
+import { ConfirmationDialog } from "@/components/feedback/ConfirmationDialog";
 
 type Rule = z.infer<typeof pricingRuleSchema>;
 export function PricingRuleDialog({ spaceSlug, currency, types, machines, rule, allowSpaceDefault = true }: {
@@ -19,6 +20,7 @@ export function PricingRuleDialog({ spaceSlug, currency, types, machines, rule, 
   allowSpaceDefault?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const mutation = useMachineMutation();
   const label = rule ? "Edit pricing rule" : "Add pricing rule";
   const inputAmount = (amount: number) => isCurrencyCode(currency) ? toInputValue(amount, currency) : String(amount);
@@ -46,12 +48,14 @@ export function PricingRuleDialog({ spaceSlug, currency, types, machines, rule, 
         <Field label="Billable time increment (minutes)"><Input name="timeIncrementMinutes" type="number" min="1" max="1440" defaultValue={rule?.timeIncrementMinutes ?? 1} required /></Field>
         <Field label="Payment timing"><Dropdown name="paymentTiming" defaultValue={rule?.paymentTiming ?? ""}><option value="">Space default</option>{["UPFRONT", "ON_COMPLETION", "PAY_LATER"].map((v) => <option key={v} value={v}>{words(v)}</option>)}</Dropdown></Field>
         <Field label="Deposit"><Dropdown name="depositMode" defaultValue={rule?.depositMode ?? "NONE"}>{["NONE", "FIXED", "PERCENT"].map((v) => <option key={v} value={v}>{words(v)}</option>)}</Dropdown></Field>
-        <Field label={`Fixed deposit (${currency})`}><Input name="depositValue" inputMode="decimal" defaultValue={inputAmount(rule?.depositMode === "FIXED" ? rule.depositValue : 0)} /></Field>
-        <Field label="Percentage deposit"><Input name="depositPercent" type="number" min="0" max="100" step="0.01" defaultValue={rule?.depositMode === "PERCENT" ? rule.depositValue / 100 : 0} /></Field>
+        <Field label={`Fixed deposit (${currency})`} helperText="Used only when the deposit is Fixed."><Input name="depositValue" inputMode="decimal" defaultValue={inputAmount(rule?.depositMode === "FIXED" ? rule.depositValue : 0)} /></Field>
+        <Field label="Percentage deposit" helperText="Used only when the deposit is Percent."><Input name="depositPercent" type="number" min="0" max="100" step="0.01" defaultValue={rule?.depositMode === "PERCENT" ? rule.depositValue / 100 : 0} /></Field>
       </fieldset></DialogBody><DialogFooter>
-        {rule ? <Button type="button" variant="danger" disabled={mutation.pending} onClick={() => mutation.run(() => deletePricingRuleAction({ spaceSlug, ruleId: rule.ruleId }), "Pricing rule deleted", () => setOpen(false))}>Delete pricing rule</Button> : null}
-        <Button type="button" variant="secondary" disabled={mutation.pending} onClick={() => setOpen(false)}>Close</Button><Button type="submit" loading={mutation.pending}>Save pricing rule</Button>
+        {rule ? <Button type="button" variant="danger" disabled={mutation.pending} onClick={() => setConfirmDelete(true)}>Delete pricing rule</Button> : null}
+        <Button type="button" variant="secondary" disabled={mutation.pending} onClick={() => setOpen(false)}>Close</Button><Button type="submit" variant="primary" loading={mutation.pending}>Save pricing rule</Button>
       </DialogFooter></form>
     </DialogContent>
+    {rule ? <ConfirmationDialog open={confirmDelete} title="Delete this pricing rule?" message="New quotes fall back to the next rule that applies. Existing quotes keep their rates." confirmLabel="Delete pricing rule" loading={mutation.pending}
+      onCancel={() => setConfirmDelete(false)} onConfirm={() => mutation.run(() => deletePricingRuleAction({ spaceSlug, ruleId: rule.ruleId }), "Pricing rule deleted", () => { setConfirmDelete(false); setOpen(false); })} /> : null}
   </Dialog>;
 }

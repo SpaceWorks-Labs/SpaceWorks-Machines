@@ -32,7 +32,7 @@ export default async function SpaceSettingsPage({ params }: Props) {
       />
       <SettingsTabs slug={space.slug} />
 
-      <div className="flex min-w-0 flex-col gap-6">
+      <div className="flex min-w-0 max-w-[860px] flex-col gap-6">
         <EditSpaceForm
           id="profile"
           spaceSlug={space.slug}
@@ -49,11 +49,11 @@ export default async function SpaceSettingsPage({ params }: Props) {
             <p className="mt-0.5 text-body-ui text-ink-muted">One link for makers to find and join the space. The address can&apos;t be changed.</p>
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <span className="max-w-full truncate rounded-full bg-muted px-3.5 py-2 tabular-nums text-sm text-ink-secondary">/s/{space.slug}</span>
+            <span title={`/s/${space.slug}`} className="max-w-full truncate rounded-full bg-muted px-3.5 py-2 tabular-nums text-sm text-ink-secondary">/s/{space.slug}</span>
             <CopySpaceUrl slug={space.slug} />
             <Link
               href={`/s/${space.slug}`}
-              className="inline-flex min-h-9 items-center gap-1 px-2 text-sm font-semibold text-ink-secondary underline-offset-4 hover:text-ink hover:underline"
+              className="inline-flex min-h-11 items-center gap-1 px-2 text-sm font-semibold text-ink-secondary underline-offset-4 hover:text-ink hover:underline"
             >
               Open
               <ExternalLink aria-hidden className="size-3.5" />

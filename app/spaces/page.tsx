@@ -40,7 +40,7 @@ export default async function SpacesDirectoryPage({ searchParams }: { searchPara
                   <div className="flex items-center gap-3">
                     <SpaceLogo name={space.name} src={space.logoUrl} size="md" />
                     <div className="min-w-0">
-                      <h2 className="truncate text-h4 text-ink">{space.name}</h2>
+                      <h2 className="truncate text-h4 text-ink" title={space.name}>{space.name}</h2>
                       <p className="truncate text-caption text-ink-muted">{[space.city, space.region, space.country].filter(Boolean).join(" · ")}</p>
                     </div>
                   </div>
@@ -51,7 +51,7 @@ export default async function SpacesDirectoryPage({ searchParams }: { searchPara
             ))}
           </ul>
           {pages > 1 ? (
-            <nav aria-label="Pages" className="flex items-center justify-between text-sm">
+            <nav aria-label="Pages" className="flex flex-wrap items-center justify-between gap-3 text-sm">
               <span className="text-ink-muted">Page {page} of {pages}</span>
               <span className="flex gap-2">
                 {page > 1 ? <Link href={link(page - 1)} className={buttonClasses({ variant: "secondary", size: "sm" })}>Previous</Link> : null}

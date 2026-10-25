@@ -13,10 +13,12 @@ import { useMachineMutation } from "@/components/machines/useMachineMutation";
  * `booleans` become true/false, names in `arrays` become every checked value; every other field is sent as typed,
  * merged with `fixed` (ids, slug). With `reveal`, a value the action returns (a new key or secret) is shown once.
  */
-export function ActionDialog({ action, fixed, booleans = [], arrays = [], reveal, trigger, triggerVariant = "secondary", title, description, submitLabel, success, children }: {
+export function ActionDialog({ action, fixed, booleans = [], arrays = [], reveal, trigger, triggerVariant = "secondary", title, description, submitLabel, submitVariant = "primary", success, children }: {
   action: (input: unknown) => Promise<ActionResult<unknown>>; fixed: Record<string, string>; booleans?: string[]; arrays?: string[];
   reveal?: { key: string; title: string; note: string };
-  trigger: string; triggerVariant?: "primary" | "secondary"; title: string; description?: string; submitLabel: string; success: string; children: ReactNode;
+  trigger: ReactNode; triggerVariant?: "primary" | "secondary" | "danger"; title: string; description?: string; submitLabel: string;
+  /** `dangerSolid` for a destructive final step (revoke, delete). */
+  submitVariant?: "primary" | "dangerSolid"; success: string; children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const mutation = useMachineMutation();
@@ -29,7 +31,7 @@ export function ActionDialog({ action, fixed, booleans = [], arrays = [], reveal
         <DialogHeader title={revealed && reveal ? reveal.title : title} description={revealed && reveal ? reveal.note : description} />
         {revealed ? <>
           <DialogBody><Input readOnly value={revealed} aria-label={reveal?.title} className="font-mono" onFocus={(event) => event.currentTarget.select()} /></DialogBody>
-          <DialogFooter><Button type="button" onClick={close}>Done</Button></DialogFooter>
+          <DialogFooter><Button type="button" variant="primary" onClick={close}>Done</Button></DialogFooter>
         </> : <form className="flex min-h-0 flex-col" onSubmit={(event) => {
           event.preventDefault();
           const form = new FormData(event.currentTarget);
@@ -51,7 +53,7 @@ export function ActionDialog({ action, fixed, booleans = [], arrays = [], reveal
             </fieldset>
           </DialogBody>
           <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" loading={mutation.pending}>{submitLabel}</Button></DialogFooter>
+            <Button type="submit" variant={submitVariant} loading={mutation.pending}>{submitLabel}</Button></DialogFooter>
         </form>}
       </DialogContent>
     </Dialog>

@@ -36,12 +36,12 @@ export default async function FaultPage({ params }: { params: Promise<{ spaceSlu
         ]} />
         {fault.description ? <p className="mt-4 whitespace-pre-wrap break-words text-body-ui">{fault.description}</p> : null}
       </CollapsibleSection>
-      <RepairPanel spaceSlug={space.slug} faultId={fault.id} currency={space.currency} locale={space.locale ?? undefined} data={view.repair} />
+      <RepairPanel spaceSlug={space.slug} faultId={fault.id} currency={space.currency} locale={space.locale ?? undefined} timeZone={space.timezone} data={view.repair} />
       {view.canToBuy && !fault.closed ? <div><ToBuyRequestDialog spaceSlug={space.slug} machines={[]} pools={view.pools} faultId={fault.id} /></div> : null}
       <CollapsibleSection id="fault-photos" label="Photos" title="Photos" description="Up to 4 photos." count={view.photos.length}>
         {view.photos.length ? <ul className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{view.photos.map((photo, index) => (
           // eslint-disable-next-line @next/next/no-img-element
-          <li key={photo.id}><a href={photo.url}><img src={photo.url} alt={`Fault photo ${index + 1}`} className="aspect-square w-full rounded-md border border-line object-cover" /></a></li>))}</ul>
+          <li key={photo.id}><a className="block rounded-md" href={photo.url}><img src={photo.url} alt={`Fault photo ${index + 1}`} className="aspect-square w-full rounded-md border border-line object-cover" /></a></li>))}</ul>
           : <p className="mb-4 text-body-ui text-ink-muted">No photos.</p>}
         {view.canManage && !fault.closed && view.photos.length < 4 ? <UpkeepFileUpload spaceSlug={space.slug} kind="fault" targetId={fault.id} label="Add a photo" /> : null}
       </CollapsibleSection>

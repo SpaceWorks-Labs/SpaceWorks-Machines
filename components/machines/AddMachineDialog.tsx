@@ -20,7 +20,7 @@ export function AddMachineDialog({ spaceSlug, currency, types, money = true }: {
   const router = useRouter();
   return (
     <Dialog open={open} onOpenChange={(open) => { if (!mutation.pending) setOpen(open); }}>
-      <DialogTrigger asChild><Button>Add machine</Button></DialogTrigger>
+      <DialogTrigger asChild><Button variant="primary">Add machine</Button></DialogTrigger>
       <DialogContent size="lg">
         <DialogHeader title="Add machine" description="Choose its type and add its details. The type cannot change after creation." />
         <form className="flex min-h-0 flex-1 flex-col" onSubmit={(event) => {
@@ -43,7 +43,7 @@ export function AddMachineDialog({ spaceSlug, currency, types, money = true }: {
               </> : <Callout>No active machine types are available. A machine manager needs to add or restore a type first.</Callout>}
             </fieldset>
           </DialogBody>
-          <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" loading={mutation.pending} disabled={!type}>Add machine</Button></DialogFooter>
+          <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={mutation.pending} disabled={!type}>Add machine</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

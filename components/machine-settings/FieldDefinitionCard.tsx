@@ -19,7 +19,7 @@ export function FieldDefinitionCard({ draft, index, count, section, errors, canM
   const kinds = section === "specFields" ? SPEC_FIELD_KINDS : FIELD_KINDS;
   return <Card as="section" aria-label={`Field ${index + 1}`}>
     <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-      <h3 className="text-h3">Field {index + 1}{draft.label ? `: ${draft.label}` : ""}</h3>
+      <h3 className="min-w-0 break-words text-title text-ink">Field {index + 1}{draft.label ? `: ${draft.label}` : ""}</h3>
       {canManage ? <div className="flex flex-wrap gap-2">
         <Button type="button" variant="secondary" size="sm" disabled={index === 0} aria-label={`Move field ${index + 1} up`} onClick={() => onMove(-1)}>Move up</Button>
         <Button type="button" variant="secondary" size="sm" disabled={index === count - 1} aria-label={`Move field ${index + 1} down`} onClick={() => onMove(1)}>Move down</Button>

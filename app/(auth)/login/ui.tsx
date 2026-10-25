@@ -199,10 +199,11 @@ export function LoginForm({ accountCreationEnabled }: { accountCreationEnabled: 
 
   return (
     <Tabs value={mode} onValueChange={(value) => switchMode(value as Mode)} className="flex flex-col gap-4">
-      <TabsList aria-label="Sign in or create an account" className="grid auto-cols-fr grid-flow-col gap-1 rounded-full border border-line bg-surface p-1">
-        <TabsTrigger value="signin" className="min-h-10 justify-center rounded-full px-4 after:hidden border border-transparent data-[state=active]:border-line-strong data-[state=active]:bg-panel data-[state=active]:font-semibold">Sign in</TabsTrigger>
-        {accountCreationEnabled ? <TabsTrigger value="signup" className="min-h-10 justify-center rounded-full px-4 after:hidden border border-transparent data-[state=active]:border-line-strong data-[state=active]:bg-panel data-[state=active]:font-semibold">Create account</TabsTrigger> : null}
-      </TabsList>
+      {/* A lone "Sign in" tab would be a control with nothing to switch to. */}
+      {accountCreationEnabled ? <TabsList aria-label="Sign in or create an account" className="grid auto-cols-fr grid-flow-col gap-1 rounded-full border border-line bg-surface p-1">
+        <TabsTrigger value="signin" className="min-h-11 justify-center rounded-full px-4 after:hidden border border-transparent data-[state=active]:border-line-strong data-[state=active]:bg-panel data-[state=active]:font-semibold">Sign in</TabsTrigger>
+        <TabsTrigger value="signup" className="min-h-11 justify-center rounded-full px-4 after:hidden border border-transparent data-[state=active]:border-line-strong data-[state=active]:bg-panel data-[state=active]:font-semibold">Create account</TabsTrigger>
+      </TabsList> : null}
 
       <TabsContent value={mode} className="flex flex-col gap-4 pt-0">
         {error ? <Callout tone="danger" role="alert">{error}</Callout> : null}
@@ -247,7 +248,7 @@ export function LoginForm({ accountCreationEnabled }: { accountCreationEnabled: 
               />
             </Field>
             {!isSignUp ? (
-              <Link href="/reset-password" className="absolute right-0 top-0 text-sm font-semibold text-ink-secondary underline underline-offset-4 hover:text-ink">
+              <Link href="/reset-password" className="absolute right-0 top-0 text-sm font-semibold after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] text-ink-secondary underline underline-offset-4 hover:text-ink">
                 Forgot password?
               </Link>
             ) : null}
@@ -270,16 +271,6 @@ export function LoginForm({ accountCreationEnabled }: { accountCreationEnabled: 
             onSent={(text) => { resetStatus(); setMessage(text); }}
             onError={(text) => { resetStatus(); setError(text); }}
           />
-        ) : null}
-
-        {accountCreationEnabled ? (
-          <button
-            type="button"
-            onClick={() => switchMode(isSignUp ? "signin" : "signup")}
-            className="self-center text-sm text-ink-secondary underline-offset-4 hover:text-ink hover:underline"
-          >
-            {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Create one"}
-          </button>
         ) : null}
       </TabsContent>
     </Tabs>

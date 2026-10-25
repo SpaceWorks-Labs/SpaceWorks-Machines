@@ -61,7 +61,7 @@ export function RequestForm({ space, intake, initial = {}, onBehalf = false }: {
         <Input name="files" type="file" multiple accept={type.filePolicy.extensions.map((e) => `.${e}`).join(",")} required={type.filePolicy.required} />
       </Field> : null}
       <Callout tone={priceError ? "warning" : "info"}>{priceError || estimate}</Callout>
-      <Button type="submit" loading={mutation.pending} disabled={Boolean(priceError)}>Request job</Button>
+      <div><Button type="submit" variant={onBehalf ? "primary" : "accent"} loading={mutation.pending} disabled={Boolean(priceError)}>Request job</Button></div>
     </fieldset>
   </form>;
 }

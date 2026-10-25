@@ -32,7 +32,7 @@ export function ResetPasswordForm(props: { token: string; email: string }) {
     startTransition(async () => {
       let res;
       try { res = await requestPasswordReset({ email }); }
-      catch { setError("Password reset is temporarily unavailable. Please try again."); return; }
+      catch { setError("Password reset isn’t available right now. Try again in a moment."); return; }
       if (!res.ok) {
         setError(res.error);
         setFieldErrors(res.fieldErrors ?? {});
@@ -55,14 +55,14 @@ export function ResetPasswordForm(props: { token: string; email: string }) {
         email: initialEmail,
         token,
         password,
-      }); } catch { setError("Password reset is temporarily unavailable. Please try again."); return; }
+      }); } catch { setError("Password reset isn’t available right now. Try again in a moment."); return; }
       if (!res.ok) {
         setError(res.error);
         setFieldErrors(res.fieldErrors ?? {});
         return;
       }
       setPassword("");
-      setSuccess("Password reset successfully! Redirecting to sign in…");
+      setSuccess("Password saved. Taking you to sign in…");
       setTimeout(() => router.replace("/login"), 2000);
     });
   }
@@ -104,7 +104,7 @@ export function ResetPasswordForm(props: { token: string; email: string }) {
         </form>
       )}
 
-      <Link href="/login" className="self-center text-sm font-semibold text-ink-secondary underline underline-offset-4 hover:text-ink">
+      <Link href="/login" className="inline-flex min-h-11 items-center self-center text-sm font-semibold text-ink-secondary underline underline-offset-4 hover:text-ink">
         Back to sign in
       </Link>
     </div>

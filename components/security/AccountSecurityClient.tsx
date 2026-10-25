@@ -39,7 +39,7 @@ export function AccountSecurityClient(props: { mfaEnabled: boolean }) {
       const result = await beginMfaEnrollment();
       if (!result.ok || !result.data)
         setError(
-          result.ok ? "Could not start MFA setup." : result.error,
+          result.ok ? "Could not start two-step setup. Try again." : result.error,
         );
       else setEnrollment(result.data);
     });
@@ -124,13 +124,16 @@ export function AccountSecurityClient(props: { mfaEnabled: boolean }) {
         ) : null}
 
         {enabled && recoveryCodes.length === 0 ? (
-          <div className="flex flex-col gap-2 border-t border-line pt-4 sm:flex-row sm:items-end">
-            <Field label="Authenticator or recovery code" className="sm:w-72">
-              <Input value={code} onChange={(event) => setCode(event.target.value)} autoComplete="one-time-code" />
-            </Field>
-            <Button variant="dangerQuiet" disabled={pending || !code.trim()} onClick={() => setConfirming(true)}>
-              Turn off two-step
-            </Button>
+          <div className="flex flex-col gap-2 border-t border-line pt-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <Field label="Authenticator or recovery code" className="sm:w-72">
+                <Input value={code} onChange={(event) => setCode(event.target.value)} autoComplete="one-time-code" />
+              </Field>
+              <Button variant="dangerQuiet" disabled={pending || !code.trim()} onClick={() => setConfirming(true)}>
+                Turn off two-step
+              </Button>
+            </div>
+            <p className="text-caption text-ink-muted">Enter a current code to turn two-step off.</p>
           </div>
         ) : null}
       </div>

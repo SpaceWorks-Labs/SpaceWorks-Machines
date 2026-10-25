@@ -19,7 +19,7 @@ export function ManualEntryDialog({ spaceSlug, currency, machines }: { spaceSlug
   const [amountError, setAmountError] = useState("");
   const mutation = useMachineMutation();
   return <Dialog open={open} onOpenChange={(next) => { if (!mutation.pending) setOpen(next); }}>
-    <DialogTrigger asChild><Button>Add an entry</Button></DialogTrigger>
+    <DialogTrigger asChild><Button variant="primary">Add an entry</Button></DialogTrigger>
     <DialogContent>
       <DialogHeader title="Add an entry" description="Money in or out that doesn't come from a job, repair or purchase here." />
       <form className="flex min-h-0 flex-1 flex-col" onSubmit={(event) => {
@@ -39,11 +39,11 @@ export function ManualEntryDialog({ spaceSlug, currency, machines }: { spaceSlug
           <Field label="Method"><Dropdown name="method" defaultValue="BANK_TRANSFER">{METHODS.map((value) => <option key={value} value={value}>{METHOD_LABELS[value]}</option>)}</Dropdown></Field>
           <Field label="Reference" optional><Input name="reference" maxLength={200} /></Field>
           <Field label="What it was for" error={mutation.fieldErrors.note?.[0]}><Textarea name="note" rows={2} required minLength={2} maxLength={500} /></Field>
-          <Field label="Date" optional><Input name="occurredOn" type="date" /></Field>
+          <Field label="Date" optional helperText="Leave empty for today."><Input name="occurredOn" type="date" /></Field>
           <Field label="Supplier or payer" optional><Input name="supplier" maxLength={200} /></Field>
           <Field label="Machine" optional><Dropdown name="machineId" defaultValue=""><option value="">None</option>{machines.map((machine) => <option key={machine.id} value={machine.id}>{machine.name}</option>)}</Dropdown></Field>
         </fieldset></DialogBody>
-        <DialogFooter><Button type="button" variant="secondary" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" loading={mutation.pending}>Add entry</Button></DialogFooter>
+        <DialogFooter><Button type="button" variant="secondary" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={mutation.pending}>Add entry</Button></DialogFooter>
       </form>
     </DialogContent>
   </Dialog>;

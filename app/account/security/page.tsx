@@ -25,7 +25,7 @@ export default async function AccountSecurityPage() {
       {superAdmin ? (
         <Card as="section" className="rounded-xl">
           <CardHeader title="Password" description="This is a super-admin account, so its password is set on the server, never here or by email." />
-          <p className="text-body-ui text-ink-secondary">On the server, run <code className="rounded bg-subtle px-1.5 py-0.5 text-sm">scripts/spaceworks-compose.sh bundled run --rm ops admin set-password --email {"<your email>"}</code>.</p>
+          <p className="text-body-ui text-ink-secondary">On the server, run <code className="break-all rounded bg-subtle px-1.5 py-0.5 text-sm">scripts/spaceworks-compose.sh bundled run --rm ops admin set-password --email {"<your email>"}</code>.</p>
         </Card>
       ) : <AccountPasswordForm hasPassword={hasPassword} />}
       <AccountSecurityClient mfaEnabled={Boolean(user.mfaEnabledAt)} />

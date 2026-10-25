@@ -13,7 +13,7 @@ export function PrinterFields({ adapters, connection, settings }: {
     <Field label="Connection type"><Dropdown name="adapter" defaultValue={connection?.adapter ?? "SIMULATED"}>
       {adapters.map((adapter) => <option key={adapter.kind} value={adapter.kind}>{adapter.label}</option>)}</Dropdown></Field>
     <Field label="Address" optional helperText="For network printers."><Input name="baseUrl" maxLength={300} defaultValue={connection?.baseUrl} /></Field>
-    <Field label="Device id" optional helperText="Serial number or user name, when the printer needs one."><Input name="deviceId" maxLength={120} defaultValue={connection?.deviceId} /></Field>
+    <Field label="Device ID" optional helperText="Serial number or user name, when the printer needs one."><Input name="deviceId" maxLength={120} defaultValue={connection?.deviceId} /></Field>
     <Field label="Key or access code" optional helperText={connection?.hasSecret ? "Saved. Leave blank to keep it." : "Stored encrypted and never shown again."}><Input name="secret" type="password" autoComplete="off" maxLength={500} /></Field>
     <Field label="Check every (seconds)"><Input name="pollSeconds" type="number" min={15} max={3600} defaultValue={settings.pollSeconds} /></Field>
     <CheckboxField name="enabled" defaultChecked={connection?.enabled ?? true} label="Connection on" />

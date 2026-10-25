@@ -33,7 +33,7 @@ export function TypeAssignmentsDialog({ spaceSlug, targetUserId, memberName, typ
           {types.length ? types.map((type) => <CheckboxField key={type.id} label={type.name} checked={selected.has(type.id)}
             onCheckedChange={(value) => toggle(type.id, value === true)} />) : <p className="text-ink-muted">Add a machine type in Machine settings first.</p>}
         </fieldset></DialogBody>
-        <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" loading={mutation.pending}>Save</Button></DialogFooter>
+        <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={mutation.pending}>Save machine types</Button></DialogFooter>
       </form>
     </DialogContent>
   </Dialog>;

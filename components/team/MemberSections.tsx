@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { SpaceRole } from "@prisma/client";
 import { cn } from "@/lib/cn";
 import { Chip } from "@/components/ui/display";
+import { CollapsibleSection } from "@/components/ui/collapsible";
 import { ROLE_DESCRIPTIONS, ROLE_LABELS } from "@/lib/permissionRoles";
 import { DOT_TONES, ROLE_TONES } from "@/components/team/roleTones";
 
@@ -21,7 +22,7 @@ export function MemberStat({ label, value, hint, dots }: { label: string; value:
           </span>
         ) : null}
       </span>
-      <span className="truncate text-caption text-ink-muted">{hint}</span>
+      <span className="truncate text-caption text-ink-muted" title={typeof hint === "string" ? hint : undefined}>{hint}</span>
     </div>
   );
 }
@@ -32,8 +33,8 @@ const ROLE_ORDER: SpaceRole[] = ["MACHINE_MANAGER", "TYPE_MANAGER", "OPERATOR", 
 
 export function RolesCard() {
   return (
-    <section aria-labelledby="roles-title" className="flex min-w-0 flex-col gap-3 rounded-xl border border-line bg-panel p-5">
-      <h2 id="roles-title" className="text-h4 text-ink">What each role can do</h2>
+    // Reference, not a task: folded until someone opens it, and remembered per browser.
+    <CollapsibleSection id="team-roles" title="What each role can do" startOpen={false} className="min-w-0">
       <dl className="flex flex-col gap-3">
         {ROLE_ORDER.map((role) => (
           <div key={role} className="flex flex-col gap-1">
@@ -44,7 +45,7 @@ export function RolesCard() {
           </div>
         ))}
       </dl>
-      <p className="text-caption text-ink-muted">Everyone except makers needs an authenticator app before the dashboard opens.</p>
-    </section>
+      <p className="mt-3 text-caption text-ink-muted">Everyone except makers needs an authenticator app before the dashboard opens.</p>
+    </CollapsibleSection>
   );
 }

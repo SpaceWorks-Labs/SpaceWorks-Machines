@@ -21,12 +21,12 @@ export default async function StartPage() {
       </header>
 
       {openApplications.length > 0 ? (
-        <section aria-labelledby="open-applications" className="flex flex-col gap-2 rounded-2xl border border-line bg-panel p-4">
+        <section aria-labelledby="open-applications" className="flex flex-col gap-2 rounded-xl border border-line bg-panel p-4">
           <h2 id="open-applications" className="text-label font-semibold text-ink">Your applications waiting for a decision</h2>
           <ul className="flex flex-col divide-y divide-line">
             {openApplications.map((space) => (
               <li key={space.slug} className="flex items-center justify-between gap-3 py-2">
-                <Link href={`/dashboard/${space.slug}/application`} className="min-w-0 truncate text-body-ui text-ink underline-offset-4 hover:underline">
+                <Link href={`/dashboard/${space.slug}/application`} title={space.name} className="min-w-0 truncate text-body-ui text-ink underline-offset-4 hover:underline">
                   {space.name}
                 </Link>
                 <SpaceStatusChip status={space.status} />
@@ -49,7 +49,7 @@ export default async function StartPage() {
           We email you about the decision, so your address needs to be verified before you apply.
         </Callout>
       ) : (
-        <div className="rounded-2xl border border-line bg-canvas p-5 shadow-raised sm:p-8">
+        <div className="rounded-xl border border-line bg-panel p-5 sm:p-8">
           <ApplicationForm applicantEmail={applicantEmail} />
         </div>
       )}

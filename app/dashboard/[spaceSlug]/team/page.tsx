@@ -19,7 +19,8 @@ export default async function SpaceTeamPage({ params, searchParams }: Props) {
   const { space, membership, managerView } = view;
   return (
     <div className="flex flex-col gap-7 pb-4">
-      <SpacePageHeader space={space} title="Team" description={`The people who run ${space.name}, and the makers who use it.`} />
+      <SpacePageHeader space={space} title="Team" description={`The people who run ${space.name}, and the makers who use it.`}
+        actions={managerView && view.assignable.length ? <Button asChild variant="primary" className="lg:hidden"><a href="#invite-title">Invite people</a></Button> : undefined} />
 
       <section aria-label="People at a glance" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <MemberStat label="Staff" value={view.staffCount} hint={roleBreakdown(view.roleCounts)} dots={roleDots(view.roleCounts)} />

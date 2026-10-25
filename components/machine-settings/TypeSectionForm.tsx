@@ -19,6 +19,6 @@ export function TypeSectionForm({ spaceSlug, type, section, canManage }: { space
     <fieldset disabled={!canManage || mutation.pending} className="flex flex-col gap-5">
       <TypeSectionFields section={section} type={type} errors={mutation.fieldErrors} />
     </fieldset>
-    {canManage ? <div><Button type="submit" loading={mutation.pending}>Save section</Button></div> : <p className="text-caption text-ink-muted">A machine manager can change these settings.</p>}
+    {canManage ? <div><Button type="submit" variant="primary" loading={mutation.pending}>Save section</Button></div> : <p className="text-caption text-ink-muted">A machine manager can change these settings.</p>}
   </form>;
 }

@@ -33,14 +33,14 @@ export function ToBuyRequestDialog({ spaceSlug, machines, pools, faultId }: { sp
           <Field label="Kind"><Dropdown value={kind} onChange={(event) => setKind(event.target.value as "PART" | "CONSUMABLE")}>
             <option value="PART">A part</option><option value="CONSUMABLE">A consumable</option></Dropdown></Field>
           <Field label="What to buy" error={mutation.fieldErrors.title?.[0]}><Input name="title" required minLength={2} maxLength={160} /></Field>
-          <Field label="Quantity" error={mutation.fieldErrors.quantity?.[0]}><Input name="quantity" inputMode="decimal" required defaultValue="1" /></Field>
+          <Field label="Quantity" error={mutation.fieldErrors.quantity?.[0]} helperText={kind === "CONSUMABLE" ? "In the pool's unit." : undefined}><Input name="quantity" inputMode="decimal" required defaultValue="1" /></Field>
           {kind === "PART" ? <>
             <Field label="Unit" optional><Input name="unit" maxLength={30} placeholder="pieces" /></Field>
             {faultId ? null : <Field label="Machine" optional><Dropdown name="machineId" defaultValue=""><option value="">None</option>{machines.map((machine) => <option key={machine.id} value={machine.id}>{machine.name}</option>)}</Dropdown></Field>}
-          </> : <Field label="Pool"><Dropdown name="poolId" required>{pools.map((pool) => <option key={pool.id} value={pool.id}>{pool.label} ({pool.unit})</option>)}</Dropdown></Field>}
+          </> : <Field label="Pool" helperText={pools.length ? "Receiving it restocks this pool." : "No consumable pools yet. Add one on the Consumables page first."}><Dropdown name="poolId" required disabled={!pools.length}>{pools.map((pool) => <option key={pool.id} value={pool.id}>{pool.label} ({pool.unit})</option>)}</Dropdown></Field>}
           <Field label="Note" optional><Textarea name="note" rows={2} maxLength={1000} /></Field>
         </fieldset></DialogBody>
-        <DialogFooter><Button type="button" variant="secondary" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" loading={mutation.pending}>Add to list</Button></DialogFooter>
+        <DialogFooter><Button type="button" variant="secondary" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={mutation.pending} disabled={kind === "CONSUMABLE" && !pools.length}>Add to list</Button></DialogFooter>
       </form>
     </DialogContent>
   </Dialog>;
@@ -73,14 +73,14 @@ export function ToBuyStepButtons({ spaceSlug, itemId, status, currency, title }:
             <Field label={`Amount spent (${currency})`} error={amountError || undefined}><Input name="amount" inputMode="decimal" required /></Field>
             <Field label="Method"><Dropdown name="method" defaultValue="UPI">{Object.entries(PAYOUT_METHOD_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Dropdown></Field>
             <Field label="Reference" optional helperText="Needed for everything except cash."><Input name="reference" maxLength={200} /></Field>
-            <Field label="Supplier"><Input name="supplier" required minLength={2} maxLength={200} /></Field>
+            <Field label="Supplier" helperText="Who you bought it from."><Input name="supplier" required minLength={2} maxLength={200} /></Field>
             <Field label="Bought on" optional><Input name="boughtOn" type="date" /></Field>
           </fieldset></DialogBody>
-          <DialogFooter><Button type="button" variant="secondary" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" loading={mutation.pending}>Save</Button></DialogFooter>
+          <DialogFooter><Button type="button" variant="secondary" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={mutation.pending}>Mark bought</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog> : null}
     {status === "BOUGHT" ? <Button size="sm" loading={mutation.pending} onClick={() => step("RECEIVED", "Received")}>Mark received<span className="sr-only"> {title}</span></Button> : null}
-    {status === "REQUESTED" || status === "APPROVED" ? <Button size="sm" variant="dangerQuiet" disabled={mutation.pending} onClick={() => step("CANCELLED", "Cancelled")}>Cancel<span className="sr-only"> {title}</span></Button> : null}
+    {status === "REQUESTED" || status === "APPROVED" ? <Button size="sm" variant="dangerQuiet" disabled={mutation.pending} onClick={() => step("CANCELLED", "Cancelled")}>Cancel item<span className="sr-only">: {title}</span></Button> : null}
   </div>;
 }

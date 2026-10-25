@@ -18,7 +18,7 @@ export default async function SpaceEmailSettingsPage({ params }: { params: Promi
       <Card as="section" className="max-w-[860px] rounded-xl">
         <CardHeader
           title="Your own email"
-          description={`Emails to makers (invites, join decisions and, from later releases, job updates and receipts) can go out from your own address. Without it they come from ${platformSender} in ${space.name}'s name${space.contactEmail ? `, with replies to ${space.contactEmail}` : ""}. Sign-in emails such as password resets always come from the platform.`}
+          description={`Emails to makers (invites, join decisions, job updates and receipts) can go out from your own address. Without it they come from ${platformSender} in ${space.name}'s name${space.contactEmail ? `, with replies to ${space.contactEmail}` : ""}. Sign-in emails such as password resets always come from the platform.`}
         />
         <SpaceEmailForm slug={space.slug} canEdit={canEdit} initial={initial} verified={verifiedAt ? formatDate(verifiedAt, "UTC") : null} />
       </Card>

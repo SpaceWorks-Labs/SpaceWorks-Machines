@@ -23,7 +23,7 @@ export function MachineDetailsForm({ spaceSlug, machineId, type, currency, value
       <fieldset disabled={mutation.pending}>
         <MachineFormFields type={type} currency={currency} values={values} errors={mutation.fieldErrors} money={money} />
       </fieldset>
-      <div><Button type="submit" loading={mutation.pending}>Save machine</Button></div>
+      <div><Button type="submit" variant="primary" loading={mutation.pending}>Save machine</Button></div>
     </form>
   );
 }

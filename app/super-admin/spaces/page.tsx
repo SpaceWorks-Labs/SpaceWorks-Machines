@@ -23,7 +23,7 @@ export default async function SuperAdminSpacesPage({ searchParams }: Props) {
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "inline-flex min-h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm transition-colors",
+        "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3.5 text-sm transition-colors",
         active ? "border-primary bg-primary font-semibold text-on-primary" : "border-line bg-panel text-ink hover:bg-muted",
       )}
     >
@@ -53,7 +53,7 @@ export default async function SuperAdminSpacesPage({ searchParams }: Props) {
         {status ? <input type="hidden" name="status" value={status} /> : null}
       </AdminSearchForm>
 
-      <Table label="Spaces">
+      <Table label="Spaces" long>
         <THead>
           <tr>
             <TH>Space</TH>

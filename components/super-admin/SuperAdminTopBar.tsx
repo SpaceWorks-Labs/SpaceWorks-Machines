@@ -90,7 +90,7 @@ export function SuperAdminTopBar({ user }: { user: SuperAdminUser }) {
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <Link
             href="/dashboard"
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-control px-2.5 text-sm font-medium text-ink-secondary transition-colors hover:bg-surface hover:text-ink"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-control px-2.5 text-sm font-medium text-ink-secondary transition-colors hover:bg-surface hover:text-ink"
           >
             <ArrowLeft aria-hidden className="size-4" />
             <span className="hidden sm:inline">Back to dashboard</span>
@@ -109,7 +109,7 @@ export function SuperAdminTopBar({ user }: { user: SuperAdminUser }) {
                   href={section.href}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "inline-flex min-h-9 items-center whitespace-nowrap rounded-control px-3 text-sm font-medium text-ink-secondary transition-colors hover:bg-surface hover:text-ink",
+                    "inline-flex min-h-11 items-center whitespace-nowrap rounded-control px-3 text-sm font-medium text-ink-secondary transition-colors hover:bg-surface hover:text-ink",
                     isActive && "bg-sidebar-active font-semibold text-on-sidebar-active hover:bg-sidebar-active hover:text-on-sidebar-active",
                   )}
                 >

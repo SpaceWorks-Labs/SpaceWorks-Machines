@@ -26,7 +26,7 @@ export function CopyField({ label, value }: { label: string; value: string }) {
           }}
         >
           {copied ? <Check aria-hidden className="size-4" /> : <Copy aria-hidden className="size-4" />}
-          {copied ? "Copied" : "Copy"}
+          {copied ? "Copied" : "Copy"}<span className="sr-only"> {label}</span>
         </Button>
       </div>
     </div>

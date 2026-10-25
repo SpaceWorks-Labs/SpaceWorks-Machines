@@ -21,7 +21,7 @@ export function ChatChannelsPanel({ slug, channels, canEdit, secretsReady }: { s
   const [pending, startTransition] = useTransition();
   const run = (work: () => Promise<{ ok: boolean; error?: string }>, done: string) => startTransition(async () => {
     const result = await work();
-    setMessage(result.ok ? { ok: true, text: done } : { ok: false, text: result.error ?? "That didn't work." });
+    setMessage(result.ok ? { ok: true, text: done } : { ok: false, text: result.error ?? "That didn't work. Try again." });
     setRemoving(null);
     router.refresh();
   });
@@ -48,8 +48,8 @@ export function ChatChannelsPanel({ slug, channels, canEdit, secretsReady }: { s
                   <Chip size="sm" tone="outline">{CHAT_KIND_LABELS[channel.kind]}</Chip>
                   {!channel.enabled ? <Chip size="sm" tone="warning">Off</Chip> : null}
                 </span>
-                <span className="block text-caption text-ink-muted">{channel.target} · {channel.events.map((event) => CHAT_EVENT_LABELS[event as ChatEvent]).join(", ")}</span>
-                {channel.lastError ? <span className="block text-caption text-danger-fg">Last attempt failed: {channel.lastError}</span> : channel.lastDelivered ? <span className="block text-caption text-ink-muted">Last delivered {channel.lastDelivered}</span> : null}
+                <span className="block break-words text-caption text-ink-muted">{channel.target} · {channel.events.map((event) => CHAT_EVENT_LABELS[event as ChatEvent]).join(", ")}</span>
+                {channel.lastError ? <span className="block break-words text-caption text-danger-fg">Last attempt failed: {channel.lastError}</span> : channel.lastDelivered ? <span className="block text-caption text-ink-muted">Last delivered {channel.lastDelivered}</span> : null}
               </span>
               {canEdit ? (
                 <span className="flex flex-wrap gap-1">

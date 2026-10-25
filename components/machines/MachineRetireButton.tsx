@@ -11,7 +11,7 @@ export function MachineRetireButton({ spaceSlug, machineId, name, retired }: { s
   const mutation = useMachineMutation();
   const label = retired ? "Bring back into service" : "Retire machine";
   return <>
-    <Button variant={retired ? "secondary" : "dangerQuiet"} onClick={() => setConfirm(true)}>{label}</Button>
+    <Button size="sm" variant={retired ? "secondary" : "dangerQuiet"} onClick={() => setConfirm(true)}>{label}</Button>
     <ConfirmationDialog open={confirm} title={retired ? `Bring ${name} back into service?` : `Retire ${name}?`}
       message={retired ? "The machine returns to idle. Public listing and job intake stay switched off until you enable them." : "The machine goes offline and is removed from public pages and job queues. Its records and files are kept."}
       confirmLabel={label} destructive={!retired} loading={mutation.pending} onCancel={() => setConfirm(false)}

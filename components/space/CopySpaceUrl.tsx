@@ -27,8 +27,7 @@ export function CopySpaceUrl(props: { slug: string }) {
   return (
     <button
       type="button"
-      aria-label={`Copy the public URL for ${slug}`}
-      title="Copy space URL"
+      aria-label="Copy link to the public page"
       onClick={async () => {
         try {
           await copyToClipboard(`${window.location.origin}/s/${slug}`);
@@ -37,7 +36,7 @@ export function CopySpaceUrl(props: { slug: string }) {
           showToast("Could not copy space URL", "error");
         }
       }}
-      className="inline-flex min-h-9 items-center gap-1.5 rounded-control border border-line bg-panel px-3.5 text-sm font-semibold text-ink transition-colors hover:bg-muted"
+      className="inline-flex min-h-11 items-center gap-1.5 rounded-control border border-line bg-panel px-3.5 text-sm font-semibold text-ink transition-colors hover:bg-muted"
     >
       <Copy aria-hidden className="size-4" />
       Copy link

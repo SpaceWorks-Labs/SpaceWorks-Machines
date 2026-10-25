@@ -1,10 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { SpaceMemberStatus } from "@prisma/client";
 import { decideMember, removeSpaceMember } from "@/app/actions/team";
 import { useToast } from "@/components/feedback/ToastProvider";
+import { ConfirmationDialog } from "@/components/feedback/ConfirmationDialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, Chip, EmptyState } from "@/components/ui/display";
 
@@ -17,6 +18,7 @@ export function MakersList({ spaceSlug, rows, canManage, total }: { spaceSlug: s
   const router = useRouter();
   const { showToast } = useToast();
   const [pending, startTransition] = useTransition();
+  const [removeTarget, setRemoveTarget] = useState<MakerRow | null>(null);
   const run = (label: string, action: () => Promise<{ ok: boolean; error?: string }>) =>
     startTransition(async () => {
       const result = await action();
@@ -24,6 +26,7 @@ export function MakersList({ spaceSlug, rows, canManage, total }: { spaceSlug: s
         showToast(result.error ?? "That didn't work. Try again.", "error");
         return;
       }
+      setRemoveTarget(null);
       showToast(label, "success");
       router.refresh();
     });
@@ -36,11 +39,11 @@ export function MakersList({ spaceSlug, rows, canManage, total }: { spaceSlug: s
       <Avatar name={row.name ?? row.email} size="md" />
       <div className="flex min-w-0 flex-[1_1_200px] flex-col">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate font-bold text-ink">{row.name ?? "Unnamed"}</span>
+          <span className="truncate font-bold text-ink" title={row.name ?? undefined}>{row.name ?? "Unnamed"}</span>
           {row.status === "PENDING" ? <Chip size="sm" tone="warning">Waiting</Chip> : null}
           {row.status === "BLOCKED" ? <Chip size="sm" tone="danger">Blocked</Chip> : null}
         </span>
-        <span className="truncate text-caption text-ink-muted">{row.email ? `${row.email} · ` : ""}{row.status === "PENDING" ? "Asked" : "Joined"} {row.joinedLabel}</span>
+        <span className="truncate text-caption text-ink-muted" title={row.email ?? undefined}>{row.email ? `${row.email} · ` : ""}{row.status === "PENDING" ? "Asked" : "Joined"} {row.joinedLabel}</span>
       </div>
       {canManage ? (
         <div className="ml-auto flex flex-wrap justify-end gap-2">
@@ -54,7 +57,7 @@ export function MakersList({ spaceSlug, rows, canManage, total }: { spaceSlug: s
           ) : (
             <>
               <Button size="sm" variant="quiet" disabled={pending} onClick={() => decide(row, "block", "Blocked")}>Block<span className="sr-only"> {row.name}</span></Button>
-              <Button size="sm" variant="dangerQuiet" disabled={pending} onClick={() => run("Removed", () => removeSpaceMember({ spaceSlug, targetUserId: row.userId }))}>Remove<span className="sr-only"> {row.name}</span></Button>
+              <Button size="sm" variant="dangerQuiet" disabled={pending} onClick={() => setRemoveTarget(row)}>Remove<span className="sr-only"> {row.name}</span></Button>
             </>
           )}
         </div>
@@ -81,6 +84,15 @@ export function MakersList({ spaceSlug, rows, canManage, total }: { spaceSlug: s
           {others.length ? <ul className="flex flex-col gap-2">{others.map(item)}</ul> : null}
         </>
       )}
+      <ConfirmationDialog
+        open={removeTarget !== null}
+        title={removeTarget?.name ? `Remove ${removeTarget.name} from the space?` : "Remove this maker from the space?"}
+        message="They lose access straight away and would have to join again."
+        confirmLabel="Remove"
+        loading={pending}
+        onCancel={() => setRemoveTarget(null)}
+        onConfirm={() => { const target = removeTarget; if (target) run("Removed", () => removeSpaceMember({ spaceSlug, targetUserId: target.userId })); }}
+      />
     </section>
   );
 }

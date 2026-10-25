@@ -10,14 +10,14 @@ export default async function JoinSpacePage({ params }: { params: Promise<{ toke
   const { token, session, invite } = await loadJoinSpaceView({ params });
   if (!invite || invite.usedAt || (invite.expiresAt && invite.expiresAt <= new Date())) {
     return (
-      <div className="mx-auto flex w-full max-w-[440px] flex-col gap-2 rounded-2xl border border-line bg-canvas p-6 text-center shadow-raised sm:p-8">
+      <div className="mx-auto flex w-full max-w-[440px] flex-col gap-2 rounded-xl border border-line bg-panel p-6 text-center sm:p-8">
         <h1 className="text-h1 text-ink">Invite unavailable</h1>
-        <p className="text-body-ui text-ink-secondary">This invite is invalid, expired, used, or revoked.</p>
+        <p className="text-body-ui text-ink-secondary">This invite has expired, been used or been revoked. Ask whoever invited you for a new link.</p>
       </div>
     );
   }
   return (
-    <div className="mx-auto flex w-full max-w-[440px] flex-col items-center gap-4 rounded-2xl border border-line bg-canvas p-6 text-center shadow-raised sm:p-8">
+    <div className="mx-auto flex w-full max-w-[440px] flex-col items-center gap-4 rounded-xl border border-line bg-panel p-6 text-center sm:p-8">
       <SpaceLogo name={invite.space.name} src={invite.space.logoUrl} size="lg" />
       <div className="flex flex-col gap-1.5">
         <p className="text-sm text-ink-muted">You’ve been invited to join</p>

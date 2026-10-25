@@ -28,7 +28,7 @@ export function FieldDefinitionsEditor({ spaceSlug, typeId, section, fields, can
     {mutation.error ? <Callout tone="danger" role="alert">{mutation.error}</Callout> : null}
     {errors[`values.${section}`] ? <p role="alert" className="text-caption text-danger-fg">{sectionError(errors, section)}</p> : null}
     <fieldset disabled={!canManage || mutation.pending} className="flex flex-col gap-4">
-      {!drafts.length ? <p className="text-ink-muted">No fields defined.</p> : null}
+      {!drafts.length ? <p className="text-body-ui text-ink-muted">No fields yet.{canManage ? " Add a field to start." : ""}</p> : null}
       {drafts.map((draft, index) => <FieldDefinitionCard key={draft.id} draft={draft} index={index} count={drafts.length} section={section} errors={errors} canManage={canManage}
         onChange={(patch) => setDrafts((current) => current.map((item) => item.id === draft.id ? { ...item, ...patch } : item))}
         onRemove={() => { setStructureChanged(true); setDrafts((current) => current.filter((item) => item.id !== draft.id)); }}
@@ -37,11 +37,11 @@ export function FieldDefinitionsEditor({ spaceSlug, typeId, section, fields, can
           [next[index], next[index + offset]] = [next[index + offset], next[index]];
           return next;
         }); }} />)}
-      {canManage ? <div><Button type="button" variant="secondary" disabled={drafts.length >= MAX_FIELDS} onClick={() => {
+      {canManage ? <div className="flex flex-wrap items-center gap-3"><Button type="button" variant="secondary" disabled={drafts.length >= MAX_FIELDS} onClick={() => {
         setStructureChanged(true);
         setDrafts((current) => [...current, fieldDraft({ key: "", label: "", kind: "text" }, crypto.randomUUID(), false)]);
-      }}>Add field</Button></div> : null}
+      }}>Add field</Button>{drafts.length >= MAX_FIELDS ? <p className="text-caption text-ink-muted">A type holds up to {MAX_FIELDS} fields. Remove one to add another.</p> : null}</div> : null}
     </fieldset>
-    {canManage ? <div><Button type="submit" loading={mutation.pending}>Save fields</Button></div> : <p className="text-caption text-ink-muted">A machine manager can change these fields.</p>}
+    {canManage ? <div><Button type="submit" variant="primary" loading={mutation.pending}>Save fields</Button></div> : <p className="text-caption text-ink-muted">A machine manager can change these fields.</p>}
   </form>;
 }

@@ -22,7 +22,7 @@ export function ReportProblem({ spaceSlug, machineId, machineName }: { spaceSlug
           description={reported ? `The team has fault F-${String(reported.number).padStart(4, "0")}. Add photos if they help.` : "The team sees this straight away."} />
         {reported ? <>
           <DialogBody><UpkeepFileUpload spaceSlug={spaceSlug} kind="fault" targetId={reported.id} label="Add a photo" /></DialogBody>
-          <DialogFooter><Button type="button" onClick={() => { setOpen(false); setReported(null); }}>Done</Button></DialogFooter>
+          <DialogFooter><Button type="button" variant="primary" onClick={() => { setOpen(false); setReported(null); }}>Done</Button></DialogFooter>
         </> : <form className="flex min-h-0 flex-col" onSubmit={(event) => {
           event.preventDefault();
           const form = new FormData(event.currentTarget);
@@ -33,7 +33,7 @@ export function ReportProblem({ spaceSlug, machineId, machineName }: { spaceSlug
             {mutation.error ? <Callout tone="danger" role="alert">{mutation.error}</Callout> : null}
             <FaultReportFields staff={false} />
           </fieldset></DialogBody>
-          <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" loading={mutation.pending}>Report problem</Button></DialogFooter>
+          <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={mutation.pending}>Report problem</Button></DialogFooter>
         </form>}
       </DialogContent>
     </Dialog>

@@ -34,7 +34,7 @@ function metadataSummary(value: unknown) {
 export function AuditTable({ events, label, empty = "No audit events found.", hideSpace = false }: { events: AuditRow[]; label: string; empty?: string; hideSpace?: boolean }) {
   const columns = hideSpace ? 5 : 6;
   return (
-    <Table label={label} className="min-w-[900px]">
+    <Table label={label} long className="min-w-[900px]">
       <THead>
         <tr>
           <TH>When</TH>

@@ -43,7 +43,7 @@ export default async function DashboardPage() {
               <span className="flex items-center gap-3">
                 <SpaceLogo name={team.name} src={team.logoUrl} size="md" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-title text-ink">{team.name}</span>
+                  <span className="block truncate text-title text-ink" title={team.name}>{team.name}</span>
                   <span className="block truncate text-caption text-ink-muted">{ROLE_LABELS[team.role]}</span>
                 </span>
                 <ArrowRight aria-hidden className="size-5 shrink-0 text-ink-muted transition-colors group-hover:text-ink" />

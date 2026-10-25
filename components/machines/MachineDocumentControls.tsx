@@ -33,7 +33,7 @@ export function MachineDocumentControls({ spaceSlug, document }: { spaceSlug: st
                 <CheckboxField name="isPublic" value="true" label="Public document" description="Available publicly when this machine is publicly listed." defaultChecked={document.isPublic} />
               </fieldset>
             </DialogBody>
-            <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" loading={mutation.pending}>Save document</Button></DialogFooter>
+            <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={mutation.pending}>Save document</Button></DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

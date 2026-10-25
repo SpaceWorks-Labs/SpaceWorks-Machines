@@ -80,13 +80,13 @@ export function TeamList({
                     <Avatar name={row.name ?? row.email ?? null} size="md" tone={AVATAR_TONES[row.role]} />
                     <div className="flex min-w-0 flex-[1_1_200px] flex-col">
                       <span className="flex min-w-0 items-center gap-2">
-                        <span className="truncate font-bold text-ink">{row.name ?? "Unnamed"}</span>
+                        <span className="truncate font-bold text-ink" title={row.name ?? undefined}>{row.name ?? "Unnamed"}</span>
                         {row.isYou ? <Chip size="sm" className="shrink-0">You</Chip> : null}
                       </span>
-                      <span className="truncate text-caption text-ink-muted">
+                      <span className="truncate text-caption text-ink-muted" title={showEmail && row.email ? row.email : undefined}>
                         {showEmail && row.email ? `${row.email} · ` : ""}Joined {row.joinedLabel}
                       </span>
-                      {row.role === "TYPE_MANAGER" && row.typeIds ? <span className="truncate text-caption text-ink-muted">Looks after: {typeNames(row.typeIds)}</span> : null}
+                      {row.role === "TYPE_MANAGER" && row.typeIds ? <span className="truncate text-caption text-ink-muted" title={typeNames(row.typeIds)}>Looks after: {typeNames(row.typeIds)}</span> : null}
                     </div>
                     <div className="ml-auto flex min-w-0 max-w-full flex-wrap justify-end gap-2">
                       {canAssignTypes && row.role === "TYPE_MANAGER" ? <TypeAssignmentsDialog spaceSlug={spaceSlug} targetUserId={row.userId}

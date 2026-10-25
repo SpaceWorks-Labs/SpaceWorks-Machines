@@ -26,6 +26,7 @@ export function MachineFileUpload({ spaceSlug, machineId, kind, disabled = false
       }, photo ? "Photo uploaded" : "Document uploaded", () => element.reset());
     }}>
       {mutation.error ? <Callout tone="danger" role="alert">{mutation.error}</Callout> : null}
+      {disabled ? <p className="text-body-ui text-ink-muted">All 8 photo slots are in use. Remove a photo before uploading another.</p> : null}
       <fieldset disabled={disabled || mutation.pending} className="flex flex-col gap-4">
         <Field label={photo ? "Photo file" : "Document file"} helperText={photo ? "JPEG, PNG or WebP, up to 10 MB. Up to 8 photos per machine; the first is the cover." : "PDF, PNG, JPEG, WebP or text, up to 20 MB."} error={mutation.fieldErrors.file?.[0]}>
           <Input name="file" type="file" required accept={photo ? "image/jpeg,image/png,image/webp" : ".pdf,.png,.jpg,.jpeg,.webp,.txt"} />
@@ -34,7 +35,6 @@ export function MachineFileUpload({ spaceSlug, machineId, kind, disabled = false
           : <><DocumentMetaFields errors={mutation.fieldErrors} upload /><CheckboxField name="isPublic" value="true" label="Public document" description="Available publicly when this machine is publicly listed." /></>}
         <div><Button type="submit" loading={mutation.pending}>{photo ? "Upload photo" : "Upload document"}</Button></div>
       </fieldset>
-      {disabled ? <p className="text-body-ui text-ink-muted">All 8 photo slots are in use. Remove a photo before uploading another.</p> : null}
     </form>
   );
 }

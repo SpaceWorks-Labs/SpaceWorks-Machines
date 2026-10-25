@@ -15,7 +15,7 @@ export function NewTypeDialog({ spaceSlug, types }: { spaceSlug: string; types: 
   const mutation = useMachineMutation();
   const router = useRouter();
   return <Dialog open={open} onOpenChange={(open) => { if (!mutation.pending) setOpen(open); }}>
-    <DialogTrigger asChild><Button>New type</Button></DialogTrigger>
+    <DialogTrigger asChild><Button variant="primary">New type</Button></DialogTrigger>
     <DialogContent>
       <DialogHeader title="New machine type" description="Start from scratch or copy a type. Changes to the copy do not affect its source." />
       <form className="flex min-h-0 flex-1 flex-col" onSubmit={(event) => {
@@ -40,7 +40,7 @@ export function NewTypeDialog({ spaceSlug, types }: { spaceSlug: string; types: 
             </Dropdown>
           </Field>
         </fieldset></DialogBody>
-        <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" loading={mutation.pending}>Create type</Button></DialogFooter>
+        <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={mutation.pending}>Create type</Button></DialogFooter>
       </form>
     </DialogContent>
   </Dialog>;

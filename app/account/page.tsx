@@ -33,13 +33,14 @@ export default async function AccountSpacesPage() {
               <li key={space.slug} className="flex flex-wrap items-center gap-4 rounded-xl border border-line bg-panel p-4">
                 <SpaceLogo name={space.name} src={space.logoUrl} size="md" />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <Link href={href} className="truncate text-label text-ink underline-offset-4 hover:underline">{space.name}</Link>
+                  <Link href={href} title={space.name} className="-my-3 truncate py-3 text-label text-ink underline-offset-4 hover:underline">{space.name}</Link>
                   <span className="flex flex-wrap items-center gap-2 text-caption text-ink-muted">
                     <Chip tone={staff ? "info" : "neutral"}>{ROLE_LABELS[space.role]}</Chip>
                     {space.status === "PENDING" ? <Chip tone="warning">Waiting for approval</Chip> : null}
                     {space.status === "BLOCKED" ? <Chip tone="danger">Blocked</Chip> : null}
                     <span>Since {joined.format(space.joinedAt)}</span>
                   </span>
+                  {space.soleOwner ? <span className="text-caption text-ink-muted">You&apos;re the only machine manager, so you can&apos;t leave yet.</span> : null}
                 </div>
                 {space.status === "BLOCKED" ? null : <LeaveSpaceButton spaceSlug={space.slug} spaceName={space.name} soleOwner={space.soleOwner} pending={space.status === "PENDING"} />}
               </li>

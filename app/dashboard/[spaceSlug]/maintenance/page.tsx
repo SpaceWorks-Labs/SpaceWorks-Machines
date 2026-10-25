@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Maintenance", robots: { index: false
 export default async function MaintenancePage({ params }: { params: Promise<{ spaceSlug: string }> }) {
   const view = await loadMaintenanceView({ params });
   const { space, counts } = view;
-  const machineLink = (slug: string, name: string) => <Link className="text-label underline" href={`/dashboard/${space.slug}/machines/${slug}/upkeep`}>{name}</Link>;
+  const machineLink = (slug: string, name: string) => <Link className="break-words text-label underline underline-offset-4" href={`/dashboard/${space.slug}/machines/${slug}/upkeep`}>{name}</Link>;
   return (
     <div className="flex flex-col gap-7 pb-4">
       <SpacePageHeader space={space} title="Maintenance" description="Schedules that need attention, open faults, downtime and warranties."
@@ -28,7 +28,7 @@ export default async function MaintenancePage({ params }: { params: Promise<{ sp
         description="Open a machine's upkeep to log the work; the schedule then moves on.">
         {view.attention.length ? <ul className="flex flex-col divide-y divide-line">{view.attention.map((row) => (
           <li key={row.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-            <div className="min-w-0"><p className="text-label">{row.title}</p><p className="text-caption text-ink-muted">{machineLink(row.machineSlug, row.machine)} · {dueText(row.due)}</p></div>
+            <div className="min-w-0"><p className="break-words text-label">{row.title}</p><p className="text-caption text-ink-muted">{machineLink(row.machineSlug, row.machine)} · {dueText(row.due)}</p></div>
             <Chip tone={DUE_LABELS[row.due.state].tone}>{DUE_LABELS[row.due.state].label}</Chip>
           </li>))}</ul> : <p className="text-body-ui text-ink-muted">Every schedule is on track.</p>}
       </CollapsibleSection>
@@ -36,9 +36,9 @@ export default async function MaintenancePage({ params }: { params: Promise<{ sp
         <CollapsibleSection id="maintenance-faults" title="Open faults" count={view.faults.length}>
           {view.faults.length ? <ul className="flex flex-col divide-y divide-line">{view.faults.map((fault) => (
             <li key={fault.number} className="flex flex-wrap items-center justify-between gap-2 py-2">
-              <span className="min-w-0"><Link className="text-label underline" href={`/dashboard/${space.slug}/maintenance/faults/${fault.number}`}>{fault.label} {fault.title}</Link>
+              <span className="min-w-0"><Link className="break-words text-label underline underline-offset-4" href={`/dashboard/${space.slug}/maintenance/faults/${fault.number}`}>{fault.label} {fault.title}</Link>
                 <span className="block text-caption text-ink-muted">{fault.machine} · {formatDate(fault.createdAt, space.timezone)}</span></span>
-              <span className="flex gap-2"><Chip size="sm" tone={SEVERITY_LABELS[fault.severity]!.tone}>{SEVERITY_LABELS[fault.severity]!.label}</Chip><Chip size="sm" tone={FAULT_STATUS_LABELS[fault.status]!.tone}>{FAULT_STATUS_LABELS[fault.status]!.label}</Chip></span>
+              <span className="flex flex-wrap gap-2"><Chip size="sm" tone={SEVERITY_LABELS[fault.severity]!.tone}>{SEVERITY_LABELS[fault.severity]!.label}</Chip><Chip size="sm" tone={FAULT_STATUS_LABELS[fault.status]!.tone}>{FAULT_STATUS_LABELS[fault.status]!.label}</Chip></span>
             </li>))}</ul> : <p className="text-body-ui text-ink-muted">No open faults.</p>}
         </CollapsibleSection>
         <CollapsibleSection id="maintenance-down" title="Machines down" count={view.downtime.length}>
@@ -50,7 +50,7 @@ export default async function MaintenancePage({ params }: { params: Promise<{ sp
       <CollapsibleSection id="maintenance-warranties" label="Warranties" title="Warranties expiring or expired" count={view.expiring.length}>
         {view.expiring.length ? <ul className="flex flex-col divide-y divide-line">{view.expiring.map((row) => (
           <li key={row.machineSlug} className="flex flex-wrap items-center justify-between gap-2 py-2">
-            <span>{machineLink(row.machineSlug, row.machine)}<span className="block text-caption text-ink-muted">{[row.vendor, `Expires ${row.expiresOn}`].filter(Boolean).join(" · ")}</span></span>
+            <span className="min-w-0">{machineLink(row.machineSlug, row.machine)}<span className="block text-caption text-ink-muted">{[row.vendor, `Expires ${row.expiresOn}`].filter(Boolean).join(" · ")}</span></span>
             <Chip size="sm" tone={WARRANTY_LABELS[row.state].tone}>{WARRANTY_LABELS[row.state].label}</Chip>
           </li>))}</ul> : <p className="text-body-ui text-ink-muted">No warranty needs attention.</p>}
       </CollapsibleSection>

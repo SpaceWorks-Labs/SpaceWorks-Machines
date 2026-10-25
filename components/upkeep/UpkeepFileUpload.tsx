@@ -25,7 +25,7 @@ export function UpkeepFileUpload({ spaceSlug, kind, targetId, label, endpoint }:
         return !response.ok && result.ok ? { ok: false, error: "Couldn't upload the file. Try again." } : result;
       }, "File uploaded", () => element.reset());
     }}>
-      <Field label={label} error={mutation.error || undefined} helperText={photo ? "JPEG, PNG or WebP, up to 10 MB." : "PDF, image or text, up to 20 MB."}>
+      <Field className="min-w-0 flex-1 basis-64" label={label} error={mutation.error || undefined} helperText={photo ? "JPEG, PNG or WebP, up to 10 MB." : "PDF, image or text, up to 20 MB."}>
         <Input name="file" type="file" required accept={photo ? "image/jpeg,image/png,image/webp" : ".pdf,.png,.jpg,.jpeg,.webp,.txt"} />
       </Field>
       <Button type="submit" size="sm" variant="secondary" loading={mutation.pending}>Upload</Button>

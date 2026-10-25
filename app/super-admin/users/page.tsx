@@ -5,7 +5,7 @@ import type { Prisma } from "@prisma/client";
 import { cn } from "@/lib/cn";
 import { AdminPager, AdminSearchForm, NameCell } from "@/components/super-admin/AdminPanel";
 import { Chip, PageHeader } from "@/components/ui/display";
-import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
+import { Table, TBody, TD, TH, THead, TR, TruncatedTD } from "@/components/ui/table";
 
 type Props = {
   searchParams: Promise<{ q?: string; page?: string; filter?: string; }>;
@@ -39,7 +39,7 @@ export default async function SuperAdminUsersPage({ searchParams }: Props) {
             href={filterHref(key)}
             aria-current={key === filter ? "page" : undefined}
             className={cn(
-              "inline-flex min-h-8 items-center rounded-full border border-line px-3 text-sm text-ink-secondary transition-colors hover:bg-muted hover:text-ink",
+              "inline-flex min-h-11 items-center rounded-full border border-line px-3 text-sm text-ink-secondary transition-colors hover:bg-muted hover:text-ink",
               key === filter && "border-transparent bg-primary font-semibold text-on-primary hover:bg-primary hover:text-on-primary",
             )}
           >
@@ -48,7 +48,7 @@ export default async function SuperAdminUsersPage({ searchParams }: Props) {
         ))}
       </nav>
 
-      <Table label="Users">
+      <Table label="Users" long>
         <THead>
           <tr>
             <TH>User</TH>
@@ -66,7 +66,7 @@ export default async function SuperAdminUsersPage({ searchParams }: Props) {
             users.map((u) => (
               <TR key={u.id}>
                 <TD><NameCell href={`/super-admin/users/${u.id}`} name={u.name ?? "—"} sub={u.isSuperAdmin ? "Platform admin" : u.id} /></TD>
-                <TD className="tabular-nums text-sm">{u.email ?? "—"}</TD>
+                <TruncatedTD className="tabular-nums text-sm" text={u.email ?? "—"} />
                 <TD>{u.emailVerified ? <Chip size="sm" tone="success">Yes</Chip> : <Chip size="sm" tone="warning">No</Chip>}</TD>
                 <TD>{u.mfaEnabledAt ? <Chip size="sm" tone="success">On</Chip> : <Chip size="sm" tone="neutral">Off</Chip>}</TD>
                 <TD className="text-right tabular-nums">{u._count.spaceMembers}</TD>

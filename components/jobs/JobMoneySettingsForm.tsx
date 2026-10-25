@@ -29,6 +29,6 @@ export function JobMoneySettingsForm({ spaceSlug, initial: s, canEdit }: { space
     <CheckboxField name="taxInclusive" label="Prices include tax" defaultChecked={s.taxInclusive} />
     <fieldset className="flex flex-col gap-3"><legend className="mb-2 text-label">Online methods</legend>{["RAZORPAY", "STRIPE"].map((m) => <CheckboxField key={m} name="onlineMethods" value={m} label={words(m)} defaultChecked={s.onlineMethods.some((v) => v === m)} />)}</fieldset>
     <fieldset className="flex flex-col gap-3"><legend className="mb-2 text-label">Offline methods</legend>{["CASH", "UPI", "BANK_TRANSFER", "CARD_TERMINAL", "OTHER"].map((m) => <CheckboxField key={m} name="offlineMethods" value={m} label={words(m)} defaultChecked={s.offlineMethods.some((v) => v === m)} />)}</fieldset>
-    {canEdit ? <Button type="submit" loading={mutation.pending}>Save job payment policy</Button> : null}
+    {canEdit ? <div><Button type="submit" variant="primary" loading={mutation.pending}>Save job payment policy</Button></div> : <p className="text-caption text-ink-muted">Only a machine manager can change the job payment policy.</p>}
   </fieldset></form>;
 }

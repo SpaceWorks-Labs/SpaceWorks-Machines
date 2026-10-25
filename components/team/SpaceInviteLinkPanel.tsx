@@ -68,7 +68,7 @@ export function SpaceInviteLinkPanel(props: {
       <div className="flex items-center gap-3">
         <MoodTile mood="cheering" size={52} className="sw-face shrink-0" />
         <div className="min-w-0">
-          <h2 id="invite-title" className="text-h4 text-ink">Invite people</h2>
+          <h2 id="invite-title" className="scroll-mt-20 text-h4 text-ink">Invite people</h2>
           <p className="text-body-ui text-ink-secondary">Each link adds one person with the role you choose. Add an email to send it, and only that person can use it.</p>
         </div>
       </div>
@@ -92,7 +92,7 @@ export function SpaceInviteLinkPanel(props: {
           value={latestUrl}
           placeholder="No open link yet"
           onFocus={(event) => event.currentTarget.select()}
-          className="block min-h-11 w-full min-w-0 truncate rounded-md border border-line bg-panel px-3.5 tabular-nums text-[13px] text-ink-secondary placeholder:font-sans placeholder:text-ink-muted"
+          className="block min-h-11 w-full min-w-0 truncate rounded-control border border-line bg-panel px-3.5 tabular-nums text-[13px] text-ink-secondary placeholder:font-sans placeholder:text-ink-muted"
         />
         <div className="flex flex-wrap gap-2">
           {latestUrl ? (
@@ -128,7 +128,7 @@ export function SpaceInviteLinkPanel(props: {
           <ul className="flex flex-col">
             {invites.map((invite, index) => (
               <li key={invite.id} className="flex min-w-0 items-center gap-2.5">
-                <span className="min-w-0 flex-1 truncate text-body-ui text-ink">{ROLE_LABELS[invite.role]}{invite.email ? ` · ${invite.email}` : ""} · {lowerFirst(invite.createdLabel)}</span>
+                <span className="min-w-0 flex-1 truncate text-body-ui text-ink" title={invite.email ?? undefined}>{ROLE_LABELS[invite.role]}{invite.email ? ` · ${invite.email}` : ""} · {lowerFirst(invite.createdLabel)}</span>
                 {index === 0 ? <Chip size="sm" tone="outline" className="shrink-0">Newest</Chip> : null}
                 <Button size="sm" variant="dangerQuiet" disabled={pending} onClick={() => setRevokeTarget(invite)}>
                   Revoke

@@ -17,16 +17,16 @@ export default async function PublicSpacePage({ params }: { params: Promise<{ sp
           {space.description ? <p className="whitespace-pre-wrap text-body-l text-ink-secondary">{space.description}</p> : null}
           <JoinSpaceCard slug={space.slug} name={space.name} joinPolicy={space.joinPolicy} takingMakers={takingMakers} viewer={viewer} />
         </div>
-        <dl className="flex shrink-0 flex-col gap-3 rounded-2xl border border-line bg-panel p-5 text-body-ui lg:w-[300px]">
-          {place ? <div className="flex items-center gap-2.5"><dt><MapPin aria-label="Location" className="size-4 text-ink-muted" /></dt><dd>{place}</dd></div> : null}
-          {space.contactEmail ? <div className="flex items-center gap-2.5"><dt><Mail aria-label="Email" className="size-4 text-ink-muted" /></dt><dd className="min-w-0 truncate"><a className="underline-offset-4 hover:underline" href={`mailto:${space.contactEmail}`}>{space.contactEmail}</a></dd></div> : null}
-          {space.contactPhone ? <div className="flex items-center gap-2.5"><dt><Phone aria-label="Phone" className="size-4 text-ink-muted" /></dt><dd><a className="underline-offset-4 hover:underline" href={`tel:${space.contactPhone.replace(/\s/g, "")}`}>{space.contactPhone}</a></dd></div> : null}
-          {space.website ? <div className="flex items-center gap-2.5"><dt><Globe aria-label="Website" className="size-4 text-ink-muted" /></dt><dd className="min-w-0 truncate"><a className="underline-offset-4 hover:underline" href={space.website} rel="noopener noreferrer" target="_blank">{space.website.replace(/^https?:\/\//, "")}</a></dd></div> : null}
-        </dl>
+        {place || space.contactEmail || space.contactPhone || space.website ? <dl className="flex min-w-0 shrink-0 flex-col gap-3 rounded-2xl border border-line bg-panel p-5 text-body-ui lg:w-[300px]">
+          {place ? <div className="flex items-center gap-2.5"><dt className="shrink-0"><MapPin aria-hidden className="size-4 text-ink-muted" /><span className="sr-only">Location</span></dt><dd className="min-w-0 break-words">{place}</dd></div> : null}
+          {space.contactEmail ? <div className="flex items-center gap-2.5"><dt className="shrink-0"><Mail aria-hidden className="size-4 text-ink-muted" /><span className="sr-only">Email</span></dt><dd className="min-w-0 truncate"><a className="underline-offset-4 hover:underline" title={space.contactEmail} href={`mailto:${space.contactEmail}`}>{space.contactEmail}</a></dd></div> : null}
+          {space.contactPhone ? <div className="flex items-center gap-2.5"><dt className="shrink-0"><Phone aria-hidden className="size-4 text-ink-muted" /><span className="sr-only">Phone</span></dt><dd className="min-w-0"><a className="underline-offset-4 hover:underline" href={`tel:${space.contactPhone.replace(/\s/g, "")}`}>{space.contactPhone}</a></dd></div> : null}
+          {space.website ? <div className="flex items-center gap-2.5"><dt className="shrink-0"><Globe aria-hidden className="size-4 text-ink-muted" /><span className="sr-only">Website</span></dt><dd className="min-w-0 truncate"><a className="underline-offset-4 hover:underline" title={space.website} href={space.website} rel="noopener noreferrer" target="_blank">{space.website.replace(/^https?:\/\//, "")}</a></dd></div> : null}
+        </dl> : null}
       </section>
 
       {machinesVisible ? <section aria-labelledby="machines" className="flex flex-col items-start gap-6">
-        <h2 id="machines" className="text-h1 text-ink">Machines</h2>
+        <h2 id="machines" className="text-h2 text-ink">Machines</h2>
         <p className="text-body-l text-ink-secondary">Explore our machines, live status, specifications and documents.</p>
         <Link href={`/s/${space.slug}/machines`} className={buttonClasses({ variant: "secondary" })}>Browse machines</Link>
       </section> : null}

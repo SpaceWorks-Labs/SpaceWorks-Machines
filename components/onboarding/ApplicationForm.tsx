@@ -120,7 +120,7 @@ export function ApplicationForm({ applicantEmail }: { applicantEmail: string }) 
           <section className="flex flex-col gap-3" aria-labelledby="review-about">
             <div className="flex items-center justify-between gap-3">
               <h3 id="review-about" className="text-label font-semibold text-ink">About</h3>
-              <Button type="button" variant="quiet" size="sm" onClick={() => goTo(0)}>Edit</Button>
+              <Button type="button" variant="quiet" size="sm" onClick={() => goTo(0)}>Edit<span className="sr-only"> about your space</span></Button>
             </div>
             <DetailList
               className="sm:grid-cols-[8rem_minmax(0,1fr)]"
@@ -134,14 +134,14 @@ export function ApplicationForm({ applicantEmail }: { applicantEmail: string }) 
           <section className="flex flex-col gap-3" aria-labelledby="review-contact">
             <div className="flex items-center justify-between gap-3">
               <h3 id="review-contact" className="text-label font-semibold text-ink">Contact</h3>
-              <Button type="button" variant="quiet" size="sm" onClick={() => goTo(1)}>Edit</Button>
+              <Button type="button" variant="quiet" size="sm" onClick={() => goTo(1)}>Edit<span className="sr-only"> contact details</span></Button>
             </div>
             <DetailList
               className="sm:grid-cols-[8rem_minmax(0,1fr)]"
               items={[
-                { label: "Email", value: values.contactEmail },
+                { label: "Email", value: <span className="break-all">{values.contactEmail}</span> },
                 { label: "Phone", value: values.contactPhone || "Not given" },
-                { label: "Website", value: values.website || "Not given" },
+                { label: "Website", value: values.website ? <span className="break-all">{values.website}</span> : "Not given" },
                 { label: "Address", value: [values.addressLine, values.city, values.region, values.postalCode, values.country].filter(Boolean).join(", ") },
               ]}
             />

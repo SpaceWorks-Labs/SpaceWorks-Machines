@@ -60,7 +60,7 @@ export function ChatChannelDialog({ slug, channel, onClose }: { slug: string; ch
         <DialogBody className="flex flex-col gap-4">
           {error ? <Callout tone="danger" role="alert">{error}</Callout> : null}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Service">
+            <Field label="Service" helperText={channel ? "Can't be changed once added." : undefined}>
               <Dropdown value={kind} disabled={Boolean(channel)} onChange={(event) => { setKind(event.target.value as ChatKind); setFields({}); }}>
                 {CHAT_KINDS.map((item) => <option key={item} value={item}>{CHAT_KIND_LABELS[item]}</option>)}
               </Dropdown>

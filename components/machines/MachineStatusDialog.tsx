@@ -18,7 +18,7 @@ export function MachineStatusDialog({ spaceSlug, machineId, status, note }: {
   const mutation = useMachineMutation();
   return (
     <Dialog open={open} onOpenChange={(open) => { if (!mutation.pending) setOpen(open); }}>
-      <DialogTrigger asChild><Button variant="secondary">Change status</Button></DialogTrigger>
+      <DialogTrigger asChild><Button size="sm" variant="secondary">Change status</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader title="Change machine status" description="Running and paused follow jobs and printer connections. Staff can set the statuses below." />
         <form className="flex min-h-0 flex-col" onSubmit={(event) => {
@@ -35,7 +35,7 @@ export function MachineStatusDialog({ spaceSlug, machineId, status, note }: {
               <Field label="Status note" optional error={mutation.fieldErrors.note?.[0]}><Textarea name="note" defaultValue={note} maxLength={280} /></Field>
             </fieldset>
           </DialogBody>
-          <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" loading={mutation.pending}>Change status</Button></DialogFooter>
+          <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={mutation.pending}>Change status</Button></DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

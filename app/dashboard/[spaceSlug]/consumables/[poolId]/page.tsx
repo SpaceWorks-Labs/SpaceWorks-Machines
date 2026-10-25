@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/display";
 import { PoolSummary } from "@/components/consumables/PoolSummary";
 import { PoolActions } from "@/components/consumables/PoolActions";
 import { PoolLedger } from "@/components/consumables/PoolLedger";
-import { LowStockAlerts } from "@/components/consumables/LowStockAlerts";
 import { METERING_UNIT_LABELS } from "@/lib/machines/presets";
 
 export const metadata: Metadata = { title: "Consumable pool", robots: { index: false, follow: false } };
@@ -21,6 +20,5 @@ export default async function ConsumablePoolPage(props: { params: Promise<{ spac
     <Card as="section" aria-label="Pool details"><PoolSummary pool={pool} spaceSlug={space.slug} currency={space.currency} />
       {view.canManage ? <div className="mt-5"><PoolActions spaceSlug={space.slug} currency={space.currency} pool={pool} money={view.canFinance} /></div> : null}</Card>
     <PoolLedger spaceSlug={space.slug} poolId={pool.id} unit={METERING_UNIT_LABELS[pool.unit].short} entries={view.ledger} page={view.page} hasMore={view.hasMore} timezone={space.timezone} />
-    <LowStockAlerts spaceSlug={space.slug} enabled={view.lowStockAlerts} canConfigure={view.canConfigureAlerts} />
   </div>;
 }

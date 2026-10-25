@@ -38,8 +38,8 @@ export function SpaceEmailForm({ slug, initial, canEdit, verified }: { slug: str
     >
       {status ? <Callout tone={status.ok ? "success" : "danger"} role={status.ok ? "status" : "alert"}>{status.text}</Callout> : null}
       <SwitchRow
-        label="Send member emails through these settings"
-        description="Off: member emails go through the platform's email in your space's name, with replies to your contact address."
+        label="Send maker emails through these settings"
+        description="Off: maker emails go through the platform's email in your space's name, with replies to your contact address."
         checked={values.enabled}
         disabled={!canEdit}
         onCheckedChange={(checked) => set("enabled", checked === true)}

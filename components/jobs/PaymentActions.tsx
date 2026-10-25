@@ -29,13 +29,14 @@ export function PaymentDialog({ spaceSlug, payment, kind, label, methods, refund
         mutation.run(() => jobPaymentAction({ spaceSlug, paymentId: payment.id, command: { kind, method: text("method"), reference: text("reference") || undefined, note: text("note"), reason: text("reason"), amount, refundId } }), "Payment updated", () => setOpen(false));
       }}><DialogBody><fieldset disabled={mutation.pending} className="flex flex-col gap-5">
         {mutation.error ? <Callout role="alert" tone="danger">{mutation.error}</Callout> : null}
+        {kind === "record" && !methods.length ? <Callout tone="warning">No offline payment methods are turned on. Choose them in the job payment settings first.</Callout> : null}
         {kind === "record" ? <><Field label="Payment method"><Dropdown name="method" required>{methods.map((m) => <option key={m} value={m}>{words(m)}</option>)}</Dropdown></Field>
-          <Field label="Reference"><Input name="reference" required maxLength={2000} /></Field><Field label="Payment note" optional><Textarea name="note" maxLength={2000} /></Field></> : null}
+          <Field label="Reference" helperText="A receipt number, UPI reference (UTR) or bank reference."><Input name="reference" required maxLength={2000} /></Field><Field label="Payment note" optional><Textarea name="note" maxLength={2000} /></Field></> : null}
         {kind === "refund" ? <Field label={`Refund amount (${payment.currency})`} helperText="Leave blank to propose the full available amount." optional><Input name="amount" inputMode="decimal" /></Field> : null}
         {kind === "waive" || kind === "refund" ? <Field label="Reason"><Textarea name="reason" maxLength={2000} required /></Field> : null}
         {kind === "processRefund" ? ["RAZORPAY", "STRIPE"].includes(payment.method ?? "") ? <Callout>Return this amount through the original payment gateway.</Callout> : <Field label="Refund reference" helperText="Return the money first and enter its receipt or reference."><Input name="reference" required maxLength={2000} /></Field> : null}
         {kind === "confirm" ? <Callout>Confirm that the space received this payment. The person who recorded it cannot confirm it.</Callout> : null}
-      </fieldset></DialogBody><DialogFooter><Button type="button" variant="secondary" disabled={mutation.pending} onClick={() => setOpen(false)}>Close</Button><Button type="submit" loading={mutation.pending} disabled={kind === "record" && !methods.length}>{label}</Button></DialogFooter></form>
+      </fieldset></DialogBody><DialogFooter><Button type="button" variant="secondary" disabled={mutation.pending} onClick={() => setOpen(false)}>Close</Button><Button type="submit" variant="primary" loading={mutation.pending} disabled={kind === "record" && !methods.length}>{label}</Button></DialogFooter></form>
     </DialogContent>
   </Dialog>;
 }

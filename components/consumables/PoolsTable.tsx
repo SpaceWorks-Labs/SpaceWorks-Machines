@@ -24,15 +24,15 @@ export function PoolsTable({ spaceSlug, currency, pools, canManage }: { spaceSlu
     <PoolFilters value={filters} onChange={setFilters} />
     <p role="status" className="text-caption text-ink-muted">{shown.length} of {pools.length} pools</p>
     {shown.length ? <Table label="Consumable pools"><THead><TR>
-      <TH>Material</TH><TH>Colour</TH><TH>Brand / lot</TH><TH>Serves</TH><TH>Remaining</TH><TH>Low threshold</TH><TH>Cost per unit</TH><TH>Visibility</TH>{canManage ? <TH>Actions</TH> : null}
+      <TH>Material</TH><TH>Colour</TH><TH>Brand / lot</TH><TH>Serves</TH><TH className="text-right">Remaining</TH><TH className="text-right">Low threshold</TH><TH className="text-right">Cost per unit</TH><TH>Visibility</TH>{canManage ? <TH>Actions</TH> : null}
     </TR></THead><TBody>{shown.map((pool) => {
       const unit = METERING_UNIT_LABELS[pool.unit].short;
       return <TR key={pool.id}>
         <TD><Link className="font-semibold underline-offset-4 hover:underline" href={`/dashboard/${spaceSlug}/consumables/${pool.id}`}>{pool.material}</Link>{!pool.isActive ? <div className="mt-1"><Chip>Retired</Chip></div> : null}</TD>
         <TD><PoolColour pool={pool} /></TD><TD><span className="block">{pool.brand || "No brand"}</span><span className="text-caption text-ink-muted">{pool.lotCode || "No lot"}</span></TD>
         <TD><span className="block text-caption text-ink-muted">{pool.binding.kind === "type" ? "Machine type" : pool.binding.kind === "machine" ? "Machine" : "Shared"}</span>{pool.binding.label}</TD>
-        <TD><span className="whitespace-nowrap">{formatQuantity(pool.remainingQuantity)} {unit}</span>{pool.low ? <div className="mt-1"><Chip tone="warning">Low stock</Chip></div> : null}</TD>
-        <TD>{pool.lowThreshold === null ? "No threshold" : `${formatQuantity(pool.lowThreshold)} ${unit}`}</TD><TD>{poolCost(pool, currency)} / {unit}</TD>
+        <TD className="text-right"><span className="whitespace-nowrap tabular-nums">{formatQuantity(pool.remainingQuantity)} {unit}</span>{pool.low ? <div className="mt-1"><Chip tone="warning">Low stock</Chip></div> : null}</TD>
+        <TD className="whitespace-nowrap text-right tabular-nums">{pool.lowThreshold === null ? "No threshold" : `${formatQuantity(pool.lowThreshold)} ${unit}`}</TD><TD className="whitespace-nowrap text-right tabular-nums">{poolCost(pool, currency)} / {unit}</TD>
         <TD><Chip tone="outline">{pool.isPublic ? "Public" : "Staff only"}</Chip></TD>
         {canManage ? <TD><div className="flex flex-wrap gap-2"><PoolFormDialog spaceSlug={spaceSlug} currency={currency} pool={pool} />
           {pool.isActive ? <PoolLedgerDialog spaceSlug={spaceSlug} pool={pool} kind="restock" /> : null}</div></TD> : null}

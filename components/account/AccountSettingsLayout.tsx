@@ -22,7 +22,7 @@ export function AccountSettingsLayout({ account, children }: { account: AccountH
           <p className="text-sm text-ink-muted">Account</p>
           <h1 className="break-words text-h1 text-ink">{displayName}</h1>
           {account.email && account.email !== displayName ? (
-            <p className="truncate text-body-ui text-ink-secondary">{account.email}</p>
+            <p className="truncate text-body-ui text-ink-secondary" title={account.email}>{account.email}</p>
           ) : null}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {account.emailVerified ? (

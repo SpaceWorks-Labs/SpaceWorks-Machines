@@ -31,18 +31,10 @@ export default async function MachinePrinterPage({ params }: { params: Promise<{
               connection={connection ? { adapter: connection.adapter, baseUrl: connection.baseUrl, deviceId: connection.deviceId, hasSecret: connection.hasSecret, enabled: connection.enabled } : null} settings={settings} />
           </ActionDialog></>} />
 
-      <section aria-label="Connection types" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {adapters.map((adapter) => <Card key={adapter.kind} className={adapter.available ? "" : "opacity-70"}>
-          <div className="flex items-start justify-between gap-2"><h2 className="text-h3">{adapter.label}</h2>
-            {!adapter.available ? <Chip size="sm" tone="outline">Coming soon</Chip> : connection?.adapter === adapter.kind ? <Chip size="sm" tone="success">In use</Chip> : null}</div>
-          <p className="mt-2 text-body-ui text-ink-secondary">{adapter.description}</p>
-        </Card>)}
-      </section>
-
       {connection && telemetry ? <Card as="section" aria-label="Live telemetry">
         <CardHeader title="Live telemetry" description={connection.lastSeenAt ? `Last checked ${formatDayTime(connection.lastSeenAt, space.timezone)}` : "Not checked yet."}
           action={<Chip tone={STATE[telemetry.state][1]}>{STATE[telemetry.state][0]}</Chip>} />
-        {connection.lastError ? <p role="alert" className="mb-3 text-caption text-danger-fg">{connection.lastError}</p> : null}
+        {connection.lastError ? <p role="alert" className="mb-3 break-words text-caption text-danger-fg">{connection.lastError}</p> : null}
         {telemetry.progress !== null ? <ProgressBar value={telemetry.progress} max={100} label={`Progress ${telemetry.progress} %`} className="mb-4" /> : null}
         <DetailList items={[
           { label: "Print", value: telemetry.jobName ?? "None" },
@@ -58,10 +50,21 @@ export default async function MachinePrinterPage({ params }: { params: Promise<{
       {connection ? <Card as="section" aria-label="Command log">
         <CardHeader title="Command log" />
         {connection.commands.length ? <ul className="flex flex-col divide-y divide-line">{connection.commands.map((row) => <li key={row.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-          <span><code>{row.command}</code> <span className="text-caption text-ink-muted">{row.message}</span></span>
-          <span className="flex items-center gap-2"><Chip size="sm" tone={row.ok ? "success" : "danger"}>{row.ok ? "Done" : "Refused"}</Chip><span className="text-caption text-ink-muted">{formatDayTime(row.createdAt, space.timezone)}</span></span>
-        </li>)}</ul> : <p className="text-body-ui text-ink-muted">No commands yet.</p>}
+          <span className="min-w-0 break-words"><code>{row.command}</code> <span className="text-caption text-ink-muted">{row.message}</span></span>
+          <span className="flex shrink-0 items-center gap-2"><Chip size="sm" tone={row.ok ? "success" : "danger"}>{row.ok ? "Done" : "Refused"}</Chip><span className="text-caption text-ink-muted">{formatDayTime(row.createdAt, space.timezone)}</span></span>
+        </li>)}</ul> : <p className="text-body-ui text-ink-muted">No commands yet. Commands you send appear here.</p>}
       </Card> : null}
+
+      <section aria-labelledby="connection-types" className="flex flex-col gap-4">
+        <h2 id="connection-types" className="text-title text-ink">Connection types</h2>
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {adapters.map((adapter) => <li key={adapter.kind}><Card className={adapter.available ? "h-full" : "h-full bg-surface"}>
+            <div className="flex flex-wrap items-start justify-between gap-2"><h3 className="min-w-0 text-title text-ink">{adapter.label}</h3>
+              {!adapter.available ? <Chip size="sm" tone="outline">Coming soon</Chip> : connection?.adapter === adapter.kind ? <Chip size="sm" tone="success">In use</Chip> : null}</div>
+            <p className="mt-2 text-body-ui text-ink-secondary">{adapter.description}</p>
+          </Card></li>)}
+        </ul>
+      </section>
     </div>
   );
 }

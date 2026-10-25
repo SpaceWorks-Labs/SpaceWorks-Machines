@@ -35,7 +35,7 @@ export function PoolFormDialog({ spaceSlug, currency, pool, choices }: { spaceSl
           <PoolDetailsFields pool={pool} currency={currency} errors={mutation.fieldErrors} />
           {!pool && choices ? <PoolCreationFields choices={choices} errors={mutation.fieldErrors} /> : null}
         </fieldset></DialogBody>
-        <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" loading={mutation.pending}>{pool ? "Save pool" : label}</Button></DialogFooter>
+        <DialogFooter><Button variant="secondary" type="button" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={mutation.pending}>{pool ? "Save pool" : label}</Button></DialogFooter>
       </form>
     </DialogContent>
   </Dialog>;

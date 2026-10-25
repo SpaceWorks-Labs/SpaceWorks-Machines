@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { useMachineMutation } from "@/components/machines/useMachineMutation";
 
 type Command = "test" | "start" | "pause" | "resume" | "cancel" | "fail";
-const LABELS: Record<Command, string> = { test: "Test connection", start: "Start a test print", pause: "Pause", resume: "Resume", cancel: "Cancel print", fail: "Make it fail" };
+const LABELS: Record<Command, string> = { test: "Test connection", start: "Start a test print", pause: "Pause", resume: "Resume", cancel: "Cancel print", fail: "Simulate a failure" };
 
-/** Command buttons for one connection. "Make it fail" is the simulator's error injection. */
+/** Command buttons for one connection. "Simulate a failure" is the simulator's error injection. */
 export function PrinterControls({ spaceSlug, connectionId, commands }: { spaceSlug: string; connectionId: string; commands: Command[] }) {
   const mutation = useMachineMutation();
   return (

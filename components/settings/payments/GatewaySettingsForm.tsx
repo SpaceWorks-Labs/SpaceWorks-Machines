@@ -60,7 +60,7 @@ export function GatewaySettingsForm({ slug, initial, canEdit, secretsReady }: { 
         options={[{ value: "NONE", label: "Offline only" }, { value: "RAZORPAY", label: "Razorpay" }, { value: "STRIPE", label: "Stripe" }]}
       />
       {provider === "NONE" ? (
-        <p className="text-body-ui text-ink-secondary">Members pay you directly by UPI, bank transfer or cash, and your team records or confirms each payment.</p>
+        <p className="text-body-ui text-ink-secondary">Makers pay you directly by UPI, bank transfer or cash, and your team records or confirms each payment.</p>
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-2">

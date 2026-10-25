@@ -15,8 +15,10 @@ export function StaffJobActions({ job, spaceSlug, canReview, canOperate, options
     ["priority", "Change priority", ["SUBMITTED", "APPROVED"], canReview], ["reassign", "Reassign machine", ["SUBMITTED", "APPROVED"], canReview],
     ["note", "Add note", [job.status], canReview],
   ];
-  return <div className="flex flex-wrap gap-2" aria-label="Job actions">
-    {commands.filter(([, , statuses, allowed]) => allowed && statuses.includes(job.status)).map(([kind, label]) => <JobActionDialog key={kind} kind={kind} label={label} spaceSlug={spaceSlug} jobId={job.id} options={options} />)}
+  // The job's next step in the workshop stands out; everything else stays secondary.
+  const next: Partial<Record<JobDetail["status"], JobCommand["kind"]>> = { SUBMITTED: "approve", APPROVED: "start", RUNNING: "complete", PAUSED: "resume", COMPLETED: "collect" };
+  return <div className="flex flex-wrap gap-2" role="group" aria-label="Job actions">
+    {commands.filter(([, , statuses, allowed]) => allowed && statuses.includes(job.status)).map(([kind, label]) => <JobActionDialog key={kind} kind={kind} label={label} spaceSlug={spaceSlug} jobId={job.id} options={options} variant={next[job.status] === kind ? "primary" : undefined} />)}
     {options.canMoney && canOperate && ["APPROVED", "COMPLETED"].includes(job.status) ? <JobActionDialog kind={job.status === "APPROVED" ? "start" : "collect"} label={job.status === "APPROVED" ? "Start with payment override" : "Collect with payment override"} override spaceSlug={spaceSlug} jobId={job.id} options={options} /> : null}
   </div>;
 }

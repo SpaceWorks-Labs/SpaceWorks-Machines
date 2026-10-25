@@ -1,12 +1,13 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Download } from "lucide-react";
 import { loadReportsView } from "@/lib/views/app__dashboard__spaceSlug__reports__page";
 import { SpacePageHeader } from "@/components/dashboard/space/SpacePageHeader";
 import { Bars } from "@/components/reports/Bars";
 import { Button } from "@/components/ui/button";
 import { Chip, StatTile } from "@/components/ui/display";
 import { DateRangeForm } from "@/components/forms/FilterForms";
-import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
+import { Table, TBody, TD, TH, THead, TR, TruncatedTD } from "@/components/ui/table";
 import { formatMoney, isCurrencyCode } from "@/lib/money/currencies";
 import { WARRANTY_LABELS } from "@/lib/upkeep/labels";
 import { SpendSections } from "@/components/reports/SpendSections";
@@ -21,8 +22,8 @@ export default async function ReportsPage({ params, searchParams }: { params: Pr
   const { space, range, reports, spend, showMoney } = await loadReportsView({ params, searchParams });
   const money = (value: number, currency = space.currency) => isCurrencyCode(currency) ? formatMoney(value, currency, space.locale ?? undefined) : `${value} ${currency}`;
   const csv = (kind: string) => `/api/spaces/${space.slug}/reports/${kind}?from=${range.from}&to=${range.to}`;
-  const exportLink = (kind: string) => <span className="flex gap-2"><Button asChild size="sm" variant="secondary"><a href={csv(kind)} download>Export CSV</a></Button>
-    <Button asChild size="sm" variant="secondary"><a href={`${csv(kind)}&format=xlsx`} download>Excel</a></Button></span>;
+  const exportLink = (kind: string) => <span className="flex gap-2"><Button asChild size="sm" variant="secondary"><a href={csv(kind)} download aria-label={`Export the ${kind} report as CSV`}><Download aria-hidden className="size-4" />CSV</a></Button>
+    <Button asChild size="sm" variant="secondary"><a href={`${csv(kind)}&format=xlsx`} download aria-label={`Export the ${kind} report as Excel`}><Download aria-hidden className="size-4" />Excel</a></Button></span>;
   return (
     <div className="flex flex-col gap-7 pb-4">
       <SpacePageHeader space={space} title="Reports" description="Jobs, machine use, consumables, money and upkeep over a period." />
@@ -37,9 +38,10 @@ export default async function ReportsPage({ params, searchParams }: { params: Pr
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection id="reports-utilisation" label="Machine utilisation report" title="Machine utilisation" action={exportLink("utilisation")}>
-        <Table label="Machine utilisation"><THead><TR><TH>Machine</TH><TH>Hours run</TH><TH>Runs</TH><TH>Availability</TH><TH>Downtime</TH></TR></THead>
-          <TBody>{reports.utilisation.map((row) => <TR key={row.machineId}><TD>{row.name}</TD><TD>{Math.round(row.hoursRun * 10) / 10}</TD><TD>{row.runs}</TD><TD>{percent(row.availability)}</TD><TD>{minutes(row.downtimeMinutes)}</TD></TR>)}</TBody></Table>
+      <CollapsibleSection id="reports-utilisation" label="Machine utilisation report" title="Machine utilisation" action={exportLink("utilisation")} count={reports.utilisation.length}>
+        {reports.utilisation.length ? <Table label="Machine utilisation"><THead><TR><TH>Machine</TH><TH className="text-right">Hours run</TH><TH className="text-right">Runs</TH><TH className="text-right">Availability</TH><TH className="text-right">Downtime</TH></TR></THead>
+          <TBody>{reports.utilisation.map((row) => <TR key={row.machineId}><TruncatedTD text={row.name} /><TD className="text-right tabular-nums">{Math.round(row.hoursRun * 10) / 10}</TD><TD className="text-right tabular-nums">{row.runs}</TD><TD className="whitespace-nowrap text-right tabular-nums">{percent(row.availability)}</TD><TD className="whitespace-nowrap text-right tabular-nums">{minutes(row.downtimeMinutes)}</TD></TR>)}</TBody></Table>
+          : <p className="text-body-ui text-ink-secondary">No machines to report on.</p>}
       </CollapsibleSection>
 
       <CollapsibleSection id="reports-consumables" label="Consumables report" title="Consumables used" action={exportLink("consumables")}>
@@ -69,9 +71,10 @@ export default async function ReportsPage({ params, searchParams }: { params: Pr
       {spend ? <SpendSections spend={spend} money={money} exportLink={exportLink} /> : null}
 
       <CollapsibleSection id="reports-warranty" label="Warranty report" title="Warranties" action={exportLink("warranty")} count={reports.warranty.length}>
-        <Table label="Warranties"><THead><TR><TH>Machine</TH><TH>Vendor</TH><TH>Contract</TH><TH>Expires</TH><TH>State</TH></TR></THead>
-          <TBody>{reports.warranty.map((row) => <TR key={row.machineSlug}><TD><Link className="underline" href={`/dashboard/${space.slug}/machines/${row.machineSlug}/upkeep`}>{row.machine}</Link></TD>
-            <TD>{row.vendor}</TD><TD>{row.contract}</TD><TD>{row.expiresOn ?? "Not set"}</TD><TD><Chip size="sm" tone={WARRANTY_LABELS[row.state].tone}>{WARRANTY_LABELS[row.state].label}</Chip></TD></TR>)}</TBody></Table>
+        {reports.warranty.length ? <Table label="Warranties"><THead><TR><TH>Machine</TH><TH>Vendor</TH><TH>Contract</TH><TH>Expires</TH><TH>State</TH></TR></THead>
+          <TBody>{reports.warranty.map((row) => <TR key={row.machineSlug}><TD><Link className="underline underline-offset-4" href={`/dashboard/${space.slug}/machines/${row.machineSlug}/upkeep`}>{row.machine}</Link></TD>
+            <TruncatedTD text={row.vendor || "Not recorded"} /><TruncatedTD text={row.contract || "Not recorded"} /><TD className="whitespace-nowrap">{row.expiresOn ?? "Not set"}</TD><TD><Chip size="sm" tone={WARRANTY_LABELS[row.state].tone}>{WARRANTY_LABELS[row.state].label}</Chip></TD></TR>)}</TBody></Table>
+          : <p className="text-body-ui text-ink-secondary">No warranties recorded.</p>}
       </CollapsibleSection>
     </div>
   );

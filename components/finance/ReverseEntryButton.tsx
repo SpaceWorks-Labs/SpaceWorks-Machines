@@ -23,9 +23,9 @@ export function ReverseEntryButton({ spaceSlug, entryId }: { spaceSlug: string; 
       }}>
         <DialogBody><fieldset disabled={mutation.pending} className="flex flex-col gap-4">
           {mutation.error ? <Callout tone="danger" role="alert">{mutation.error}</Callout> : null}
-          <Field label="Reason" error={mutation.fieldErrors.reason?.[0]}><Textarea name="reason" rows={3} required minLength={3} maxLength={500} /></Field>
+          <Field label="Reason" helperText="Kept with the reversing entry. At least 3 characters." error={mutation.fieldErrors.reason?.[0]}><Textarea name="reason" rows={3} required minLength={3} maxLength={500} /></Field>
         </fieldset></DialogBody>
-        <DialogFooter><Button type="button" variant="secondary" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" loading={mutation.pending}>Reverse entry</Button></DialogFooter>
+        <DialogFooter><Button type="button" variant="secondary" disabled={mutation.pending} onClick={() => setOpen(false)}>Cancel</Button><Button type="submit" variant="primary" loading={mutation.pending}>Reverse entry</Button></DialogFooter>
       </form>
     </DialogContent>
   </Dialog>;

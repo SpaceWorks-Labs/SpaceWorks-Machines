@@ -18,7 +18,7 @@ export function MachineGroups({ spaceSlug, types, machines }: {
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {rows.map((machine) => (
             <Card key={machine.id} as="article" padding="none" className="overflow-hidden">
-              <Link href={`/dashboard/${spaceSlug}/machines/${machine.slug}`} className="group flex h-full flex-col focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2">
+              <Link href={`/dashboard/${spaceSlug}/machines/${machine.slug}`} className="group flex h-full flex-col focus-visible:outline-2 focus-visible:outline-[rgb(var(--sw-ui-focus))] focus-visible:-outline-offset-2">
                 <div className="relative flex aspect-[16/9] items-center justify-center bg-surface">
                   {machine.coverUrl ? <Image src={machine.coverUrl} alt={machine.coverAlt} fill unoptimized sizes="(min-width:1280px) 340px, (min-width:640px) 50vw, 100vw" className="object-cover" /> : <Icon aria-hidden className="size-12 text-ink-muted" />}
                 </div>
@@ -27,7 +27,7 @@ export function MachineGroups({ spaceSlug, types, machines }: {
                     <h3 className="min-w-0 break-words text-title text-ink group-hover:underline">{machine.name}</h3>
                     <MachineStatusChip status={machine.status} retired={machine.retired} />
                   </div>
-                  <p className="text-body-ui text-ink-secondary">{machine.location || "No location set"}</p>
+                  <p className="break-words text-body-ui text-ink-secondary">{machine.location || "No location set"}</p>
                   <div className="mt-auto flex flex-wrap gap-2"><Chip tone="outline">{machine.isPublic ? "Public" : "Staff only"}</Chip><Chip tone="outline">{machine.acceptsJobs ? "Accepts jobs" : "Jobs closed"}</Chip></div>
                 </div>
               </Link>
