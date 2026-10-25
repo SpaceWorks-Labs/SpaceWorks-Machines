@@ -13,7 +13,7 @@ test("staff log maintenance on a schedule; a maker reports a fault and staff res
   await signInDemo(staff, "machines@demo.test");
   await staff.goto(UPKEEP, { waitUntil: "networkidle" });
   await expect(staff.getByRole("heading", { name: "Upkeep: Demo drill press" })).toBeVisible();
-  await expect(staff.getByRole("region", { name: "Maintenance schedules" }).getByText("Weekly inspection", { exact: true })).toBeVisible();
+  await expect(staff.getByRole("region", { name: "Maintenance schedules" }).getByRole("paragraph").filter({ hasText: /^Weekly inspection$/ })).toBeVisible();
 
   await staff.getByRole("button", { name: "Log maintenance" }).click();
   const log = staff.getByRole("dialog", { name: "Log maintenance" });
