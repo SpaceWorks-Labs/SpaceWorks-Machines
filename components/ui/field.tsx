@@ -110,7 +110,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, Omit<InputHTMLAttribut
         onClick={() => setVisible((value) => !value)}
         aria-label={visible ? "Hide password" : "Show password"}
         aria-pressed={visible}
-        className="absolute right-1.5 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-ink-muted hover:bg-muted hover:text-ink"
+        className="absolute right-1.5 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-ink-muted after:absolute after:-inset-1 after:content-[''] hover:bg-muted hover:text-ink"
       >
         {visible ? <EyeOff aria-hidden className="size-[18px]" /> : <Eye aria-hidden className="size-[18px]" />}
       </button>
@@ -139,7 +139,7 @@ export const SearchInput = forwardRef<HTMLInputElement, Omit<InputHTMLAttributes
           type="button"
           onClick={onClear}
           aria-label="Clear search"
-          className="absolute right-1.5 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-ink-muted hover:bg-muted hover:text-ink"
+          className="absolute right-1.5 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-full text-ink-muted after:absolute after:-inset-1 after:content-[''] hover:bg-muted hover:text-ink"
         >
           <X aria-hidden className="size-4" />
         </button>

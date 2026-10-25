@@ -111,7 +111,7 @@ export function DeployTabs() {
           <TabsPrimitive.Trigger
             key={option.id}
             value={option.id}
-            className="min-h-10 rounded-control border border-sw-cream/25 px-4 text-label font-semibold text-sw-cream transition-colors hover:bg-sw-cream/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sw-citron data-[state=active]:border-sw-citron data-[state=active]:bg-sw-citron data-[state=active]:text-sw-ink"
+            className="min-h-11 rounded-control border border-sw-cream/25 px-4 text-label font-semibold text-sw-cream transition-colors hover:bg-sw-cream/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sw-citron data-[state=active]:border-sw-citron data-[state=active]:bg-sw-citron data-[state=active]:text-sw-ink"
           >
             {option.label}
           </TabsPrimitive.Trigger>

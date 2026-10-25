@@ -18,7 +18,7 @@ export function CopyCommand({ command }: { command: string }) {
           setCopied(false);
         }
       }}
-      className="inline-flex min-h-9 items-center gap-1.5 rounded-control border border-sw-cream/25 px-3.5 text-caption font-semibold text-sw-cream transition-colors hover:bg-sw-cream/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sw-citron"
+      className="inline-flex min-h-11 items-center gap-1.5 rounded-control border border-sw-cream/25 px-3.5 text-caption font-semibold text-sw-cream transition-colors hover:bg-sw-cream/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sw-citron"
     >
       {copied ? <Check aria-hidden className="size-3.5" /> : <Copy aria-hidden className="size-3.5" />}
       <span aria-live="polite">{copied ? "Copied" : "Copy command"}</span>

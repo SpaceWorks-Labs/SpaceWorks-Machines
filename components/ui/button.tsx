@@ -153,7 +153,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
       title={label}
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded-full transition-colors duration-[120ms] ease-sw disabled:pointer-events-none disabled:text-ink-disabled [&_svg]:size-[18px]",
-        size === "sm" ? "size-9" : "size-11",
+        // `sm` draws 36px but keeps a 44px target.
+        size === "sm" ? "relative size-9 after:absolute after:-inset-1 after:content-['']" : "size-11",
         variant === "quiet" && "text-ink-secondary hover:bg-muted hover:text-ink",
         variant === "secondary" && "border border-line bg-panel text-ink hover:bg-muted",
         variant === "danger" && "text-danger-fg hover:bg-danger-bg",

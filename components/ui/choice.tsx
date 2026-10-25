@@ -214,7 +214,9 @@ export function SegmentedControl<T extends string>({
           aria-label={option.ariaLabel}
           className={cn(
             "inline-flex items-center justify-center gap-1.5 rounded-md font-semibold text-ink-muted transition-[background-color,color,box-shadow] duration-[120ms] ease-sw hover:text-ink data-[state=on]:bg-panel data-[state=on]:text-ink data-[state=on]:shadow-segment [&_svg]:size-4",
-            size === "sm" ? "min-h-8 px-3 text-[13px]" : "min-h-9 px-4 text-sm",
+            // The track's padding is part of each option's target, so every option keeps 44px.
+            "relative after:absolute after:inset-x-0 after:content-['']",
+            size === "sm" ? "min-h-8 px-3 text-[13px] after:-inset-y-1.5" : "min-h-9 px-4 text-sm after:-inset-y-1",
           )}
         >
           {option.icon}

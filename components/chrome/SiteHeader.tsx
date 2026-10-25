@@ -33,7 +33,7 @@ export function BrandHomeLink({ href = "/", stacked = false, className }: { href
     );
   }
   return (
-    <Link href={href} aria-label="Space Works Machines home" className={cn("inline-flex shrink-0 items-center gap-3 rounded-md", className)}>
+    <Link href={href} aria-label="Space Works Machines home" className={cn("inline-flex min-h-11 min-w-11 shrink-0 items-center gap-3 rounded-md", className)}>
       <SpaceWorksLogo variant="app-icon" height={36} label={null} className="sm:hidden" />
       <SpaceWorksProductLogo height={32} label={null} className="hidden sm:inline-flex" />
     </Link>
@@ -100,7 +100,7 @@ export function SiteHeader() {
               </IconButton>
             </DialogPrimitive.Trigger>
             <DialogPrimitive.Portal>
-              <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[rgb(var(--sw-color-ink)/0.48)] xl:hidden" />
+              <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[rgb(var(--sw-color-ink)/0.48)] dark:bg-[rgb(0_0_0/0.48)] xl:hidden" />
               <DialogPrimitive.Content className="fixed inset-x-0 top-0 z-50 rounded-b-xl border-b border-line bg-canvas p-4 shadow-float focus:outline-none xl:hidden">
                 <DialogPrimitive.Title className="sr-only">Navigation</DialogPrimitive.Title>
                 <DialogPrimitive.Description className="sr-only">Site navigation links</DialogPrimitive.Description>

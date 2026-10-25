@@ -29,7 +29,7 @@ export function LegalToc({ sections }: { sections: Array<{ id: string; title: st
   return (
     <nav aria-labelledby="legal-toc" className="flex flex-col gap-2.5 md:sticky md:top-[100px] md:self-start">
       <p id="legal-toc" className="text-overline text-ink-muted">On this page</p>
-      <ul className="flex flex-col gap-2.5">
+      <ul className="flex flex-col">
         {sections.map((section) => (
           <li key={section.id}>
             <a
@@ -37,7 +37,7 @@ export function LegalToc({ sections }: { sections: Array<{ id: string; title: st
               aria-current={active === section.id ? "location" : undefined}
               onClick={() => setActive(section.id)}
               className={cn(
-                "text-body-ui underline-offset-4 transition-colors hover:text-ink hover:underline",
+                "flex min-h-11 items-center text-body-ui underline-offset-4 transition-colors hover:text-ink hover:underline",
                 active === section.id ? "text-ink" : "text-ink-secondary",
               )}
             >

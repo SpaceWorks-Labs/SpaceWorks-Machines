@@ -93,7 +93,7 @@ export function AccountProfileForm(props: {
                 <div className="flex items-center gap-1">
                   <p className="text-caption text-ink-muted">{avatarSourceDescription}</p>
                   <Tooltip content="Remove your uploaded image to use your sign-in provider's image, or your initials.">
-                    <IconButton label="Profile image source" size="sm" className="size-7 shrink-0 [&_svg]:size-4"><Info /></IconButton>
+                    <IconButton label="Profile image source" size="sm" className="shrink-0 [&_svg]:size-4"><Info /></IconButton>
                   </Tooltip>
                 </div>
               </div>

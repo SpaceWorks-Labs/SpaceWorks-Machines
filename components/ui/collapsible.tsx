@@ -75,7 +75,7 @@ export function CollapsibleSection({ id, title, count, description, action, labe
   const [open, setOpen] = useRememberedOpen(collapsibleKey(id), startOpen ?? defaultOpen(count));
   const contentId = useId();
   return (
-    <section aria-label={label ?? (typeof title === "string" ? title : undefined)} className={cn("rounded-xl border border-line bg-panel", className)}>
+    <section aria-label={label ?? (typeof title === "string" ? title : undefined)} className={cn("min-w-0 rounded-xl border border-line bg-panel", className)}>
       <div className="flex flex-wrap items-center gap-2 pr-3">
         {/* The disclosure pattern: the heading holds the button, so the section keeps its heading. */}
         <h2 className="min-w-0 flex-1">

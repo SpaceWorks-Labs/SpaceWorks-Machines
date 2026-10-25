@@ -227,7 +227,7 @@ export function AppShell({ user, spaces, children }: { user: ShellUser; spaces: 
       </aside>
 
       <div className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-line bg-canvas px-4 lg:hidden">
-        <Link href="/dashboard" aria-label="Space Works Machines home" className="inline-flex shrink-0 items-center rounded-md">
+        <Link href="/dashboard" aria-label="Space Works Machines home" className="inline-flex min-h-11 shrink-0 items-center rounded-md">
           <SpaceWorksProductLogo height={30} label={null} />
         </Link>
         <DialogPrimitive.Root open={menuOpen} onOpenChange={setMenuOpen}>
