@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-> **Start here:** `docs/DECISIONS.md` explains what this repo is (a standalone app split out of SpaceWorks, part of the SpaceWorks-HQ family) and holds every decision: the locked ones, the owner's, the defaults taken while building and the checks still waiting on the owner.
+> **Start here:** `docs/DECISIONS.md` explains what this repo is (a standalone app split out of SpaceWorks, part of the SpaceWorks-Labs family) and holds every decision: the locked ones, the owner's, the defaults taken while building and the checks still waiting on the owner.
 
 Guidance for Claude Code (and other agents, via `AGENTS.md`) in this repository. `CLAUDE.md` is a byte-identical
 copy of `AGENTS.md` (`tests/unit/agent-guide.test.ts`); edit `AGENTS.md` and copy it over.

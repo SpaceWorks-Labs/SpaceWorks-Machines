@@ -10,7 +10,7 @@ x-logging: &default-logging
     max-size: "10m"
     max-file: "3"
 x-restart: &default-restart unless-stopped
-x-backend-image: &backend-image "${SWM_BACKEND_IMAGE:-ghcr.io/spaceworks-hq/spaceworks-machines-backend}:${SWM_IMAGE_TAG:-latest}"
+x-backend-image: &backend-image "${SWM_BACKEND_IMAGE:-ghcr.io/spaceworks-labs/spaceworks-machines-backend}:${SWM_IMAGE_TAG:-latest}"
 x-app-env: &app-env
   NODE_ENV: production
   AUTH_URL: ${PUBLIC_APP_BASE_URL:?set PUBLIC_APP_BASE_URL}

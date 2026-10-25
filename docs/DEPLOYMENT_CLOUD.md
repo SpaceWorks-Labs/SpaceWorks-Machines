@@ -30,7 +30,7 @@ over TLS, an S3-compatible bucket and an SMTP relay. It uses `docker-compose.clo
 ## Docker host with Compose
 
 ```bash
-git clone https://github.com/SpaceWorks-HQ/SpaceWorks-Machines.git /opt/spaceworks-machines
+git clone https://github.com/SpaceWorks-Labs/SpaceWorks-Machines.git /opt/spaceworks-machines
 cd /opt/spaceworks-machines
 sudo install -D -m 600 .env.production.example /etc/spaceworks-machines/cloud.env
 sudoedit /etc/spaceworks-machines/cloud.env      # fill every value; see docs/CONFIGURATION.md
@@ -89,7 +89,7 @@ the secret, so the calls must reach the backend directly, not through an edge th
 
 Any container platform works with the published image:
 
-- web: `ghcr.io/spaceworks-hq/spaceworks-machines-backend:<version>` with the default command
+- web: `ghcr.io/spaceworks-labs/spaceworks-machines-backend:<version>` with the default command
   (`--role backend node server.js`) and the variables in [CONFIGURATION.md](CONFIGURATION.md);
 - a release or pre-deploy job: the same image with `--role migrate`;
 - a background worker: the same image with `--role worker node dist/worker.js`;

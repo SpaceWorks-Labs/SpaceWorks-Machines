@@ -77,7 +77,7 @@ integration tests at a disposable database. `DEMO_PASSWORD` and `DEMO_MFA_SECRET
 
 | Variable | Default | Description |
 |---|---|---|
-| `SWM_REPOSITORY` | `SpaceWorks-HQ/SpaceWorks-Machines` | Repository the installer, updater and runner follow (a fork works). |
+| `SWM_REPOSITORY` | `SpaceWorks-Labs/SpaceWorks-Machines` | Repository the installer, updater and runner follow (a fork works). |
 | `SWM_BACKEND_IMAGE`, `SWM_FRONTEND_IMAGE` | `ghcr.io/<owner>/spaceworks-machines-backend` / `-frontend` | Image names, derived from the repository owner. |
 | `SWM_IMAGE_TAG` | `.spaceworks-version`, else `latest` | The release the stack runs. |
 | `SWM_LAYER` | `none` | `none` plain HTTP through Caddy, `tls` automatic HTTPS, `proxy` your own proxy on `127.0.0.1:8080`. |

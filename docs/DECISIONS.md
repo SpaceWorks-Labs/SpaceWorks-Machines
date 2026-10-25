@@ -7,16 +7,16 @@ phase plan is `docs/plans/2026-10-23-machines-build.md`, the rules ported from D
 ## Where this repo fits
 
 Space Works is a family of self-hosted, open-source (AGPL-3.0-or-later) tools for makerspaces and
-communities, published under the [SpaceWorks-HQ](https://github.com/SpaceWorks-HQ) GitHub org. The original
-[SpaceWorks](https://github.com/SpaceWorks-HQ/SpaceWorks) (Django + React) bundled inventory, lending, machines,
+communities, published under the [SpaceWorks-Labs](https://github.com/SpaceWorks-Labs) GitHub org. The original
+[SpaceWorks](https://github.com/SpaceWorks-Labs/SpaceWorks) (Django + React) bundled inventory, lending, machines,
 3D printing, space bookings and payments. On 2026-10-23 three areas were split into standalone apps:
-[SpaceWorks-Inventory](https://github.com/SpaceWorks-HQ/SpaceWorks-Inventory),
+[SpaceWorks-Inventory](https://github.com/SpaceWorks-Labs/SpaceWorks-Inventory),
 **SpaceWorks-Machines** (this repo: machine types and catalogue, job requests, pricing and payments,
 consumables, maintenance and usage, the 3D-printer adapter layer) and
-[SpaceWorks-Bookings](https://github.com/SpaceWorks-HQ/SpaceWorks-Bookings).
-[SpaceWorks-Events](https://github.com/SpaceWorks-HQ/SpaceWorks-Events) is the reference for structure,
+[SpaceWorks-Bookings](https://github.com/SpaceWorks-Labs/SpaceWorks-Bookings).
+[SpaceWorks-Events](https://github.com/SpaceWorks-Labs/SpaceWorks-Events) is the reference for structure,
 install and deploy; brand and UI rules come only from
-[SpaceWorks-Design](https://spaceworks-hq.github.io/SpaceWorks-Design/).
+[SpaceWorks-Design](https://spaceworks-labs.github.io/SpaceWorks-Design/).
 
 ## Locked decisions (2026-10-23)
 

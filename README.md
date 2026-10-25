@@ -164,7 +164,7 @@ production compose stack:
 ### Install in one line
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks-Machines/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks-Machines/main/install.sh | bash
 ```
 
 The installer checks the server first and changes nothing until those checks pass. It then asks for your
@@ -175,7 +175,7 @@ anything.
 - **Private repository:** set `GITHUB_TOKEN`, or fetch the installer with the GitHub CLI:
 
 ```bash
-gh api "repos/SpaceWorks-HQ/SpaceWorks-Machines/contents/install.sh?ref=dev" -H "Accept: application/vnd.github.raw" | bash -s -- --ref dev
+gh api "repos/SpaceWorks-Labs/SpaceWorks-Machines/contents/install.sh?ref=dev" -H "Accept: application/vnd.github.raw" | bash -s -- --ref dev
 ```
 
 Everything about the server install is in [docs/DEPLOYMENT_VPS.md](docs/DEPLOYMENT_VPS.md).
@@ -200,7 +200,7 @@ or storage credentials. See [docs/DEPLOYMENT_NETLIFY.md](docs/DEPLOYMENT_NETLIFY
 
 ## Run it in the cloud
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/SpaceWorks-HQ/SpaceWorks-Machines)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/SpaceWorks-Labs/SpaceWorks-Machines)
 
 [`render.yaml`](render.yaml) is a Render Blueprint for the web service plus the worker and beat (Render
 starter instances). You bring the managed services:
@@ -231,7 +231,7 @@ Without Redis, set `JOBS_INPROCESS=true` to deliver email from the web process i
 
 ## Design system
 
-Space Works Machines follows [SpaceWorks-Design](https://spaceworks-hq.github.io/SpaceWorks-Design/), the
+Space Works Machines follows [SpaceWorks-Design](https://spaceworks-labs.github.io/SpaceWorks-Design/), the
 only source of brand truth:
 
 - tokens for every colour, and light and dark modes; switching reveals the new mode in a circle from the
@@ -285,14 +285,14 @@ things are the way they are.
 ## Credits
 
 - **Platform layer:** forked from
-  [Space Works Organization](https://github.com/SpaceWorks-HQ/SpaceWorks-Organization) 0.7.0, which itself
-  builds on [Space Works Events](https://github.com/SpaceWorks-HQ/SpaceWorks-Events).
+  [Space Works Organization](https://github.com/SpaceWorks-Labs/SpaceWorks-Organization) 0.7.0, which itself
+  builds on [Space Works Events](https://github.com/SpaceWorks-Labs/SpaceWorks-Events).
 - **Background jobs:** the BullMQ worker and beat follow
-  [Space Works Workspace](https://github.com/SpaceWorks-HQ/SpaceWorks-Workspace).
+  [Space Works Workspace](https://github.com/SpaceWorks-Labs/SpaceWorks-Workspace).
 - **Domain:** the rules for machines, printing, maintenance and payments are ported from the Django
-  [SpaceWorks](https://github.com/SpaceWorks-HQ/SpaceWorks) apps.
+  [SpaceWorks](https://github.com/SpaceWorks-Labs/SpaceWorks) apps.
 - **Brand:** the name, logo, Patch and visual identity come from
-  [SpaceWorks-Design](https://github.com/SpaceWorks-HQ/SpaceWorks-Design).
+  [SpaceWorks-Design](https://github.com/SpaceWorks-Labs/SpaceWorks-Design).
 - **Fonts:** Gilroy Light and ExtraBold by Radomir Tinkov (Gilroy Free Font EULA), and Unbounded (SIL Open
   Font License 1.1). See [NOTICE](NOTICE).
 

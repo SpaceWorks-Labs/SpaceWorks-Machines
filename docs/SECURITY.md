@@ -2,7 +2,7 @@
 
 How Space Works Machines protects an installation, and what an operator must do. Report a vulnerability
 privately through GitHub's **Security → Report a vulnerability** on
-[SpaceWorks-HQ/SpaceWorks-Machines](https://github.com/SpaceWorks-HQ/SpaceWorks-Machines), not in a
+[SpaceWorks-Labs/SpaceWorks-Machines](https://github.com/SpaceWorks-Labs/SpaceWorks-Machines), not in a
 public issue.
 
 ## Data in transit

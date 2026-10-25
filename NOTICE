@@ -6,17 +6,17 @@ the terms of the GNU Affero General Public License as published by the Free
 Software Foundation, either version 3 of the License, or (at your option) any
 later version. See the LICENSE file for the full text.
 
-Source code: https://github.com/SpaceWorks-HQ/SpaceWorks-Machines
+Source code: https://github.com/SpaceWorks-Labs/SpaceWorks-Machines
 
 The platform layer is derived from Space Works Organization
-(https://github.com/SpaceWorks-HQ/SpaceWorks-Organization, AGPL-3.0-or-later),
+(https://github.com/SpaceWorks-Labs/SpaceWorks-Organization, AGPL-3.0-or-later),
 forked at release 0.7.0, which in turn derives parts of its platform layer from
-Space Works Events (https://github.com/SpaceWorks-HQ/SpaceWorks-Events,
+Space Works Events (https://github.com/SpaceWorks-Labs/SpaceWorks-Events,
 AGPL-3.0-or-later). The BullMQ worker and beat follow Space Works Workspace
-(https://github.com/SpaceWorks-HQ/SpaceWorks-Workspace, AGPL-3.0-or-later).
+(https://github.com/SpaceWorks-Labs/SpaceWorks-Workspace, AGPL-3.0-or-later).
 
 The Space Works name, logo, mascot and visual identity come from the Space Works
-design system (https://github.com/SpaceWorks-HQ/SpaceWorks-Design).
+design system (https://github.com/SpaceWorks-Labs/SpaceWorks-Design).
 
 Fonts shipped in public/brand/fonts:
 - Gilroy Light and Gilroy ExtraBold, by Radomir Tinkov, under the Gilroy Free

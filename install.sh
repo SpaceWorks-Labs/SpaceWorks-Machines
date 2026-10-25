@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pinned, no-git Space Works Machines installer:
-#   curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks-Machines/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks-Machines/main/install.sh | bash
 # Mirrors the main SpaceWorks installer. It is fetched alone (curl | bash), so it is one
 # self-contained file by necessity and may exceed the ~300-line ceiling for that reason.
 set -euo pipefail
@@ -68,7 +68,7 @@ fi
 # One command for everyone: --repo (or SWM_REPOSITORY) picks a fork up front;
 # otherwise a fresh install asks below, defaulting to the main project.
 [[ -z "$REPO_ARG" ]] || SWM_REPOSITORY="$REPO_ARG"
-REPOSITORY="${SWM_REPOSITORY:-SpaceWorks-HQ/SpaceWorks-Machines}"
+REPOSITORY="${SWM_REPOSITORY:-SpaceWorks-Labs/SpaceWorks-Machines}"
 INSTALL_DIR="${SWM_DIR:-/opt/spaceworks-machines}"
 MIN_FREE_KB=$((8 * 1024 * 1024))
 RUN_ROOT=()

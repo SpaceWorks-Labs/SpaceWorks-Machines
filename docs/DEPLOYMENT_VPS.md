@@ -7,7 +7,7 @@ Space Works apps. Assume a dedicated server: the installer's Caddy takes ports 8
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/SpaceWorks-HQ/SpaceWorks-Machines/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/SpaceWorks-Labs/SpaceWorks-Machines/main/install.sh | bash
 ```
 
 The installer checks the host (architecture, distribution, Docker, disk space, an existing install), asks which

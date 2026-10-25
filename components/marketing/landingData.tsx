@@ -2,7 +2,7 @@ import { Cog, Drill, Printer, Scissors, Zap, type LucideIcon } from "lucide-reac
 import { Proof } from "./Proof";
 
 /** Sample content for the landing page. Every person, machine and number here is labelled as a sample. */
-export const GITHUB = "https://github.com/SpaceWorks-HQ/SpaceWorks-Machines";
+export const GITHUB = "https://github.com/SpaceWorks-Labs/SpaceWorks-Machines";
 
 export const SAMPLE_SPACE = "SpaceWorks Kochi";
 

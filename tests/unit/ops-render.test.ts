@@ -19,6 +19,6 @@ describe("render.yaml", () => {
     expect(blueprint).toContain("MIGRATE_ON_START");
   });
   it("matches the README's Deploy to Render button", () => {
-    expect(readFileSync("README.md", "utf8")).toContain("https://render.com/deploy?repo=https://github.com/SpaceWorks-HQ/SpaceWorks-Machines");
+    expect(readFileSync("README.md", "utf8")).toContain("https://render.com/deploy?repo=https://github.com/SpaceWorks-Labs/SpaceWorks-Machines");
   });
 });
