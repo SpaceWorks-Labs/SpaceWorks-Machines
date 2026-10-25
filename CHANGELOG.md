@@ -29,6 +29,21 @@ below were never released on their own), plus repairs, technicians, the to-buy l
   overview, maintenance, repairs, upkeep, fault, report and finance sections collapse from their header (with a
   count). Empty sections start collapsed and each choice is remembered in the browser. The colour-mode reveal from
   the account menu now waits for the menu to close, so no ghost of it lingers in the animation.
+- **Polish.** A page-by-page pass on every screen:
+  - **Layout and targets.** Every page fits a 390px phone with no sideways scroll. Every control has a 44px target,
+    including small icon buttons, segmented options, footer and contents links.
+  - **Tables and lists.** Ledgers, logs and other long tables keep their header pinned. Long names are cut with
+    the full text on hover, and money is right-aligned.
+  - **Actions and confirmations.** Each page has one primary action, and dialog submits stand out from Cancel.
+    Destructive steps confirm with the danger button; removing a maker and deleting a pricing rule now ask first.
+    Disabled controls say why.
+  - **Folding.** Closed jobs, service history, machine photos and documents, the role reference, low-stock alerts
+    and printer connection types fold. The job board drops its duplicate "Awaiting collection" list.
+  - **Empty states and copy.** Lists have proper empty states. Out-of-date and exclamation-mark copy is gone,
+    words standing in for icons are replaced, and README screenshots are recaptured in light and dark.
+  - **Colour-mode reveal.** Element transitions now switch off only after the old mode is captured, so the
+    production build no longer reveals over a blank page. Choosing a mode from the account menu with the mouse no
+    longer flashes a focus ring.
 - **Roles.** No owner or space manager role any more: the machine manager is the top role (settings, money,
   the team including other machine managers, deleting the space), and a space always keeps one active machine
   manager. New machine type managers get full access and settings for the machine types a machine manager

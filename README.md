@@ -126,7 +126,7 @@ Screens from the seeded demo, in light mode. Every page has a dark mode too; the
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/public-machines.png" alt="Public machine catalogue grouped by type, with a status word on every machine" /><br /><sub>Public machine catalogue</sub></td>
-    <td width="50%"><img src="docs/screenshots/jobs.png" alt="Staff job board with columns for submitted, approved, running, paused, awaiting collection and collected jobs" /><br /><sub>Job board</sub></td>
+    <td width="50%"><img src="docs/screenshots/jobs.png" alt="Staff job board with open jobs by stage (submitted, approved, running, paused, awaiting collection) and closed jobs folded below" /><br /><sub>Job board</sub></td>
   </tr>
   <tr>
     <td><img src="docs/screenshots/machines.png" alt="Staff machine list grouped by type with status counts" /><br /><sub>Machines</sub></td>
