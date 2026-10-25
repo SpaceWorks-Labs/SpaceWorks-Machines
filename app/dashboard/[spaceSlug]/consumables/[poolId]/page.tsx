@@ -19,7 +19,7 @@ export default async function ConsumablePoolPage(props: { params: Promise<{ spac
     <div><Button asChild size="sm" variant="secondary"><Link href={`/dashboard/${space.slug}/consumables`}>Back to consumables</Link></Button></div>
     <SpacePageHeader space={space} title={pool.material} description={[pool.colour, pool.brand, pool.lotCode].filter(Boolean).join(" · ")} />
     <Card as="section" aria-label="Pool details"><PoolSummary pool={pool} spaceSlug={space.slug} currency={space.currency} />
-      {view.canManage ? <div className="mt-5"><PoolActions spaceSlug={space.slug} currency={space.currency} pool={pool} /></div> : null}</Card>
+      {view.canManage ? <div className="mt-5"><PoolActions spaceSlug={space.slug} currency={space.currency} pool={pool} money={view.canFinance} /></div> : null}</Card>
     <PoolLedger spaceSlug={space.slug} poolId={pool.id} unit={METERING_UNIT_LABELS[pool.unit].short} entries={view.ledger} page={view.page} hasMore={view.hasMore} timezone={space.timezone} />
     <LowStockAlerts spaceSlug={space.slug} enabled={view.lowStockAlerts} canConfigure={view.canConfigureAlerts} />
   </div>;

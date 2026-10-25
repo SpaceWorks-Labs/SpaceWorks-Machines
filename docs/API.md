@@ -49,7 +49,8 @@
 
 Events: `machine.created|updated|status_changed|retired`, `job.submitted|approved|rejected|started|paused|resumed|
 completed|failed|collected|cancelled|reprinted|priority_changed|reassigned|noted`, `payment.paid|refunded`,
-`consumable.low_stock`, `maintenance.due|logged`, `fault.reported|resolved`, `downtime.started|ended`.
+`consumable.low_stock`, `maintenance.due|logged`, `fault.reported|resolved`, `downtime.started|ended`, `repair.paid`,
+`finance.entry_posted` (ids, direction, category, amount and currency only).
 
 ## Printer connections
 

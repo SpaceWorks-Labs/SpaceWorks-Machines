@@ -68,8 +68,8 @@ Grouped the way a workshop's week actually goes.
 - Maintenance schedules by date, machine hours or job count, with reminders. Maintenance records with
   attachments, downtime windows, fault reports from makers and staff, warranties with expiry reminders, and a
   service history for each machine.
-- Reports with CSV export: jobs (failure rate, turnaround), utilisation (hours, availability, MTBF, MTTR),
-  consumables used, revenue per currency, maintenance and warranties.
+- Reports with CSV and Excel export: jobs (failure rate, turnaround), utilisation (hours, availability, MTBF,
+  MTTR), consumables used, revenue per currency, maintenance, warranties, spend per machine and repair spend.
 
 ### Connect it to everything else
 
@@ -82,6 +82,32 @@ Grouped the way a workshop's week actually goes.
   - **Coming soon:** OctoPrint, Moonraker/Klipper, Bambu Lab and PrusaLink.
 - An audit log of every change, team chat alerts (Slack, Discord, Mattermost, Telegram, WhatsApp), and email
   through each space's own SMTP.
+
+### Repairs, technicians and buying
+
+- A directory of the people who fix your machines: staff technicians and outside contacts, with their skills
+  and how to reach them.
+- From any fault, ask one or more technicians at once. Each hears by email, plus WhatsApp or Telegram when the
+  space has them set up; staff get it in their Repairs inbox and outside technicians a private link that needs
+  no account. The first to accept takes the repair.
+- The technician records the fix, the parts and photos, and the amount they ask; a manager checks it and closes
+  it (a corrective maintenance record is written) or reopens it with a reason.
+- The machine manager approves the amount and pays it in one go or in parts, by cash, bank transfer or UPI, in
+  an append-only payout ledger.
+- A to-buy list for parts and consumables: asked for, approved, bought (with what was actually spent) and
+  received. Receiving a consumable restocks its pool.
+
+### Finance
+
+- Every payment in and out goes into one append-only ledger as it happens: job payments and refunds, repair
+  payouts, maintenance costs, parts and consumables bought, and your own entries such as rent. Mistakes are
+  corrected with a reversing entry, never by editing.
+- A Finance page with money in, out and net per day, week, month or financial year (April to March), by
+  category, method, machine, technician and supplier, each entry linked to where it came from, with CSV and
+  Excel export.
+- Spend per machine and repair spend in Reports, and this month's figures on the overview. Money is for the
+  machine manager only: other roles see no totals, and a technician sees only what they asked and whether it
+  was paid.
 
 ### Accounts and spaces
 
@@ -117,6 +143,10 @@ Screens from the seeded demo, in light mode. Every page has a dark mode too; the
   <tr>
     <td><img src="docs/screenshots/integrations.png" alt="API keys, webhooks and printer connections" /><br /><sub>Integrations</sub></td>
     <td><img src="docs/screenshots/public-machine.png" alt="A public machine page with its specifications" /><br /><sub>A public machine page</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/repair.png" alt="A fault being repaired: who was asked, who took it, the fix and the amount asked" /><br /><sub>A repair</sub></td>
+    <td><img src="docs/screenshots/finance.png" alt="Finance for the month: money in, out and net, by category, method and machine, and the ledger" /><br /><sub>Finance</sub></td>
   </tr>
 </table>
 

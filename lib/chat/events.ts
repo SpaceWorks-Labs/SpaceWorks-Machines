@@ -1,5 +1,5 @@
 /** Staff alerts a chat channel can receive. Client-safe.  */
-export const CHAT_EVENTS = ["join-request", "member-joined", "member-left", "consumable-low-stock", "job-submitted", "job-cancelled", "job-failed", "job-payment", "maintenance-due", "fault-reported", "warranty-expiring"] as const;
+export const CHAT_EVENTS = ["join-request", "member-joined", "member-left", "consumable-low-stock", "job-submitted", "job-cancelled", "job-failed", "job-payment", "maintenance-due", "fault-reported", "fault-assigned", "fault-resolved", "repair-payment", "warranty-expiring"] as const;
 export type ChatEvent = (typeof CHAT_EVENTS)[number];
 
 export const CHAT_EVENT_LABELS: Record<ChatEvent, string> = {
@@ -13,6 +13,9 @@ export const CHAT_EVENT_LABELS: Record<ChatEvent, string> = {
   "job-payment": "A payment was received",
   "maintenance-due": "Maintenance is due or overdue",
   "fault-reported": "A fault was reported",
+  "fault-assigned": "A technician took a repair",
+  "fault-resolved": "A repair was checked and closed",
+  "repair-payment": "A technician was paid for a repair",
   "warranty-expiring": "A warranty is expiring",
 };
 

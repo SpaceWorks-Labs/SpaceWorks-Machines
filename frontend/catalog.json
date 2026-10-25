@@ -61,6 +61,11 @@
       "id": "app__dashboard__spaceSlug__consumables__poolId__page:loadConsumablePoolView"
     },
     {
+      "module": "lib/views/app__dashboard__spaceSlug__finance__page",
+      "name": "loadFinanceView",
+      "id": "app__dashboard__spaceSlug__finance__page:loadFinanceView"
+    },
+    {
       "module": "lib/views/app__dashboard__spaceSlug__integrations__page",
       "name": "loadIntegrationsView",
       "id": "app__dashboard__spaceSlug__integrations__page:loadIntegrationsView"
@@ -156,6 +161,16 @@
       "id": "app__dashboard__spaceSlug__payments__page:loadPaymentsView"
     },
     {
+      "module": "lib/views/app__dashboard__spaceSlug__payouts__page",
+      "name": "loadPayoutsView",
+      "id": "app__dashboard__spaceSlug__payouts__page:loadPayoutsView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__repairs__page",
+      "name": "loadRepairsView",
+      "id": "app__dashboard__spaceSlug__repairs__page:loadRepairsView"
+    },
+    {
       "module": "lib/views/app__dashboard__spaceSlug__reports__page",
       "name": "loadReportsView",
       "id": "app__dashboard__spaceSlug__reports__page:loadReportsView"
@@ -186,6 +201,16 @@
       "id": "app__dashboard__spaceSlug__team__page:loadSpaceTeamView"
     },
     {
+      "module": "lib/views/app__dashboard__spaceSlug__technicians__page",
+      "name": "loadTechniciansView",
+      "id": "app__dashboard__spaceSlug__technicians__page:loadTechniciansView"
+    },
+    {
+      "module": "lib/views/app__dashboard__spaceSlug__to-buy__page",
+      "name": "loadToBuyView",
+      "id": "app__dashboard__spaceSlug__to-buy__page:loadToBuyView"
+    },
+    {
       "module": "lib/views/app__j__token__page",
       "name": "loadPublicJobView",
       "id": "app__j__token__page:loadPublicJobView"
@@ -194,6 +219,11 @@
       "module": "lib/views/app__join__space__token__page",
       "name": "loadJoinSpaceView",
       "id": "app__join__space__token__page:loadJoinSpaceView"
+    },
+    {
+      "module": "lib/views/app__r__token__page",
+      "name": "loadRepairLinkView",
+      "id": "app__r__token__page:loadRepairLinkView"
     },
     {
       "module": "lib/views/app__s__spaceSlug__jobs__number__page",
@@ -401,6 +431,16 @@
       "module": "app/actions/faults",
       "name": "reportFaultAction",
       "id": "faults:reportFaultAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "addFinanceEntryAction",
+      "id": "finance:addFinanceEntryAction"
+    },
+    {
+      "module": "app/actions/finance",
+      "name": "reverseFinanceEntryAction",
+      "id": "finance:reverseFinanceEntryAction"
     },
     {
       "module": "app/actions/instance-settings",
@@ -648,6 +688,56 @@
       "id": "payment-settings:saveOfflinePaymentSettings"
     },
     {
+      "module": "app/actions/repair-link",
+      "name": "answerRepairLinkAction",
+      "id": "repair-link:answerRepairLinkAction"
+    },
+    {
+      "module": "app/actions/repair-link",
+      "name": "recordRepairLinkFixAction",
+      "id": "repair-link:recordRepairLinkFixAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "sendRepairRequestsAction",
+      "id": "repairs:sendRepairRequestsAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "assignTechnicianAction",
+      "id": "repairs:assignTechnicianAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "revokeRepairRequestAction",
+      "id": "repairs:revokeRepairRequestAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "answerRepairRequestAction",
+      "id": "repairs:answerRepairRequestAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "recordStaffFixAction",
+      "id": "repairs:recordStaffFixAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "verifyRepairAction",
+      "id": "repairs:verifyRepairAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "approveRepairAmountAction",
+      "id": "repairs:approveRepairAmountAction"
+    },
+    {
+      "module": "app/actions/repairs",
+      "name": "recordRepairPayoutAction",
+      "id": "repairs:recordRepairPayoutAction"
+    },
+    {
       "module": "app/actions/security",
       "name": "beginMfaEnrollment",
       "id": "security:beginMfaEnrollment"
@@ -771,6 +861,26 @@
       "module": "app/actions/team",
       "name": "deleteSpace",
       "id": "team:deleteSpace"
+    },
+    {
+      "module": "app/actions/technicians",
+      "name": "saveTechnicianAction",
+      "id": "technicians:saveTechnicianAction"
+    },
+    {
+      "module": "app/actions/technicians",
+      "name": "importTechniciansAction",
+      "id": "technicians:importTechniciansAction"
+    },
+    {
+      "module": "app/actions/to-buy",
+      "name": "requestToBuyAction",
+      "id": "to-buy:requestToBuyAction"
+    },
+    {
+      "module": "app/actions/to-buy",
+      "name": "advanceToBuyAction",
+      "id": "to-buy:advanceToBuyAction"
     },
     {
       "module": "app/actions/upkeep",

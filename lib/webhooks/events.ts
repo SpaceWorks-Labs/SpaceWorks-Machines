@@ -30,6 +30,8 @@ export const WEBHOOK_EVENTS = [
   "fault.resolved",
   "downtime.started",
   "downtime.ended",
+  "repair.paid",
+  "finance.entry_posted",
 ] as const;
 
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];

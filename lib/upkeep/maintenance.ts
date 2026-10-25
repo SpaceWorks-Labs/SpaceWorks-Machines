@@ -1,10 +1,11 @@
 import "server-only";
-import type { MaintenanceKind, MaintenanceTrigger, Prisma } from "@prisma/client";
+import type { MaintenanceKind, MaintenanceTrigger, PayoutMethod, Prisma } from "@prisma/client";
 import { recordAuditEvent } from "@/lib/audit";
 import { emitWebhook } from "@/lib/webhooks/emit";
 import { advanceSchedule } from "./due";
 import { assertMachineScope, day, lockMachine, required, text, UpkeepError, UpkeepNotFoundError, type Actor } from "./context";
 import { closeOpenDowntime } from "./downtime";
+import { postFinance } from "@/lib/finance/post";
 
 export type ScheduleInput = {
   title: string; description?: string; checklist?: string[]; trigger: MaintenanceTrigger;
@@ -63,7 +64,7 @@ export async function updateSchedule(tx: Prisma.TransactionClient, actor: Actor 
 
 export type LogInput = {
   machineId: string; scheduleId?: string | null; faultId?: string | null; kind: MaintenanceKind; summary: string;
-  details?: string; partsNote?: string; cost?: number | null; vendor?: string; performedAt?: Date; restoreIdle?: boolean;
+  details?: string; partsNote?: string; cost?: number | null; costMethod?: PayoutMethod | null; vendor?: string; performedAt?: Date; restoreIdle?: boolean;
 };
 
 /**
@@ -84,11 +85,18 @@ export async function logMaintenance(tx: Prisma.TransactionClient, actor: Actor,
   }
   const log = await tx.maintenanceLog.create({ data: { spaceId: actor.spaceId, machineId: machine.id, scheduleId: input.scheduleId ?? null,
     faultId: input.faultId ?? null, kind: input.kind, summary: required(input.summary, 200, "Summarise the work done."),
-    details: text(input.details, 5000), partsNote: text(input.partsNote, 2000), cost: input.cost ?? null, vendor: text(input.vendor, 200),
+    details: text(input.details, 5000), partsNote: text(input.partsNote, 2000), cost: input.cost ?? null, costMethod: input.cost ? input.costMethod ?? null : null, vendor: text(input.vendor, 200),
     performedAt, performedById: actor.actorId, meterMinutes: machine.meterMinutes } });
   await recordAuditEvent({ action: "maintenance.logged", actorUserId: actor.actorId, spaceId: actor.spaceId, targetType: "MaintenanceLog", targetId: log.id, client: tx });
   const ids = await emitWebhook(tx, actor.spaceId, "maintenance.logged", { machineId: machine.id, logId: log.id, scheduleId: log.scheduleId, kind: log.kind });
   if (input.restoreIdle) ids.push(...await closeOpenDowntime(tx, actor, machine, true));
+  // A cost is money spent: it posts to the finance ledger with the record.
+  if (log.cost) {
+    const { currency } = await tx.space.findUniqueOrThrow({ where: { id: actor.spaceId }, select: { currency: true } });
+    ids.push(...(await postFinance(tx, { spaceId: actor.spaceId, direction: "OUT", category: "MAINTENANCE", amountMinor: log.cost, currency, method: log.costMethod ?? "OTHER",
+      occurredAt: performedAt, sourceType: "MaintenanceLog", sourceId: log.id, actorId: actor.actorId, note: log.summary, supplier: log.vendor,
+      machineId: machine.id, typeId: machine.typeId })).webhookDeliveryIds);
+  }
   return { log, webhookDeliveryIds: ids };
 }
 

@@ -28,6 +28,7 @@ export async function loadMachineView({ params }: { params: Promise<{ spaceSlug:
     canManage: can(membership.role, "machines.manage") && spaceAllows(space.status, "machines.manage"),
     canChangeStatus: can(membership.role, "machines.status") && spaceAllows(space.status, "machines.status"),
     canPrinters: can(membership.role, "printers.manage") && spaceAllows(space.status, "printers.manage"),
+    canFinance: can(membership.role, "finance.view"),
     type: { id: row.type.id, name: row.type.name, icon: row.type.icon, archived: row.type.archivedAt !== null,
       specFields, materials: row.type.materials, colours: row.type.colours },
     machine: {
@@ -38,7 +39,7 @@ export async function loadMachineView({ params }: { params: Promise<{ spaceSlug:
       name: row.name, manufacturer: row.manufacturer, model: row.model, serialNumber: row.serialNumber, location: row.location,
       description: row.description, notes: row.notes, firmwareVersion: row.firmwareVersion,
       acquiredOn: row.acquiredOn?.toISOString().slice(0, 10) ?? null,
-      purchaseCost: row.purchaseCost !== null && isCurrencyCode(profile.currency) ? toInputValue(row.purchaseCost, profile.currency) : "", specs,
+      purchaseCost: can(membership.role, "finance.view") && row.purchaseCost !== null && isCurrencyCode(profile.currency) ? toInputValue(row.purchaseCost, profile.currency) : "", specs,
     },
     missingSpecs: validateSpecs(specFields, specs).missing,
     photos: row.photos.map((photo) => ({ id: photo.id, url: machineFileUrl(photo.storageKey), alt: photo.alt })),

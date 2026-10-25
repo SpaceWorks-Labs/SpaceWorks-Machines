@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { invalid, refreshMachinePages, revalidate, slugOf, staffAction, type Failure } from "@/lib/actionAccess";
 import { isCurrencyCode, parseAmount } from "@/lib/money/currencies";
+import { can } from "@/lib/permissionRoles";
 import { JobGuardError } from "@/lib/jobs/context";
 import { recordUsage } from "@/lib/usage/record";
 import { createSchedule, endDowntime, logMaintenance, saveWarranty, startDowntime, updateFault, updateSchedule,
@@ -54,8 +55,10 @@ export async function updateScheduleAction(input: unknown) {
 export async function logMaintenanceAction(input: unknown) {
   return run(input, logSchema, async (tx, access, data) => {
     const space = await tx.space.findUniqueOrThrow({ where: { id: access.space.id }, select: { currency: true } });
-    const cost = data.cost ? (isCurrencyCode(space.currency) ? parseAmount(data.cost, space.currency) : null) : null;
-    if (data.cost && cost === null) throw new UpkeepError("Enter the cost as an amount, like 1500 or 1,500.50.");
+    // Money is the machine manager's: anyone else logs the work without a cost.
+    const money = can(access.membership.role, "finance.view");
+    const cost = data.cost && money ? (isCurrencyCode(space.currency) ? parseAmount(data.cost, space.currency) : null) : null;
+    if (data.cost && money && cost === null) throw new UpkeepError("Enter the cost as an amount, like 1500 or 1,500.50.");
     const performedAt = data.performedOn ? new Date(`${data.performedOn}T12:00:00Z`) : undefined;
     const { log, webhookDeliveryIds } = await logMaintenance(tx, actor(access), { ...data, cost, performedAt });
     return { id: log.id, webhookDeliveryIds };

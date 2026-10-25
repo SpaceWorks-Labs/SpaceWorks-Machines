@@ -8,29 +8,14 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { ArrowUpRight, ChevronsUpDown, Home, LogOut, Menu as MenuIcon, Moon, Plus, Sun, UserRound, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { ShellSpace, ShellUser } from "@/lib/appShell";
-import { can, spaceAllows, ROLE_LABELS, type Capability } from "@/lib/permissionRoles";
+import { can, spaceAllows, ROLE_LABELS } from "@/lib/permissionRoles";
 import { SpaceWorksProductLogo } from "@/components/brand/SpaceWorksLogo";
 import { useAppColorMode } from "@/components/providers";
 import { Avatar, SpaceLogo } from "@/components/ui/display";
 import { IconButton } from "@/components/ui/button";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
+import { NavGroup, SPACE_NAV_GROUPS, type NavEntry } from "./spaceNav";
 import { BrandHomeLink } from "./SiteHeader";
-
-/** Space navigation, in order. Each entry shows when the role holds any of its capabilities. */
-export const SPACE_NAV: Array<{ path: string; label: string; capabilities: Capability[]; exact?: boolean }> = [
-  { path: "", label: "Overview", capabilities: ["space.view"], exact: true },
-  { path: "/machines", label: "Machines", capabilities: ["machines.view"] },
-  { path: "/jobs", label: "Jobs", capabilities: ["jobs.view"] },
-  { path: "/maintenance", label: "Maintenance", capabilities: ["maintenance.view"] },
-  { path: "/consumables", label: "Consumables", capabilities: ["consumables.view"] },
-  { path: "/payments", label: "Payments", capabilities: ["payments.view"] },
-  { path: "/reports", label: "Reports", capabilities: ["reports.view"] },
-  { path: "/integrations", label: "Integrations", capabilities: ["integrations.manage", "printers.manage"] },
-  { path: "/audit", label: "Audit log", capabilities: ["audit.view"] },
-  { path: "/team", label: "Team", capabilities: ["space.view"] },
-  { path: "/settings", label: "Space settings", capabilities: ["space.settings"] },
-  { path: "/machine-settings", label: "Machine settings", capabilities: ["machines.view"] },
-];
 
 function NavItem({ href, children, active, onNavigate, badge }: { href: string; children: string; active: boolean; onNavigate?: () => void; badge?: ReactNode }) {
   return (
@@ -86,8 +71,11 @@ function AccountMenu({ user, onNavigate }: { user: ShellUser; onNavigate?: () =>
         <MenuItem
           icon={mode === "dark" ? <Sun /> : <Moon />}
           onSelect={() => {
+            // Let the menu close first: the reveal snapshots the page as it is, and an open menu would linger in
+            // the old snapshot as a ghost. The circle grows from the account button, which stays on screen.
             const rect = triggerRef.current?.getBoundingClientRect();
-            toggleColorMode(rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : undefined);
+            const origin = rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : undefined;
+            requestAnimationFrame(() => requestAnimationFrame(() => toggleColorMode(origin)));
           }}
         >
           {mode === "dark" ? "Light mode" : "Dark mode"}
@@ -156,14 +144,21 @@ function SidebarContents({ user, spaces, onNavigate }: { user: ShellUser; spaces
         <>
           <SpaceSwitcher current={current} spaces={spaces} onNavigate={onNavigate} />
           <nav aria-label="Space" className="flex flex-col gap-1">
-            {SPACE_NAV.filter((item) => item.capabilities.some((capability) => spaceAllows(current.status, capability) && can(current.role, capability))).map((item) => {
-              const href = `${base}${item.path}`;
-              const isActive = item.exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
-              return (
-                <NavItem key={item.path} href={href} active={isActive} onNavigate={onNavigate}>
+            {SPACE_NAV_GROUPS.map((group) => {
+              const items = group.items.filter((item) => item.capabilities.some((capability) => spaceAllows(current.status, capability) && can(current.role, capability)));
+              if (!items.length) return null;
+              const isActive = (item: NavEntry) => {
+                const href = `${base}${item.path}`;
+                return item.exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+              };
+              const links = items.map((item) => (
+                <NavItem key={item.path} href={`${base}${item.path}`} active={isActive(item)} onNavigate={onNavigate}>
                   {item.label}
                 </NavItem>
-              );
+              ));
+              return group.label
+                ? <NavGroup key={group.key} groupKey={group.key} label={group.label} current={items.some(isActive)}>{links}</NavGroup>
+                : <div key={group.key} className="flex flex-col gap-1">{links}</div>;
             })}
             {active ? null : (
               // Under review, declined, suspended or archived: the status page explains what is open.

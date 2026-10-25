@@ -18,7 +18,7 @@ export default async function MachinesPage(props: Props) {
   return (
     <div className="flex flex-col gap-7 pb-4">
       <SpacePageHeader space={view.space} title="Machines" description="Every machine in the space, its status and what it can do."
-        actions={view.canManage ? <AddMachineDialog spaceSlug={view.space.slug} currency={view.space.currency} types={view.types.filter((type) => !type.archived)} /> : null} />
+        actions={view.canManage ? <AddMachineDialog spaceSlug={view.space.slug} currency={view.space.currency} types={view.types.filter((type) => !type.archived)} money={view.canFinance} /> : null} />
       <section aria-label="Machines at a glance" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatTile label="In service" value={view.totals.total} />
         {MACHINE_STATUSES.map((status) => <StatTile key={status} label={MACHINE_STATUS_LABELS[status]} value={view.totals.counts[status]} />)}

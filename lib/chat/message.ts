@@ -18,7 +18,9 @@ export async function chatMessage(spaceId: string, event: ChatEvent, refs: ChatR
   const space = await prisma.space.findUnique({ where: { id: spaceId }, select: { name: true, slug: true } });
   if (!space) return null;
   if (event === "consumable-low-stock") return lowStockMessage(space, refs.poolId);
-  if (event === "maintenance-due" || event === "fault-reported" || event === "warranty-expiring") return upkeepMessage(spaceId, space, event, refs);
+  if (event === "maintenance-due" || event === "fault-reported" || event === "fault-assigned" || event === "fault-resolved" || event === "repair-payment" || event === "warranty-expiring") {
+    return upkeepMessage(spaceId, space, event, refs);
+  }
   if (event.startsWith("job-") && refs.jobId) {
     const job = await prisma.job.findFirst({ where: { id: refs.jobId, spaceId }, select: { number: true, title: true } });
     return job ? `${space.name}: J-${String(job.number).padStart(4, "0")} ${event.slice(4)}${includeNames ? `: ${job.title}` : "."}\n${absoluteUrl(`/dashboard/${space.slug}/jobs/${job.number}`)}` : null;

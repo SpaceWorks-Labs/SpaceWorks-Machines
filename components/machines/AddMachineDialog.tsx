@@ -12,7 +12,7 @@ import { readMachineForm } from "./formValues";
 import { useMachineMutation } from "./useMachineMutation";
 import type { MachineTypeOption } from "./types";
 
-export function AddMachineDialog({ spaceSlug, currency, types }: { spaceSlug: string; currency: string; types: MachineTypeOption[] }) {
+export function AddMachineDialog({ spaceSlug, currency, types, money = true }: { spaceSlug: string; currency: string; types: MachineTypeOption[]; money?: boolean }) {
   const [open, setOpen] = useState(false);
   const [typeId, setTypeId] = useState(types[0]?.id ?? "");
   const type = types.find((type) => type.id === typeId) ?? types[0];
@@ -39,7 +39,7 @@ export function AddMachineDialog({ spaceSlug, currency, types }: { spaceSlug: st
                 <Field label="Machine type" error={mutation.fieldErrors.typeId?.[0]}><Dropdown value={type.id} onChange={(event) => setTypeId(event.target.value)}>
                   {types.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
                 </Dropdown></Field>
-                <MachineFormFields type={type} currency={currency} errors={mutation.fieldErrors} />
+                <MachineFormFields type={type} currency={currency} errors={mutation.fieldErrors} money={money} />
               </> : <Callout>No active machine types are available. A machine manager needs to add or restore a type first.</Callout>}
             </fieldset>
           </DialogBody>

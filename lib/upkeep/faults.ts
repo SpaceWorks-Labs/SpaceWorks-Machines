@@ -7,14 +7,18 @@ import { emitWebhook } from "@/lib/webhooks/emit";
 import { queueUpkeepAlert } from "./alerts";
 import { assertMachineScope, lockMachine, required, text, UpkeepError, UpkeepNotFoundError, type Actor } from "./context";
 import { startDowntime } from "./downtime";
+import { closeRequestsForFault } from "@/lib/repairs/requests";
 
 export const MAX_FAULT_PHOTOS = 4;
+export const MAX_FIX_PHOTOS = 6;
 const CLOSED: FaultStatus[] = ["RESOLVED", "WONT_FIX"];
 /** Forward-only workflow; closing is allowed from any open state. */
 const NEXT: Record<FaultStatus, FaultStatus[]> = {
   OPEN: ["ACKNOWLEDGED", "IN_PROGRESS", "RESOLVED", "WONT_FIX"],
   ACKNOWLEDGED: ["IN_PROGRESS", "RESOLVED", "WONT_FIX"],
   IN_PROGRESS: ["RESOLVED", "WONT_FIX"],
+  // Set by the technician (lib/repairs/fix.ts); a manager closes it or reopens it.
+  FIXED: ["RESOLVED", "IN_PROGRESS", "WONT_FIX"],
   RESOLVED: [], WONT_FIX: [],
 };
 
@@ -79,16 +83,22 @@ export async function updateFault(tx: Prisma.TransactionClient, actor: Actor, in
     metadata: { status: updated.status, assigned: updated.assignedToId !== null }, client: tx });
   const ids: string[] = [];
   if (closing) {
+    await closeRequestsForFault(tx, actor.spaceId, fault.id);
     ids.push(...await emitWebhook(tx, actor.spaceId, "fault.resolved", { machineId: fault.machineId, faultId: fault.id, status: updated.status }));
     await queueUpkeepAlert(tx, actor.spaceId, fault.machineId, "fault-resolved", fault.id);
   }
   return { fault: updated, webhookDeliveryIds: ids };
 }
 
-export async function addFaultPhoto(tx: Prisma.TransactionClient, actor: Actor, input: { faultId: string; storageKey: string }) {
-  const fault = await tx.faultReport.findFirst({ where: { spaceId: actor.spaceId, id: input.faultId }, select: { id: true, machineId: true, reportedById: true, _count: { select: { photos: true } } } });
+/** Report photos, or (stage FIX, from the technician who took the repair) photos of the fix. */
+export async function addFaultPhoto(tx: Prisma.TransactionClient, actor: Actor, input: { faultId: string; storageKey: string; stage?: "REPORT" | "FIX" }) {
+  const fault = await tx.faultReport.findFirst({ where: { spaceId: actor.spaceId, id: input.faultId },
+    select: { id: true, machineId: true, reportedById: true, technician: { select: { userId: true } } } });
   if (!fault) throw new UpkeepNotFoundError();
   if (fault.reportedById !== actor.actorId) await assertMachineScope(tx, actor.spaceId, actor.actorId, fault.machineId);
-  if (fault._count.photos >= MAX_FAULT_PHOTOS) throw new UpkeepError(`A fault holds up to ${MAX_FAULT_PHOTOS} photos.`);
-  return tx.faultPhoto.create({ data: { spaceId: actor.spaceId, faultId: fault.id, storageKey: input.storageKey } });
+  const stage = input.stage ?? (actor.actorId && fault.technician?.userId === actor.actorId ? "FIX" : "REPORT");
+  const max = stage === "FIX" ? MAX_FIX_PHOTOS : MAX_FAULT_PHOTOS;
+  const label = stage === "FIX" ? "repair" : "fault";
+  if (await tx.faultPhoto.count({ where: { spaceId: actor.spaceId, faultId: fault.id, stage } }) >= max) throw new UpkeepError(`A ${label} holds up to ${max} photos.`);
+  return tx.faultPhoto.create({ data: { spaceId: actor.spaceId, faultId: fault.id, storageKey: input.storageKey, stage } });
 }

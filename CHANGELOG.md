@@ -4,8 +4,31 @@ Releases are published from `main` and titled **`Space Works Machines <version>`
 file selects the series; each build is tagged `v<series>-main.<run>.<sha>`, which is what a deployment pins
 to. Pushes to `dev` publish staging images tagged `dev` without a release.
 
-## Unreleased
+## 0.5.0
 
+The first public release: everything since Space Works Machines was split out of SpaceWorks (0.1.0 and 0.2.0
+below were never released on their own), plus repairs, technicians, the to-buy list, finance and the new roles.
+
+- **Repairs and technicians.** A technician directory per space (staff technicians and outside contacts with
+  skills, email, WhatsApp and Telegram). From a fault, ask several technicians at once: email always, WhatsApp or
+  Telegram through the space's own provider, an inbox for staff and a private hashed link for outside
+  technicians. The first to accept takes the repair and the rest are told. The technician records the fix,
+  parts, photos and the amount they ask; a manager checks and closes it (writing a corrective maintenance
+  record) or reopens it with a reason. Migration `0005_repairs_finance`.
+- **Payouts.** The machine manager approves the amount (a reason when it differs) and pays in parts or in full by
+  cash, bank transfer or UPI, in an append-only payout ledger with a Payouts page and repair-spend export.
+- **To-buy list.** Parts and consumables asked for from a fault, a maintenance record or a low pool, approved,
+  bought (amount, method, reference and supplier) and received; receiving a consumable restocks its pool.
+- **Finance.** One append-only ledger for every money movement, posted in the same transaction as its source:
+  job payments and refunds, repair payouts, maintenance costs, purchases, restocks with a cost and manual
+  entries, with reversals for corrections and a backfill of earlier payments, refunds and maintenance costs.
+  A Finance page by day, week, month or financial year with breakdowns and CSV and Excel export, spend per
+  machine and repair spend in Reports, this month's figures on the overview, and the `finance.entry_posted` and
+  `repair.paid` webhooks. Money is visible to the machine manager only.
+- **Calmer dashboard.** The sidebar groups its pages (Machines, Upkeep, Money, Space) into groups that fold, and
+  overview, maintenance, repairs, upkeep, fault, report and finance sections collapse from their header (with a
+  count). Empty sections start collapsed and each choice is remembered in the browser. The colour-mode reveal from
+  the account menu now waits for the menu to close, so no ghost of it lingers in the animation.
 - **Roles.** No owner or space manager role any more: the machine manager is the top role (settings, money,
   the team including other machine managers, deleting the space), and a space always keeps one active machine
   manager. New machine type managers get full access and settings for the machine types a machine manager

@@ -7,7 +7,9 @@ const shortFields = [
   ["location", "Location", 120], ["firmwareVersion", "Firmware version", 60],
 ] as const;
 
-export function MachineFormFields({ type, currency, values, errors = {} }: {
+export function MachineFormFields({ type, currency, values, errors = {}, money = true }: {
+  /** The purchase cost is money: shown only to the machine manager. */
+  money?: boolean;
   type: MachineTypeOption; currency: string; values?: MachineDetailsInput; errors?: Record<string, string[]>;
 }) {
   return (
@@ -18,7 +20,7 @@ export function MachineFormFields({ type, currency, values, errors = {} }: {
           <Input name={name} maxLength={maxLength} defaultValue={values?.[name]} />
         </Field>)}
         <Field label="Acquired on" optional error={errors.acquiredOn?.[0]}><Input name="acquiredOn" type="date" defaultValue={values?.acquiredOn ?? ""} /></Field>
-        <Field label={`Purchase cost (${currency})`} optional error={errors.purchaseCost?.[0]}><Input name="purchaseCost" inputMode="decimal" maxLength={24} defaultValue={values?.purchaseCost} /></Field>
+        {money ? <Field label={`Purchase cost (${currency})`} optional error={errors.purchaseCost?.[0]}><Input name="purchaseCost" inputMode="decimal" maxLength={24} defaultValue={values?.purchaseCost} /></Field> : null}
       </div>
       <Field label="Description" optional error={errors.description?.[0]}><Textarea name="description" maxLength={2000} defaultValue={values?.description} /></Field>
       <Field label="Staff notes" optional helperText="Only staff can see these notes." error={errors.notes?.[0]}><Textarea name="notes" maxLength={2000} defaultValue={values?.notes} /></Field>

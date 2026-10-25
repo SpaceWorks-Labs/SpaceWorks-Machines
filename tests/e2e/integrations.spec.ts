@@ -6,7 +6,7 @@ test.skip(!process.env.DEMO_PASSWORD || !process.env.DEMO_MFA_SECRET, "DEMO_PASS
 test("a machine manager creates an API key and reads machines with it; a machine type manager runs a simulated printer", async ({ browser, request }) => {
   test.setTimeout(180_000);
   const owner = await (await browser.newContext()).newPage();
-  await signInDemo(owner, "owner@demo.test");
+  await signInDemo(owner, "manager@demo.test");
   await owner.goto("/dashboard/tinkerspace/integrations", { waitUntil: "networkidle" });
   await owner.getByRole("button", { name: "Create key" }).click();
   const dialog = owner.getByRole("dialog");

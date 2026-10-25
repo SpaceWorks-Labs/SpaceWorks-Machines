@@ -28,7 +28,7 @@ async function signIn(page: Page, email: string) {
 const nav = (page: Page) => page.getByRole("navigation", { name: "Space" }).first();
 
 test("a machine manager sees both settings areas and reaches email and chat settings", async ({ page }) => {
-  await signIn(page, "owner@demo.test");
+  await signIn(page, "manager@demo.test");
   await page.goto("/dashboard/tinkerspace");
   await expect(nav(page).getByRole("link", { name: "Space settings" })).toBeVisible();
   await expect(nav(page).getByRole("link", { name: "Machine settings" })).toBeVisible();

@@ -29,7 +29,8 @@ export type MachineDetails = {
   notes: string;
   firmwareVersion: string;
   acquiredOn: Date | null;
-  purchaseCost: number | null;
+  /** Undefined keeps the stored cost (roles without finance never see or send it). */
+  purchaseCost: number | null | undefined;
   specs: Record<string, unknown>;
 };
 

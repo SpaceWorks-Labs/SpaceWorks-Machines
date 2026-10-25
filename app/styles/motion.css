@@ -60,6 +60,13 @@
   mask-image: radial-gradient(circle at var(--sw-reveal-x) var(--sw-reveal-y), #000 calc(var(--sw-reveal) - 160px), transparent var(--sw-reveal));
 }
 
+/* During the reveal the new mode is already final: no element transitions (the toggle's icons still turn). */
+.sw-theme-switching *:not(.sw-mode-icon),
+.sw-theme-switching *::before,
+.sw-theme-switching *::after {
+  transition: none !important;
+}
+
 /* Fallback when View Transitions aren't available: a gentle colour cross-fade. */
 .sw-theme-fade,
 .sw-theme-fade *,

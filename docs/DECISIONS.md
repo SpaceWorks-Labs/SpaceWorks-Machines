@@ -56,6 +56,28 @@ install and deploy; brand and UI rules come only from
    under Claude's prompts and review. From Phase 4 on the build is Claude Code only.
 6. **README.** Follows SpaceWorks-Events: banner, light screenshots, one-line install and Deploy to Render,
    with the Patch easter eggs and the Events light/dark circular reveal.
+7. **Repairs and technicians.** Every makerspace keeps a directory of many technicians: staff technicians
+   (TECHNICIAN role) and outside contacts with skills and channels, managed by the Machine manager (audited).
+   On a fault, a manager (or a Machine type manager for their types) picks one or more technicians and sends
+   the request: email always, plus WhatsApp or Telegram when the space has that provider set up; staff also
+   get an inbox item and outside technicians a private link (32 random bytes, stored as a SHA-256 hash, one
+   request, closes when it expires, is withdrawn, someone else takes the repair or the fault closes). The
+   first to accept is assigned and the others are told it's taken. The technician records the fix, parts,
+   photos and the amount they ask and marks it fixed; a manager checks it and closes it (a corrective
+   maintenance record is written) or reopens it with a reason. The Machine manager approves the amount (a
+   different amount needs a reason) and records payouts, partly or in full, in an append-only payout ledger.
+8. **To-buy list.** Parts and consumables are asked for (from a fault, a maintenance record or a low pool),
+   approved, bought (actual amount, method, reference and supplier required) and received; receiving a
+   consumable restocks its pool through `lib/consumables`.
+9. **Finance.** Every money movement posts one append-only `FinanceEntry` in the same transaction as its
+   source: paid job payments, succeeded refunds, repair payouts, maintenance costs, to-buy purchases,
+   consumable purchases at restock and manual entries. Corrections are reversing entries with a reason.
+   History before the ledger was backfilled by `0005_repairs_finance`. Finance (the page, money in reports
+   and exports, spend columns, dashboard figures, payouts) is visible only to the Machine manager; other
+   roles see no money totals, and a technician sees only the amount they asked and whether it was paid.
+10. **Version.** The first public release is 0.5.0.
+    Its CI-way browser suite, VPS and split-hosting runs are verified on GitHub CI (clean runners); the shared
+    development host ran out of memory for them, while lint, typecheck, unit (597) and integration (490) passed locally.
 
 ## Defaults decided while building (revisitable)
 
@@ -83,6 +105,23 @@ Taken conservatively without the owner; each one may be changed.
   Machine type manager to another role clears their type assignments.
 - A Machine type manager's own job request for a type they don't manage is theirs only as its requester.
 - Fault assignees and upkeep alert emails include a Machine type manager only for their types.
+- Maintenance costs post to Finance when the record is saved (the record is when the money was spent), with
+  the method given (or "other"). Only the Machine manager enters a cost; other roles log maintenance without one.
+- A restock posts a consumable purchase only when an amount is entered with it (a donated spool posts nothing).
+- Repair requests expire after 14 days by default (`repairRequestExpiryDays`, 1 to 90); an expired request
+  is marked when someone tries to answer it, not by a sweep.
+- Card-terminal payments post with the method "other" (the ledger's methods are the owner's list).
+- Finance periods use the space's time zone; the financial year runs 1 April to 31 March.
+- Consumable cost per unit stays visible to those who manage stock (it is a rate, not a total); machine purchase
+  cost is shown and edited only by the Machine manager.
+- Manual finance entries have no receipt photo yet.
+- Excel exports are a single sheet written without a spreadsheet library (`lib/xlsx.ts`).
+- The demo's top account is `manager@demo.test` (Machine manager).
+- Dashboard sections collapse; empty ones start collapsed; choice remembered per browser (`swm:dash:<id>` in
+  localStorage, read after hydration). KPI tiles stay visible.
+- The sidebar groups its pages (Machines, Upkeep, Money, Space); each group folds and is remembered per browser
+  (`swm:nav:<group>`), and the group holding the current page is always open. Detail and report pages fold
+  their secondary sections the same way; forms never fold mid-flow.
 
 ## Deferred owner checks
 
@@ -93,7 +132,8 @@ These need the owner's accounts or hardware.
 | Real Render deploy from `render.yaml` | The Blueprint deploys; web, worker and beat are healthy; sign-in, a job and an email work |
 | Real VPS install (release path, and `--ref dev` before the first release) | A fresh Ubuntu server installs, `ops` checks pass, update, backup and restore work |
 | GHCR images and the first release | The release workflow publishes both images and the installer pins and pulls them |
-| Live Razorpay and Stripe (test mode) | One paid job and one refund per gateway settle through the real webhooks |
+| Live Razorpay and Stripe (test mode) | One paid job and one refund per gateway settle through the real webhooks, each posting one Finance entry |
+| WhatsApp and Telegram repair requests | A technician with a number or chat ID receives a request through the space's own provider and the link opens |
 | Real printers (OctoPrint, Moonraker, Bambu, PrusaLink) | Each adapter is implemented against real hardware and tested before it stops being "Coming soon" |
 | Branch protection and CODEOWNERS on GitHub | Only @Shaan-Shoukath can push or merge to `main`; force pushes and deletions are blocked |
 

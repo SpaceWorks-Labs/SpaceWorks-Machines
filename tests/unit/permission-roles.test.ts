@@ -7,13 +7,14 @@ const holders = (capability: Capability) => ALL.filter((role) => can(role, capab
 
 describe("space roles and capabilities", () => {
   it("gives the whole makerspace to the machine manager alone", () => {
-    for (const capability of ["space.settings", "space.delete", "team.manage", "members.manage", "payments.view", "payments.settings", "payments.manage", "integrations.manage", "machine.settings"] as const) {
+    for (const capability of ["space.settings", "space.delete", "team.manage", "members.manage", "payments.view", "payments.settings", "payments.manage", "integrations.manage", "machine.settings",
+      "finance.view", "finance.manage", "repairs.pay", "technicians.manage", "tobuy.manage"] as const) {
       expect(holders(capability)).toEqual(["MACHINE_MANAGER"]);
     }
   });
 
   it("gives machine type managers the machine side (scoped to their types elsewhere)", () => {
-    for (const capability of ["machines.manage", "type.settings", "printers.manage", "audit.view"] as const) {
+    for (const capability of ["machines.manage", "type.settings", "printers.manage", "audit.view", "repairs.request", "repairs.verify"] as const) {
       expect(holders(capability)).toEqual(["MACHINE_MANAGER", "TYPE_MANAGER"]);
     }
     expect(can("TYPE_MANAGER", "machine.settings")).toBe(false);

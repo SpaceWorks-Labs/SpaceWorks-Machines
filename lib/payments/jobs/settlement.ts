@@ -4,6 +4,7 @@ import { JobGuardError } from "@/lib/jobs/context";
 import type { GatewayEvent } from "../gateway";
 import { proposeOutcomeRefund, proposeOverpayment } from "../refundProposals";
 import { lockPayment } from "./context";
+import { financeMethodOf, postFinance } from "@/lib/finance/post";
 import { paymentNotice } from "./notifications";
 import { terminalJob, updatePaymentState } from "./state";
 
@@ -12,9 +13,14 @@ export async function paidPayment(tx: Prisma.TransactionClient, job: Job, paymen
   const updated = await tx.payment.update({ where: { id: payment.id }, data: { status: "PAID", paidAt: new Date(),
     ...(providerPaymentId ? { providerPaymentId } : {}) } });
   await updatePaymentState(tx, job);
+  // The ledger entry posts with the payment, once (a replayed settlement finds it already there).
+  const posted = await postFinance(tx, { spaceId: job.spaceId, direction: "IN", category: "JOB_PAYMENT", amountMinor: updated.amount, currency: updated.currency,
+    method: financeMethodOf(updated.method), reference: updated.reference || updated.providerPaymentId || "", occurredAt: updated.paidAt ?? new Date(),
+    sourceType: "Payment", sourceId: updated.id, actorId: updated.confirmedById ?? updated.recordedById, note: `Job ${job.number}`,
+    machineId: job.assignedMachineId ?? job.machineId, typeId: job.typeId });
   if (terminalJob(job)) await proposeOutcomeRefund(tx, job, job.status === "REJECTED" ? "rejected" : job.status === "CANCELLED" ? "cancelled" : "failed");
   else await proposeOverpayment(tx, job);
-  return paymentNotice(tx, job, updated, "paid", payment.amount);
+  return [...await paymentNotice(tx, job, updated, "paid", payment.amount), ...posted.webhookDeliveryIds];
 }
 
 /** Amount/currency and both identifiers must agree; a valid signature alone is not settlement. */

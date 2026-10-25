@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { invalid, refreshMachinePages, slugOf, staffAction, type Failure } from "@/lib/actionAccess";
 import { isCurrencyCode, parseAmount } from "@/lib/money/currencies";
+import { can } from "@/lib/permissionRoles";
 import { changeMachineStatus, createMachine, MachineInputError, MachineNotFoundError, setMachineFlags, setMachineRetired, updateMachine, type MachineDetails } from "@/lib/machines/machines";
 import { createMachineSchema, machineDetailsSchema, machineStatusSchema } from "@/lib/machines/schemas";
 import { enqueueWebhookDeliveries } from "@/lib/webhooks/emit";
@@ -21,9 +22,9 @@ function failure(error: unknown): Failure {
 }
 
 /** Details as typed, with the purchase cost turned into minor units of the space's currency. */
-async function details(spaceId: string, values: z.infer<typeof machineDetailsSchema>): Promise<MachineDetails | Failure> {
-  let purchaseCost: number | null = null;
-  if (values.purchaseCost) {
+async function details(spaceId: string, values: z.infer<typeof machineDetailsSchema>, money = true): Promise<MachineDetails | Failure> {
+  let purchaseCost: number | null | undefined = money ? null : undefined;
+  if (values.purchaseCost && money) {
     const space = await prisma.space.findUniqueOrThrow({ where: { id: spaceId }, select: { currency: true } });
     purchaseCost = isCurrencyCode(space.currency) ? parseAmount(values.purchaseCost, space.currency) : null;
     if (purchaseCost === null) return { ok: false, error: "Check the highlighted fields.", fieldErrors: { purchaseCost: ["Enter an amount like 125000 or 1,25,000.50"] } };
@@ -39,7 +40,7 @@ export async function createMachineAction(input: unknown): Promise<ActionResult<
   if (!access.ok) return access;
   const parsed = createMachineSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
-  const clean = await details(access.space.id, parsed.data);
+  const clean = await details(access.space.id, parsed.data, can(access.membership.role, "finance.view"));
   if ("ok" in clean) return clean;
   try {
     const created = await prisma.$transaction((tx) => createMachine(tx, { ...clean, spaceId: access.space.id, actorId: access.userId, typeId: parsed.data.typeId, isPublic: parsed.data.isPublic, acceptsJobs: parsed.data.acceptsJobs }));
@@ -56,7 +57,7 @@ export async function updateMachineAction(input: unknown): Promise<ActionResult<
   if (!access.ok) return access;
   const parsed = machineDetailsSchema.extend({ machineId }).safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
-  const clean = await details(access.space.id, parsed.data);
+  const clean = await details(access.space.id, parsed.data, can(access.membership.role, "finance.view"));
   if ("ok" in clean) return clean;
   try {
     const result = await prisma.$transaction((tx) => updateMachine(tx, { ...clean, spaceId: access.space.id, actorId: access.userId, machineId: parsed.data.machineId }));

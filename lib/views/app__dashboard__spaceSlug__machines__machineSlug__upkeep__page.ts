@@ -35,7 +35,7 @@ export async function loadMachineUpkeepView({ params }: { params: Promise<{ spac
   const allowed = (capability: Parameters<typeof can>[1]) => can(role, capability) && spaceAllows(space.status, capability);
   return {
     space: { ...space, ...profile }, settings,
-    canManage: allowed("maintenance.manage"), canLogUsage: allowed("jobs.operate"), canReport: allowed("machines.view"),
+    canManage: allowed("maintenance.manage"), canLogUsage: allowed("jobs.operate"), canReport: allowed("machines.view"), canFinance: allowed("finance.view"),
     machine: { id: machine.id, slug: machine.slug, name: machine.name, status: machine.status, retired: machine.retiredAt !== null,
       hours: Math.round(machine.meterMinutes / 6) / 10, jobs: machine.meterJobs },
     schedules: schedules.map((schedule) => ({ id: schedule.id, title: schedule.title, description: schedule.description, checklist: schedule.checklist,
@@ -43,7 +43,7 @@ export async function loadMachineUpkeepView({ params }: { params: Promise<{ spac
       blockWhenOverdue: schedule.blockWhenOverdue, isActive: schedule.isActive, lastDoneAt: schedule.lastDoneAt?.toISOString() ?? null,
       due: scheduleDue(schedule, machine, now, settings.maintenanceReminderDays) })),
     logs: logs.map((log) => ({ id: log.id, summary: log.summary, kind: log.kind, details: log.details, partsNote: log.partsNote, vendor: log.vendor,
-      cost: log.cost, performedAt: log.performedAt.toISOString(), schedule: log.schedule?.title ?? null,
+      cost: allowed("finance.view") ? log.cost : null, performedAt: log.performedAt.toISOString(), schedule: log.schedule?.title ?? null,
       attachments: log.attachments.map((file) => ({ id: file.id, filename: file.filename, url: machineFileUrl(file.storageKey) })) })),
     downtime: downtime.map((row) => ({ id: row.id, reason: row.reason, note: row.note, startedAt: row.startedAt.toISOString(), endedAt: row.endedAt?.toISOString() ?? null })),
     openDowntime: downtime.some((row) => row.endedAt === null),

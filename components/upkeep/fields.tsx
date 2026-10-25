@@ -28,7 +28,7 @@ export function ScheduleFields({ values, edit = false }: { values?: ScheduleValu
   </>;
 }
 
-export function LogFields({ schedules, faults }: { schedules: { id: string; title: string }[]; faults: { id: string; label: string }[] }) {
+export function LogFields({ schedules, faults, money = false }: { schedules: { id: string; title: string }[]; faults: { id: string; label: string }[]; money?: boolean }) {
   return <>
     <Field label="What was done"><Input name="summary" required maxLength={200} /></Field>
     <Field label="Kind"><Dropdown name="kind" defaultValue="PREVENTIVE">{MAINTENANCE_KINDS.map((value) => <option key={value} value={value}>{KIND_LABELS[value]}</option>)}</Dropdown></Field>
@@ -42,7 +42,11 @@ export function LogFields({ schedules, faults }: { schedules: { id: string; titl
       <Field label="Parts" optional><Input name="partsNote" maxLength={2000} /></Field>
       <Field label="Vendor" optional><Input name="vendor" maxLength={200} /></Field>
     </div>
-    <Field label="Cost" optional helperText="In the space currency."><Input name="cost" inputMode="decimal" maxLength={32} /></Field>
+    {money ? <div className="grid gap-4 sm:grid-cols-2">
+      <Field label="Cost" optional helperText="In the space currency. Posted to Finance."><Input name="cost" inputMode="decimal" maxLength={32} /></Field>
+      <Field label="Paid by" optional><Dropdown name="costMethod" defaultValue="OTHER"><option value="CASH">Cash</option><option value="BANK_TRANSFER">Bank transfer</option>
+        <option value="UPI">UPI</option><option value="OTHER">Other</option></Dropdown></Field>
+    </div> : null}
     <CheckboxField name="restoreIdle" label="Set the machine back to idle" description="Ends open downtime." />
   </>;
 }

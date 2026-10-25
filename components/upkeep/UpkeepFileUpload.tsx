@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { useMachineMutation } from "@/components/machines/useMachineMutation";
 
-/** Upload a maintenance attachment, warranty document or fault photo through the upkeep files route. */
-export function UpkeepFileUpload({ spaceSlug, kind, targetId, label }: { spaceSlug: string; kind: "maintenance" | "warranty" | "fault"; targetId: string; label: string }) {
+/**
+ * Upload a maintenance attachment, warranty document or fault photo through the upkeep files route, or (with
+ * `endpoint`) a photo of a fix through an outside technician's repair link.
+ */
+export function UpkeepFileUpload({ spaceSlug, kind, targetId, label, endpoint }: { spaceSlug: string; kind: "maintenance" | "warranty" | "fault"; targetId: string; label: string; endpoint?: string }) {
   const mutation = useMachineMutation();
   const photo = kind === "fault";
   return (
@@ -17,7 +20,7 @@ export function UpkeepFileUpload({ spaceSlug, kind, targetId, label }: { spaceSl
       form.set("kind", kind);
       form.set("targetId", targetId);
       mutation.run(async (): Promise<ActionResult> => {
-        const response = await fetch(`/api/spaces/${encodeURIComponent(spaceSlug)}/upkeep/files`, { method: "POST", body: form });
+        const response = await fetch(endpoint ?? `/api/spaces/${encodeURIComponent(spaceSlug)}/upkeep/files`, { method: "POST", body: form });
         const result = await response.json() as ActionResult;
         return !response.ok && result.ok ? { ok: false, error: "Couldn't upload the file. Try again." } : result;
       }, "File uploaded", () => element.reset());

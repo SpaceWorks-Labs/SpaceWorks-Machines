@@ -70,9 +70,10 @@ function transitionColorMode(commit: () => void, origin?: ColorModeOrigin) {
   const feathered = strategy === "reveal-soft";
   root.style.setProperty("--sw-reveal-x", `${x}px`);
   root.style.setProperty("--sw-reveal-y", `${y}px`);
-  root.classList.add(feathered ? "sw-theme-reveal-soft" : "sw-theme-reveal");
+  // Colour transitions would otherwise run inside the live new view, so the revealed circle looks half-switched.
+  root.classList.add(feathered ? "sw-theme-reveal-soft" : "sw-theme-reveal", "sw-theme-switching");
   const cleanUp = () => {
-    root.classList.remove("sw-theme-reveal", "sw-theme-reveal-soft");
+    root.classList.remove("sw-theme-reveal", "sw-theme-reveal-soft", "sw-theme-switching");
     root.style.removeProperty("--sw-reveal-x");
     root.style.removeProperty("--sw-reveal-y");
   };

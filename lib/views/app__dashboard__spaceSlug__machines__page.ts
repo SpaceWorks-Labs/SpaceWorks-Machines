@@ -35,6 +35,7 @@ export async function loadMachinesView({ params, searchParams }: Props) {
   return {
     space: { ...space, ...profile }, totals, typeId, status,
     canManage: can(membership.role, "machines.manage") && spaceAllows(space.status, "machines.manage"),
+    canFinance: can(membership.role, "finance.view"),
     types: types.map((type) => ({ id: type.id, name: type.name, icon: type.icon, archived: type.archivedAt !== null,
       specFields: readFields(type.specFields), materials: type.materials, colours: type.colours })),
     machines: rows.map(machineCard),

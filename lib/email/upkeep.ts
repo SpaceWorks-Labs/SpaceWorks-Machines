@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { asRecord, isBoundedString, isEmail } from "@/lib/outboxPayload";
 import { absoluteUrl, sendBrandedEmail } from "./message";
 
-export const UPKEEP_EMAIL_EVENTS = ["maintenance-due", "fault-reported", "fault-resolved", "warranty-expiring"] as const;
+export const UPKEEP_EMAIL_EVENTS = ["maintenance-due", "fault-reported", "fault-fixed", "fault-resolved", "warranty-expiring"] as const;
 export type UpkeepEmailEvent = typeof UPKEEP_EMAIL_EVENTS[number];
 type UpkeepEmailPayload = { to: string; spaceId: string; machineId: string; event: UpkeepEmailEvent; refId?: string };
 
@@ -30,11 +30,15 @@ export async function deliverUpkeepEmail(payload: UpkeepEmailPayload, messageId:
     return send(`${schedule.title} is due`, "Maintenance due", [`${schedule.title} on ${machine.name} is due or overdue.`,
       "Log the maintenance when it's done; the schedule moves on to its next due point."], "Open the machine");
   }
-  if (payload.event === "fault-reported" || payload.event === "fault-resolved") {
+  if (payload.event === "fault-reported" || payload.event === "fault-resolved" || payload.event === "fault-fixed") {
     const fault = payload.refId ? await prisma.faultReport.findFirst({ where: { id: payload.refId, spaceId: payload.spaceId }, select: { number: true, title: true, severity: true, status: true } }) : null;
     if (!fault) return "dropped";
     const label = `F-${String(fault.number).padStart(4, "0")}`;
     const url = absoluteUrl(`/dashboard/${machine.space.slug}/maintenance/faults/${fault.number}`);
+    if (payload.event === "fault-fixed") {
+      if (fault.status !== "FIXED") return "dropped";
+      return send(`repair ${label} is ready to check`, "Repair marked fixed", [`The technician marked ${label} on ${machine.name} fixed. Check it and close it, or reopen it.`], "Check the repair", url);
+    }
     return payload.event === "fault-reported"
       ? send(`fault ${label} on ${machine.name}`, "Fault reported", [`${label} (${fault.severity.toLowerCase()}): ${fault.title}`], "Open the fault", url)
       : send(`fault ${label} closed`, "Fault closed", [`${label} on ${machine.name} is ${fault.status === "WONT_FIX" ? "closed without a fix" : "resolved"}.`], "Open the fault", url);

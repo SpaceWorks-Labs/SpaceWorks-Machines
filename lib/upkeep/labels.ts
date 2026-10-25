@@ -17,6 +17,7 @@ export const SEVERITY_LABELS: Record<string, { label: string; tone: ChipTone }> 
 };
 export const FAULT_STATUS_LABELS: Record<string, { label: string; tone: ChipTone }> = {
   OPEN: { label: "Open", tone: "danger" }, ACKNOWLEDGED: { label: "Acknowledged", tone: "warning" }, IN_PROGRESS: { label: "In progress", tone: "info" },
+  FIXED: { label: "Fixed, to check", tone: "accent" },
   RESOLVED: { label: "Resolved", tone: "success" }, WONT_FIX: { label: "Won't fix", tone: "neutral" },
 };
 export const faultNumber = (number: number) => `F-${String(number).padStart(4, "0")}`;

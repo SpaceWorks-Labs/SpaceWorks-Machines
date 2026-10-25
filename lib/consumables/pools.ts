@@ -1,9 +1,10 @@
 import "server-only";
 
-import type { MeteringUnit, Prisma } from "@prisma/client";
+import type { MeteringUnit, PayoutMethod, Prisma } from "@prisma/client";
 import { recordAuditEvent } from "@/lib/audit";
 import { applyAdjustment, lockPool, PoolNotFoundError } from "./ledger";
 import { fromMilli, toMilli } from "./math";
+import { postFinance } from "@/lib/finance/post";
 
 export class PoolBindingError extends Error {}
 
@@ -84,7 +85,10 @@ export async function updatePool(tx: Prisma.TransactionClient, input: PoolDetail
   await recordAuditEvent({ action: "consumable.updated", actorUserId: input.actorId, spaceId: input.spaceId, targetType: "ConsumablePool", targetId: pool.id, client: tx });
 }
 
-export async function restockPool(tx: Prisma.TransactionClient, input: { spaceId: string; poolId: string; actorId: string; quantity: string; reason?: string; lotCode?: string }) {
+/** A restock that was bought (not donated) carries what was spent; it posts to the finance ledger. */
+export type RestockPurchase = { amountMinor: number; method: PayoutMethod; reference?: string; supplier?: string };
+
+export async function restockPool(tx: Prisma.TransactionClient, input: { spaceId: string; poolId: string; actorId: string; quantity: string; reason?: string; lotCode?: string; purchase?: RestockPurchase }) {
   const result = await applyAdjustment(tx, { spaceId: input.spaceId, poolId: input.poolId, kind: "RESTOCK", delta: input.quantity, reason: input.reason ?? "", actorId: input.actorId });
   const pool = await tx.consumablePool.findUniqueOrThrow({ where: { spaceId_id: { spaceId: input.spaceId, id: input.poolId } }, select: { initialQuantity: true } });
   // The remaining bar measures against the fullest the pool has been.
@@ -93,6 +97,14 @@ export async function restockPool(tx: Prisma.TransactionClient, input: { spaceId
     await tx.consumablePool.update({ where: { spaceId_id: { spaceId: input.spaceId, id: input.poolId } }, data: { ...(capacity ? { initialQuantity: capacity } : {}), ...(input.lotCode ? { lotCode: input.lotCode } : {}) } });
   }
   await recordAuditEvent({ action: "consumable.restocked", actorUserId: input.actorId, spaceId: input.spaceId, targetType: "ConsumablePool", targetId: input.poolId, metadata: { quantity: result.delta }, client: tx });
+  if (input.purchase && result.adjustmentId) {
+    const { currency } = await tx.space.findUniqueOrThrow({ where: { id: input.spaceId }, select: { currency: true } });
+    const bound = await tx.consumablePool.findUniqueOrThrow({ where: { spaceId_id: { spaceId: input.spaceId, id: input.poolId } }, select: { machineId: true, typeId: true, material: true } });
+    const posted = await postFinance(tx, { spaceId: input.spaceId, direction: "OUT", category: "CONSUMABLES", amountMinor: input.purchase.amountMinor, currency,
+      method: input.purchase.method, reference: input.purchase.reference, supplier: input.purchase.supplier, occurredAt: new Date(), sourceType: "ConsumableAdjustment",
+      sourceId: result.adjustmentId, actorId: input.actorId, note: `Restock: ${bound.material}`, machineId: bound.machineId, typeId: bound.typeId });
+    return { ...result, webhookDeliveryIds: [...result.webhookDeliveryIds, ...posted.webhookDeliveryIds] };
+  }
   return result;
 }
 

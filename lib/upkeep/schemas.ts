@@ -31,6 +31,7 @@ export const logSchema = z.object({
   spaceSlug: slug, machineId: id, scheduleId: optionalId, faultId: optionalId, kind: z.enum(MAINTENANCE_KINDS),
   summary: z.string().trim().min(1, "Summarise the work done").max(200), details: z.string().trim().max(5000).default(""),
   partsNote: z.string().trim().max(2000).default(""), cost: z.string().trim().max(32).default(""), vendor: z.string().trim().max(200).default(""),
+  costMethod: z.enum(["CASH", "BANK_TRANSFER", "UPI", "OTHER"]).default("OTHER"),
   performedOn: dateInput, restoreIdle: z.boolean().default(false),
 });
 

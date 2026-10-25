@@ -185,6 +185,9 @@ model Space {
   payments         Payment[]
   apiKeys          ApiKey[]
   webhookEndpoints WebhookEndpoint[]
+  technicians      Technician[]
+  toBuyItems       ToBuyItem[]
+  financeEntries   FinanceEntry[]
 
   @@index([status, createdAt])
   @@index([visibility, status])
@@ -584,6 +587,8 @@ model Machine {
   warranty        Warranty?
   connection      PrinterConnection?
 
+  toBuyItems ToBuyItem[]
+
   @@unique([spaceId, slug])
   @@unique([spaceId, id])
   @@index([spaceId, typeId, retiredAt])
@@ -668,6 +673,8 @@ model ConsumablePool {
   type        MachineType?           @relation(fields: [spaceId, typeId], references: [spaceId, id], onDelete: NoAction)
   adjustments ConsumableAdjustment[]
   jobs        Job[]
+
+  toBuyItems ToBuyItem[]
 
   @@unique([spaceId, id])
   @@index([spaceId, isActive])
@@ -1103,6 +1110,8 @@ model SpaceJobSettings {
   lowStockAlerts                 Boolean         @default(true)
   maintenanceReminderDays        Int             @default(3)
   warrantyReminderDays           Int             @default(30)
+  /// Days a repair request stays open before it expires.
+  repairRequestExpiryDays        Int             @default(14)
   updatedById                    String?
   updatedAt                      DateTime        @updatedAt
 
@@ -1199,6 +1208,8 @@ model MaintenanceLog {
   details       String          @default("")
   partsNote     String          @default("")
   cost          Int?
+  /// How the cost was paid (posted to the finance ledger with the record).
+  costMethod    PayoutMethod?
   vendor        String          @default("")
   performedAt   DateTime        @default(now())
   performedById String?
@@ -1265,42 +1276,69 @@ enum FaultStatus {
   OPEN
   ACKNOWLEDGED
   IN_PROGRESS
+  /// The technician marked it fixed; a manager checks it.
+  FIXED
   RESOLVED
   WONT_FIX
 }
 
 model FaultReport {
-  id           String        @id @default(cuid())
-  spaceId      String
-  machineId    String
-  number       Int
-  reportedById String?
-  jobId        String?
-  severity     FaultSeverity @default(MEDIUM)
-  title        String
-  description  String        @default("")
-  status       FaultStatus   @default(OPEN)
-  assignedToId String?
-  resolution   String        @default("")
-  resolvedAt   DateTime?
-  resolvedById String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id                 String        @id @default(cuid())
+  spaceId            String
+  machineId          String
+  number             Int
+  reportedById       String?
+  jobId              String?
+  severity           FaultSeverity @default(MEDIUM)
+  title              String
+  description        String        @default("")
+  status             FaultStatus   @default(OPEN)
+  assignedToId       String?
+  resolution         String        @default("")
+  resolvedAt         DateTime?
+  resolvedById       String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  /// Repairs: the directory technician who took it, their fix and the money (minor units, space currency).
+  technicianId       String?
+  fixRemarks         String        @default("")
+  fixParts           String        @default("")
+  amountAsked        Int?
+  fixedAt            DateTime?
+  reopenReason       String        @default("")
+  verifiedById       String?
+  approvedAmount     Int?
+  approvedById       String?
+  approvedAt         DateTime?
+  amountChangeReason String        @default("")
+  paidAmount         Int           @default(0)
+  payoutStatus       PayoutStatus  @default(UNPAID)
 
-  machine Machine      @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: Cascade)
-  photos  FaultPhoto[]
+  machine    Machine         @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: Cascade)
+  photos     FaultPhoto[]
+  technician Technician?     @relation(fields: [spaceId, technicianId], references: [spaceId, id], onDelete: NoAction)
+  requests   RepairRequest[]
+  payouts    RepairPayout[]
+  toBuyItems ToBuyItem[]
 
   @@unique([spaceId, number])
   @@unique([spaceId, id])
   @@index([spaceId, status, severity])
 }
 
+enum FaultPhotoStage {
+  REPORT
+  FIX
+}
+
 model FaultPhoto {
-  id         String   @id @default(cuid())
+  id         String          @id @default(cuid())
   spaceId    String
   faultId    String
-  storageKey String   @unique
-  createdAt  DateTime @default(now())
+  storageKey String          @unique
+  /// REPORT: sent with the report; FIX: the technician's photos of the repair.
+  stage      FaultPhotoStage @default(REPORT)
+  createdAt  DateTime        @default(now())
 
   fault FaultReport @relation(fields: [spaceId, faultId], references: [spaceId, id], onDelete: Cascade)
 }
@@ -1473,4 +1511,225 @@ model WebhookDelivery {
 
   @@index([spaceId, endpointId, createdAt])
   @@index([status, nextAttemptAt])
+}
+
+// ─── Repairs, technicians, to-buy and finance (M8) ─────────────────────────────
+
+enum TechnicianKind {
+  STAFF
+  EXTERNAL
+}
+
+enum TechnicianChannel {
+  EMAIL
+  WHATSAPP
+  TELEGRAM
+}
+
+/// A makerspace's directory of people who fix things: staff technicians (linked to their membership) and
+/// external contacts. Managed by the machine manager, audited; deactivated rather than deleted.
+model Technician {
+  id               String            @id @default(cuid())
+  spaceId          String
+  kind             TechnicianKind
+  /// STAFF only: the member's account (a TECHNICIAN on this space's staff).
+  userId           String?
+  name             String
+  email            String            @default("")
+  phone            String            @default("")
+  whatsapp         String            @default("")
+  telegramChatId   String            @default("")
+  skills           String[]
+  preferredChannel TechnicianChannel @default(EMAIL)
+  notes            String            @default("")
+  isActive         Boolean           @default(true)
+  createdById      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  space    Space           @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  requests RepairRequest[]
+  faults   FaultReport[]
+  payouts  RepairPayout[]
+
+  @@unique([spaceId, id])
+  @@unique([spaceId, userId])
+  @@index([spaceId, isActive])
+}
+
+enum RepairRequestStatus {
+  SENT
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CLOSED
+}
+
+/// One technician asked to take one fault. First to accept is assigned; the rest close.
+model RepairRequest {
+  id           String              @id @default(cuid())
+  spaceId      String
+  faultId      String
+  technicianId String
+  status       RepairRequestStatus @default(SENT)
+  /// Channels it went out on (email, whatsapp, telegram, inbox).
+  channels     String[]
+  /// External technicians: SHA-256 of the link token (the token itself is only ever emailed or messaged).
+  tokenHash    String?             @unique
+  expiresAt    DateTime
+  sentById     String?
+  sentAt       DateTime            @default(now())
+  respondedAt  DateTime?
+  closedReason String              @default("")
+
+  fault      FaultReport @relation(fields: [spaceId, faultId], references: [spaceId, id], onDelete: Cascade)
+  technician Technician  @relation(fields: [spaceId, technicianId], references: [spaceId, id], onDelete: Cascade)
+
+  @@unique([spaceId, id])
+  @@index([spaceId, faultId])
+  @@index([spaceId, technicianId, status])
+}
+
+enum PayoutStatus {
+  UNPAID
+  PARTLY_PAID
+  PAID
+}
+
+enum PayoutMethod {
+  CASH
+  BANK_TRANSFER
+  UPI
+  OTHER
+}
+
+/// Append-only (trigger): money paid to a technician for one fault.
+model RepairPayout {
+  id           String       @id @default(cuid())
+  spaceId      String
+  faultId      String
+  technicianId String
+  amount       Int
+  currency     String
+  method       PayoutMethod
+  reference    String       @default("")
+  paidAt       DateTime
+  paidById     String?
+  note         String       @default("")
+  createdAt    DateTime     @default(now())
+
+  fault      FaultReport @relation(fields: [spaceId, faultId], references: [spaceId, id], onDelete: Cascade)
+  technician Technician  @relation(fields: [spaceId, technicianId], references: [spaceId, id], onDelete: Cascade)
+
+  @@unique([spaceId, id])
+  @@index([spaceId, faultId])
+}
+
+enum ToBuyKind {
+  PART
+  CONSUMABLE
+}
+
+enum ToBuyStatus {
+  REQUESTED
+  APPROVED
+  BOUGHT
+  RECEIVED
+  CANCELLED
+}
+
+/// Parts and consumables to buy: requested -> approved -> bought (amount, method, reference, supplier) -> received.
+model ToBuyItem {
+  id               String        @id @default(cuid())
+  spaceId          String
+  number           Int
+  kind             ToBuyKind     @default(PART)
+  title            String
+  quantity         Decimal       @db.Decimal(14, 3)
+  unit             String        @default("")
+  machineId        String?
+  poolId           String?
+  faultId          String?
+  maintenanceLogId String?
+  status           ToBuyStatus   @default(REQUESTED)
+  note             String        @default("")
+  amount           Int?
+  currency         String?
+  method           PayoutMethod?
+  reference        String        @default("")
+  supplier         String        @default("")
+  requestedById    String?
+  approvedById     String?
+  boughtById       String?
+  boughtAt         DateTime?
+  receivedById     String?
+  receivedAt       DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  space   Space           @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  machine Machine?        @relation(fields: [spaceId, machineId], references: [spaceId, id], onDelete: NoAction)
+  pool    ConsumablePool? @relation(fields: [spaceId, poolId], references: [spaceId, id], onDelete: NoAction)
+  fault   FaultReport?    @relation(fields: [spaceId, faultId], references: [spaceId, id], onDelete: NoAction)
+
+  @@unique([spaceId, number])
+  @@unique([spaceId, id])
+  @@index([spaceId, status])
+}
+
+enum FinanceDirection {
+  IN
+  OUT
+}
+
+enum FinanceCategory {
+  JOB_PAYMENT
+  JOB_REFUND
+  REPAIR_PAYOUT
+  MAINTENANCE
+  PARTS
+  CONSUMABLES
+  OTHER_INCOME
+  OTHER_EXPENSE
+  REVERSAL
+}
+
+enum FinanceMethod {
+  GATEWAY_RAZORPAY
+  GATEWAY_STRIPE
+  CASH
+  BANK_TRANSFER
+  UPI
+  OTHER
+}
+
+/// Append-only (trigger) ledger of every money movement, posted in the same transaction as its source.
+/// Corrections are reversing entries with a reason; a source posts once ([sourceType, sourceId] is unique).
+model FinanceEntry {
+  id           String           @id @default(cuid())
+  spaceId      String
+  direction    FinanceDirection
+  category     FinanceCategory
+  amountMinor  Int
+  currency     String
+  method       FinanceMethod
+  reference    String           @default("")
+  occurredAt   DateTime
+  sourceType   String
+  sourceId     String
+  actorId      String?
+  note         String           @default("")
+  machineId    String?
+  typeId       String?
+  technicianId String?
+  supplier     String           @default("")
+  reversesId   String?          @unique
+  createdAt    DateTime         @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceType, sourceId])
+  @@unique([spaceId, id])
+  @@index([spaceId, occurredAt])
+  @@index([spaceId, machineId])
 }

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireSpaceCapability } from "@/lib/permissions";
 import { can, spaceAllows } from "@/lib/permissionRoles";
 import { loadReports, reportRange, withoutMoney } from "@/lib/reports/load";
+import { loadSpendReports } from "@/lib/reports/spend";
 
 type Props = { params: Promise<{ spaceSlug: string }>; searchParams: Promise<{ from?: string; to?: string }> };
 
@@ -15,7 +16,8 @@ export async function loadReportsView({ params, searchParams }: Props) {
     prisma.space.findUniqueOrThrow({ where: { id: space.id }, select: { logoUrl: true, timezone: true, currency: true, locale: true } }),
     loadReports(space.id, range.from, range.to, typeScope),
   ]);
-  const showMoney = can(membership.role, "payments.view") && spaceAllows(space.status, "payments.view");
+  const showMoney = can(membership.role, "finance.view") && spaceAllows(space.status, "finance.view");
+  const spend = showMoney ? await loadSpendReports(space.id, range.from, range.to) : null;
   return { space: { ...space, ...profile }, range: { from: range.fromInput, to: range.toInput }, showMoney,
-    reports: showMoney ? reports : withoutMoney(reports) };
+    reports: showMoney ? reports : withoutMoney(reports), spend };
 }

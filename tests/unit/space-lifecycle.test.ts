@@ -62,7 +62,7 @@ describe("what a space's status allows", () => {
   it("keeps only reading and settling money already received open while suspended or archived", () => {
     for (const status of ["SUSPENDED", "ARCHIVED"] as const) {
       expect(capabilities.filter((capability) => spaceAllows(status, capability)).sort()).toEqual(
-        ["audit.view", "consumables.view", "jobs.view", "machines.view", "maintenance.view", "payments.manage", "payments.view", "reports.view", "space.view"],
+        ["audit.view", "consumables.view", "finance.view", "jobs.view", "machines.view", "maintenance.view", "payments.manage", "payments.view", "reports.view", "space.view"],
       );
     }
   });

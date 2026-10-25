@@ -20,7 +20,8 @@ export type Bucket =
   | "invite"
   | "apiRead"
   | "apiWrite"
-  | "dataExport";
+  | "dataExport"
+  | "repairLink";
 
 const limits: Record<Bucket, { max: number; windowMs: number; }> = {
   global: { max: 300, windowMs: 60_000 },
@@ -47,6 +48,8 @@ const limits: Record<Bucket, { max: number; windowMs: number; }> = {
   apiWrite: { max: 60, windowMs: 60_000 },
   // A person's own data export: heavy and rarely needed.
   dataExport: { max: 5, windowMs: 60 * 60_000 },
+  // An outside technician's repair link: answering, saving the fix and photos.
+  repairLink: { max: 60, windowMs: 15 * 60_000 },
 };
 
 // Local fallback store

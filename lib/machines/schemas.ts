@@ -114,7 +114,8 @@ export const createPoolSchema = poolDetailsSchema.extend({
   ]),
 });
 
-export const restockSchema = z.object({ quantity, reason: shortText(200), lotCode: shortText(60) });
+export const restockSchema = z.object({ quantity, reason: shortText(200), lotCode: shortText(60), amount: shortText(32),
+  method: z.enum(["CASH", "BANK_TRANSFER", "UPI", "OTHER"]).default("OTHER"), reference: shortText(200), supplier: shortText(200) });
 export const correctionSchema = z.object({ delta: signedQuantity, reason: z.string().trim().min(3, "Say why the count changed").max(200) });
 export const retirePoolSchema = z.object({ reason: z.string().trim().min(3, "Say why the pool is retired").max(200) });
 

@@ -39,7 +39,7 @@ export default async function MachinePage({ params }: { params: Promise<{ spaceS
       </Card>
       <Card as="section" aria-label="Machine details">
         <CardHeader title="Machine details" description={`Type: ${type.name}. The machine type is fixed.`} />
-        {canManage ? <MachineDetailsForm {...context} type={type} currency={space.currency} values={details} /> : <MachineDetailsReadOnly type={type} currency={space.currency} values={details} />}
+        {canManage ? <MachineDetailsForm {...context} type={type} currency={space.currency} values={details} money={view.canFinance} /> : <MachineDetailsReadOnly type={type} currency={space.currency} values={details} money={view.canFinance} />}
       </Card>
       <MachinePhotosPanel {...context} photos={view.photos} />
       <MachineDocumentsPanel {...context} documents={view.documents} />

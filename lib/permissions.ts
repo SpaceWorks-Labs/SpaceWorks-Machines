@@ -88,6 +88,16 @@ export async function requireSpaceCapability(spaceSlug: string, capability: Capa
   return access;
 }
 
+/**
+ * Money pages (finance, payouts, the technician directory): the machine manager's alone. Everyone else gets the
+ * same 404 as a space they don't belong to, so the pages don't even confirm they exist.
+ */
+export async function requireMoneyCapability(spaceSlug: string, capability: Capability): Promise<SpaceAccessContext> {
+  const access = await requireSpaceTeam(spaceSlug);
+  if (!can(access.membership.role, capability) || !spaceAllows(access.space.status, capability)) notFound();
+  return access;
+}
+
 export type SpaceActionAccess =
   | { ok: true; space: SpaceAccessContext["space"]; membership: SpaceMember; userId: string; typeScope: TypeScope }
   | { ok: false; error: string };

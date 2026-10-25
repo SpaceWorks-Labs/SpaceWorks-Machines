@@ -31,5 +31,6 @@ export async function loadConsumablePoolView({ params, searchParams }: {
       actor: row.actorId ? names.get(row.actorId) ?? "Former account" : "System", reason: row.reason, time: row.createdAt.toISOString() })),
     canManage: can(membership.role, "consumables.manage") && spaceAllows(space.status, "consumables.manage"),
     canConfigureAlerts: can(membership.role, "space.settings") && spaceAllows(space.status, "space.settings"),
+    canFinance: can(membership.role, "finance.view") && spaceAllows(space.status, "finance.view"),
     lowStockAlerts: settings?.lowStockAlerts ?? true };
 }

@@ -5,7 +5,9 @@ import { prisma } from "@/lib/db";
 import { invalid, refreshMachinePages, slugOf, staffAction, type Failure } from "@/lib/actionAccess";
 import { InsufficientStockError, formatQuantity } from "@/lib/consumables/math";
 import { PoolNotFoundError } from "@/lib/consumables/ledger";
-import { correctPool, createPool, PoolBindingError, restockPool, retirePool, setPoolPublic, updatePool, type PoolDetails } from "@/lib/consumables/pools";
+import { correctPool, createPool, PoolBindingError, restockPool, retirePool, setPoolPublic, updatePool, type PoolDetails, type RestockPurchase } from "@/lib/consumables/pools";
+import { can } from "@/lib/permissionRoles";
+import type { SpaceRole } from "@prisma/client";
 import { correctionSchema, createPoolSchema, poolDetailsSchema, restockSchema, retirePoolSchema } from "@/lib/machines/schemas";
 import { isCurrencyCode, parseAmount } from "@/lib/money/currencies";
 import { enqueueWebhookDeliveries } from "@/lib/webhooks/emit";
@@ -66,13 +68,13 @@ export async function updatePoolAction(input: unknown): Promise<ActionResult> {
 }
 
 /** Restock, correction and retirement all write one ledger row each (append-only, with the balance after). */
-async function ledgerAction<T extends z.ZodType>(input: unknown, schema: T, work: (spaceId: string, actorId: string, data: z.infer<T> & { poolId: string }) => Promise<{ webhookDeliveryIds?: string[] } | void>): Promise<ActionResult> {
+async function ledgerAction<T extends z.ZodType>(input: unknown, schema: T, work: (spaceId: string, actorId: string, data: z.infer<T> & { poolId: string }, role: SpaceRole) => Promise<{ webhookDeliveryIds?: string[] } | void>): Promise<ActionResult> {
   const access = await staffAction(slugOf(input), "consumables.manage");
   if (!access.ok) return access;
   const parsed = z.object({ poolId }).and(schema).safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
   try {
-    const result = await work(access.space.id, access.userId, parsed.data as z.infer<T> & { poolId: string });
+    const result = await work(access.space.id, access.userId, parsed.data as z.infer<T> & { poolId: string }, access.membership.role);
     await enqueueWebhookDeliveries(result?.webhookDeliveryIds ?? []);
   } catch (error) {
     return failure(error);
@@ -81,9 +83,18 @@ async function ledgerAction<T extends z.ZodType>(input: unknown, schema: T, work
   return { ok: true };
 }
 
+/** A restock; with an amount (the machine manager only, as it is money) it is also a consumable purchase in Finance. */
 export async function restockPoolAction(input: unknown): Promise<ActionResult> {
-  return ledgerAction(input, restockSchema, (spaceId, actorId, data) =>
-    prisma.$transaction((tx) => restockPool(tx, { spaceId, actorId, poolId: data.poolId, quantity: data.quantity, reason: data.reason, lotCode: data.lotCode })));
+  return ledgerAction(input, restockSchema, async (spaceId, actorId, data, role) => {
+    let purchase: RestockPurchase | undefined;
+    if (data.amount && can(role, "finance.view")) {
+      const { currency } = await prisma.space.findUniqueOrThrow({ where: { id: spaceId }, select: { currency: true } });
+      const amountMinor = isCurrencyCode(currency) ? parseAmount(data.amount, currency) : null;
+      if (!amountMinor) throw new PoolBindingError("Enter what the restock cost, like 1500 or 1,500.50.");
+      purchase = { amountMinor, method: data.method, reference: data.reference, supplier: data.supplier };
+    }
+    return prisma.$transaction((tx) => restockPool(tx, { spaceId, actorId, poolId: data.poolId, quantity: data.quantity, reason: data.reason, lotCode: data.lotCode, purchase }));
+  });
 }
 
 export async function correctPoolAction(input: unknown): Promise<ActionResult> {

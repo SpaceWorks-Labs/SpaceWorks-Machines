@@ -11,6 +11,7 @@ import { asLowStockPayload, deliverLowStockAlert } from "@/lib/email/consumables
 import { asJobEmailPayload, deliverJobEmail } from "@/lib/email/jobs";
 import { asUpkeepEmailPayload, deliverUpkeepEmail } from "@/lib/email/upkeep";
 import { asEndpointPayload, deliverEndpointDisabled } from "@/lib/email/integrations";
+import { asRepairRequestPayload, deliverRepairRequestChat, deliverRepairRequestEmail } from "@/lib/email/repairs";
 import { asLoginAlertPayload, asLoginCodePayload, deliverLoginAlert, deliverLoginCode } from "@/lib/email/loginSecurity";
 
 /** What a handler reports after a delivery attempt. Throw to retry; throw PermanentOutboxError to give up. */
@@ -165,6 +166,25 @@ const webhookDisabled: OutboxKindHandler = {
   },
 };
 
+/** Repair requests carry an outside technician's link: the row is deleted once sent. */
+const repairRequest: OutboxKindHandler = {
+  capability: true,
+  async deliver(value, messageId) {
+    const payload = asRepairRequestPayload(value);
+    if (!payload) throw new PermanentOutboxError();
+    return deliverRepairRequestEmail(payload, messageId);
+  },
+};
+
+const repairRequestChat: OutboxKindHandler = {
+  capability: true,
+  async deliver(value) {
+    const payload = asRepairRequestPayload(value, true);
+    if (!payload) throw new PermanentOutboxError();
+    return deliverRepairRequestChat(payload);
+  },
+};
+
 /** Every email the platform can send. Add a kind here when a feature needs a new message. */
 export const OUTBOX_KINDS = {
   "password-reset": passwordReset,
@@ -182,6 +202,8 @@ export const OUTBOX_KINDS = {
   "job-staff": jobEmail(true),
   "upkeep-staff": upkeepStaff,
   "webhook-disabled": webhookDisabled,
+  "repair-request": repairRequest,
+  "repair-request-chat": repairRequestChat,
 } satisfies Record<string, OutboxKindHandler>;
 
 export type OutboxKind = keyof typeof OUTBOX_KINDS;

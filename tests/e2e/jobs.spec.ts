@@ -46,7 +46,7 @@ test("a maker submits a file and follows a paid job from review to collection", 
   const staffContext = await browser.newContext({ baseURL });
   try {
     const staff = await staffContext.newPage();
-    await signIn(staff, "owner@demo.test", true);
+    await signIn(staff, "manager@demo.test", true);
     await staff.goto(`/dashboard/tinkerspace/jobs/${number}`, { waitUntil: "networkidle" });
     for (const label of ["Approve job", "Start job", "Complete job"]) {
       await staff.getByRole("button", { name: label, exact: true }).click();

@@ -9,6 +9,7 @@ import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { seedWorkshop } from "./seed-demo-workshop.mjs";
+import { seedRepairs } from "./seed-demo-repairs.mjs";
 
 if (process.env.NODE_ENV === "production") throw new Error("seed-demo never runs in production.");
 const password = process.env.DEMO_PASSWORD ?? "";
@@ -38,9 +39,10 @@ async function user(email, name, extra = {}) {
 const mfa = process.env.DEMO_MFA_SECRET ? { mfaSecretEncrypted: encryptMfaSecret(process.env.DEMO_MFA_SECRET), mfaEnabledAt: now } : {};
 const admin = await user("admin@demo.test", "Shaan Shoukath", { isSuperAdmin: true, ...mfa });
 // Staff need an authenticator before the dashboard opens; with DEMO_MFA_SECRET the demo staff share one.
-const owner = await user("owner@demo.test", "Abhiram NJ", mfa);
+const manager = await user("manager@demo.test", "Abhiram NJ", mfa);
 const machines = await user("machines@demo.test", "Abdul Samad MJ", mfa);
 const viewer = await user("viewer@demo.test", "Ajzal P", mfa);
+const technician = await user("tech@demo.test", "Fathima K", mfa);
 const maker = await user("maker@demo.test", "Anin Arafath");
 const applicant = await user("applicant@demo.test", "Midlaj C");
 
@@ -50,8 +52,8 @@ const spaces = [
     slug: "tinkerspace", name: "Tinkerspace", status: "ACTIVE", city: "Kochi", joinPolicy: "APPROVAL", visibility: "PUBLIC",
     description: "A shared workshop with 3D printers, a laser cutter and a CNC router, open to makers around Kochi.",
     contactEmail: "hello@tinkerspace.demo.test",
-    team: [[owner, "MACHINE_MANAGER"], [machines, "TYPE_MANAGER"], [viewer, "VIEWER"], [maker, "MEMBER"]],
-    reviews: [["SUBMITTED", owner, null], ["APPROVED", admin, null]],
+    team: [[manager, "MACHINE_MANAGER"], [machines, "TYPE_MANAGER"], [viewer, "VIEWER"], [maker, "MEMBER"]],
+    reviews: [["SUBMITTED", manager, null], ["APPROVED", admin, null]],
   },
   {
     slug: "kunj-lab", name: "Kunj Lab", status: "PENDING_REVIEW", city: "Kozhikode",
@@ -68,8 +70,8 @@ const spaces = [
   {
     slug: "spaceworks", name: "SpaceWorks Makerspace", status: "SUSPENDED", city: "Alappuzha",
     description: "Build nights, a laser cutter and a resin printer for makers around Alappuzha.",
-    contactEmail: "hello@spaceworks.demo.test", team: [[owner, "MACHINE_MANAGER"]],
-    reviews: [["SUBMITTED", owner, null], ["APPROVED", admin, null], ["SUSPENDED", admin, "Suspended while we confirm the workshop's insurance cover."]],
+    contactEmail: "hello@spaceworks.demo.test", team: [[manager, "MACHINE_MANAGER"]],
+    reviews: [["SUBMITTED", manager, null], ["APPROVED", admin, null], ["SUSPENDED", admin, "Suspended while we confirm the workshop's insurance cover."]],
   },
 ];
 
@@ -139,9 +141,11 @@ for (const slug of ["workshop-equipment", "fdm-printer", "laser-cutter"]) {
   const type = await prisma.machineType.findUniqueOrThrow({ where: { spaceId_slug: { spaceId: tinkerspace.id, slug } } });
   await prisma.typeManagerAssignment.upsert({
     where: { spaceId_machineTypeId_userId: { spaceId: tinkerspace.id, machineTypeId: type.id, userId: machines.id } },
-    create: { spaceId: tinkerspace.id, machineTypeId: type.id, userId: machines.id, createdById: owner.id }, update: {},
+    create: { spaceId: tinkerspace.id, machineTypeId: type.id, userId: machines.id, createdById: manager.id }, update: {},
   });
 }
 
+await seedRepairs(prisma, { space: tinkerspace, manager, technicianUser: technician });
+
 await prisma.$disconnect();
-console.log(`seed-demo: ${spaces.length} spaces and 6 accounts (admin, owner, machines, viewer, maker, applicant @demo.test) ready.`);
+console.log(`seed-demo: ${spaces.length} spaces and 7 accounts (admin, manager, machines, viewer, tech, maker, applicant @demo.test) ready.`);

@@ -24,11 +24,13 @@ const SCREENS = [
   ["consumables", "/dashboard/tinkerspace/consumables", true],
   ["reports", "/dashboard/tinkerspace/reports", true],
   ["integrations", "/dashboard/tinkerspace/integrations", true],
+  ["repair", "/dashboard/tinkerspace/maintenance/faults/1", true],
+  ["finance", "/dashboard/tinkerspace/finance", true],
 ];
 
 async function signIn(page) {
   await page.goto(`${base}/login`, { waitUntil: "networkidle" });
-  await page.locator('input[autocomplete="email"]').fill("owner@demo.test");
+  await page.locator('input[autocomplete="email"]').fill("manager@demo.test");
   await page.locator('input[autocomplete="current-password"]').fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   const code = page.getByLabel("Authenticator or recovery code");

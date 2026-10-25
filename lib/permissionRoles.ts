@@ -44,6 +44,18 @@ export const CAPABILITIES = {
   "reports.view": [...MACHINE_SIDE, "VIEWER"],
   "audit.view": MACHINE_SIDE,
   "integrations.manage": SPACE_MANAGERS,
+  /** Money (owner decision 2026-10-24): the finance page, money in reports and exports, payouts. Machine manager only. */
+  "finance.view": SPACE_MANAGERS,
+  "finance.manage": SPACE_MANAGERS,
+  "repairs.pay": SPACE_MANAGERS,
+  /** The technician directory holds people's contact details. */
+  "technicians.manage": SPACE_MANAGERS,
+  /** Ask technicians to take a fault, and check a fix (machine type managers: their types). */
+  "repairs.request": MACHINE_SIDE,
+  "repairs.verify": MACHINE_SIDE,
+  "tobuy.request": [...MACHINE_SIDE, "OPERATOR", "TECHNICIAN"],
+  /** Approving, buying and receiving records money. */
+  "tobuy.manage": SPACE_MANAGERS,
 } as const satisfies Record<string, readonly SpaceRole[]>;
 
 export type Capability = keyof typeof CAPABILITIES;
@@ -60,7 +72,7 @@ export function isStaffRole(role: SpaceRole | null | undefined): role is StaffRo
  * Capabilities a suspended or archived space keeps: reading what is there and settling money already
  * received. Everything else waits until the space is active again.
  */
-export const SUSPENDED_CAPABILITIES: ReadonlySet<Capability> = new Set<Capability>(["space.view", "machines.view", "consumables.view", "jobs.view", "maintenance.view", "payments.view", "payments.manage", "reports.view", "audit.view"]);
+export const SUSPENDED_CAPABILITIES: ReadonlySet<Capability> = new Set<Capability>(["space.view", "machines.view", "consumables.view", "jobs.view", "maintenance.view", "payments.view", "payments.manage", "reports.view", "audit.view", "finance.view"]);
 
 /** Whether a space in this status may use a capability at all. Before approval: none. */
 export function spaceAllows(status: SpaceStatus, capability: Capability): boolean {

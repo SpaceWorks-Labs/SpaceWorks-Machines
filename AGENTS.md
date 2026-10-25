@@ -151,8 +151,14 @@ Run one unit test file: `npx vitest run tests/unit/permission-roles.test.ts`.
     event's transaction (`lib/chat/*`); events are listed in `lib/chat/events.ts`. Space secrets use
     `encryptSpaceSecret`; hosts a space types in must pass `assertPublicHost`.
 - **Single writers.** Job status changes only in `lib/jobs/transitions.ts`; usage logs and machine meters only in
-  `lib/usage/record.ts`; consumable quantities only through `lib/consumables`. Upkeep lives in `lib/upkeep`
+  `lib/usage/record.ts`; consumable quantities only through `lib/consumables`; money ledger entries only through
+  `postFinance` (`lib/finance/post.ts`), in the same transaction as the payment, refund, payout, maintenance cost,
+  purchase or restock that caused them (a source posts once; corrections are reversals). Upkeep lives in `lib/upkeep`
   (schedules, records, downtime, faults, warranty, sweeps), reports in `lib/reports` (pure maths in `compute.ts`).
+- **Repairs and finance** (`docs/DECISIONS.md`, owner decisions 7 to 9): technicians, repair requests and links,
+  the fix and payouts live in `lib/repairs`; the finance ledger, its periods and summaries in `lib/finance`.
+  Money (finance, payouts, money in reports, costs) is the Machine manager's: check `finance.view` in loaders
+  and blank amounts for everyone else. Outside technicians reach exactly one request through a hashed link token.
 - **Integrations.** `/api/v1` routes go through `apiRoute` (`lib/api/handler.ts`): key, scope, and for writes the
   key creator's current capability. Webhooks: `emitWebhook` in the change's transaction, delivery and retries in
   `lib/webhooks/deliver.ts`. Printers: adapters in `lib/printers`; only the manual and simulated ones are

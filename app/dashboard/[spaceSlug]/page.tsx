@@ -6,13 +6,15 @@ import { ROLE_LABELS } from "@/lib/permissionRoles";
 import { STATUS_EXPLANATIONS } from "@/lib/spaceLifecycle";
 import { SpacePageHeader } from "@/components/dashboard/space/SpacePageHeader";
 import { buttonClasses } from "@/components/ui/button";
-import { Callout, Card, CardHeader, StatTile } from "@/components/ui/display";
+import { Callout, StatTile } from "@/components/ui/display";
+import { CollapsibleSection } from "@/components/ui/collapsible";
 import { cn } from "@/lib/cn";
+import { formatMoney, isCurrencyCode } from "@/lib/money/currencies";
 
 export const metadata: Metadata = { title: "Overview", robots: { index: false, follow: false } };
 
 export default async function SpaceOverviewPage({ params }: { params: Promise<{ spaceSlug: string }> }) {
-  const { space, role, staffCount, makers, pending, openInvites, steps } = await loadSpaceOverviewView({ params });
+  const { space, role, staffCount, makers, pending, openInvites, steps, finance } = await loadSpaceOverviewView({ params });
   const remaining = steps.filter((step) => !step.done).length;
   const base = `/dashboard/${space.slug}`;
   return (
@@ -32,11 +34,13 @@ export default async function SpaceOverviewPage({ params }: { params: Promise<{ 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <StatTile className="rounded-xl" label="Makers" value={makers.toLocaleString("en-IN")} hint={pending ? `${pending} waiting for approval` : "No one waiting"} href={`${base}/team`} />
         <StatTile className="rounded-xl" label="Staff" value={staffCount.toLocaleString("en-IN")} hint={openInvites ? `${openInvites} open invite${openInvites === 1 ? "" : "s"}` : "No open invites"} href={`${base}/team`} />
+        {finance?.totals.map((total) => <StatTile key={total.currency} className="rounded-xl" label={`Net this month (${total.currency})`} href={`${base}/finance`}
+          value={isCurrencyCode(total.currency) ? formatMoney(total.net, total.currency) : String(total.net)}
+          hint={`In ${isCurrencyCode(total.currency) ? formatMoney(total.income, total.currency) : total.income} · out ${isCurrencyCode(total.currency) ? formatMoney(total.spending, total.currency) : total.spending}`} />)}
       </div>
 
       {steps.length > 0 ? (
-        <Card as="section" className="rounded-xl">
-          <CardHeader title="Get set up" description={remaining ? `${remaining} of ${steps.length} left` : "All done. Nice work."} />
+        <CollapsibleSection id="overview-setup" title="Get set up" count={remaining} description={remaining ? `${remaining} of ${steps.length} left` : "All done. Nice work."}>
           <ol className="flex flex-col divide-y divide-line">
             {steps.map((step) => (
               <li key={step.id}>
@@ -62,7 +66,7 @@ export default async function SpaceOverviewPage({ params }: { params: Promise<{ 
               </li>
             ))}
           </ol>
-        </Card>
+        </CollapsibleSection>
       ) : null}
     </div>
   );
