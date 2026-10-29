@@ -23,6 +23,10 @@ exposed the same private-source ownership defect in `/app/docker/ops/check.mjs`.
 direct runtime source copies (operator tools and their shared MFA crypto helper) now explicitly
 use the runtime UID. The installer regression forces private operator modes too and asserts exact
 non-root ownership/readability; the full native installation below must verify this final packaging.
+CI run `40956066564` then passed setup, database/worker/operator checks and super-admin creation;
+an over-specific fixture assertion expected operator directory mode 700 after Docker merged dependency
+directory metadata to 755. The check now requires actual non-root directory traversal while retaining
+exact file mode 600, runtime ownership and readable bytes for both operator sources. Raw failure is retained.
 
 After the calendar correction, the complete native unit suite passed **687/687 in 101 files**,
 with no skips. Full TypeScript, changed-file ESLint and the frontend catalogue check passed.

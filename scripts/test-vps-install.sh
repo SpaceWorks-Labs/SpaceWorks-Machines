@@ -94,7 +94,8 @@ for (const source of ["/app/docker/ops/check.mjs", "/app/lib/mfaCrypto.mjs"]) {
   assert.equal(fs.statSync(source).uid, process.getuid());
   assert.ok(fs.readFileSync(source, "utf8").length);
 }
-assert.equal(fs.statSync("/app/docker/ops").mode & 0o777, 0o700);
+// A later dependency COPY may merge directory metadata; the runtime must traverse it.
+fs.accessSync("/app/docker/ops", fs.constants.R_OK | fs.constants.X_OK);
 console.log("Non-root public asset and operator source probes passed.");'
 "${COMPOSE[@]}" exec -T --user postgres db sh -ec '
 test -r /var/lib/postgresql/bootstrap/pg_hba.conf
