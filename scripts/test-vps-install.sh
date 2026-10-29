@@ -73,6 +73,10 @@ chmod 600 "$asset_probe/asset.txt"
 # bootstrap inputs privately; PostgreSQL drops to a different UID during init.
 chmod 600 "$ROOT/deploy/pg_hba.conf"
 chmod 700 "$ROOT/deploy/init-database.sh"
+# Operator tools and their shared crypto helper must also survive owner-only source modes.
+chmod 700 "$ROOT/docker/ops"
+find "$ROOT/docker/ops" -type f -name '*.mjs' -exec chmod 600 {} +
+chmod 600 "$ROOT/lib/mfaCrypto.mjs"
 bash setup.sh --build
 unset SWM_COMPOSE_BUILD_LAYER
 [[ "$(stat -c %a .env)" == 600 ]]
@@ -85,7 +89,13 @@ assert.equal(fs.statSync(file).mode & 0o777, 0o600);
 assert.equal(fs.statSync(directory).uid, process.getuid());
 assert.equal(fs.statSync(file).uid, process.getuid());
 assert.equal(fs.readFileSync(file, "utf8"), "spaceworks-runtime-asset-probe\n");
-console.log("Non-root public asset probe passed.");'
+for (const source of ["/app/docker/ops/check.mjs", "/app/lib/mfaCrypto.mjs"]) {
+  assert.equal(fs.statSync(source).mode & 0o777, 0o600);
+  assert.equal(fs.statSync(source).uid, process.getuid());
+  assert.ok(fs.readFileSync(source, "utf8").length);
+}
+assert.equal(fs.statSync("/app/docker/ops").mode & 0o777, 0o700);
+console.log("Non-root public asset and operator source probes passed.");'
 "${COMPOSE[@]}" exec -T --user postgres db sh -ec '
 test -r /var/lib/postgresql/bootstrap/pg_hba.conf
 test -x /docker-entrypoint-initdb.d/10-app-role.sh

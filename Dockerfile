@@ -160,9 +160,9 @@ COPY --from=prisma-cli /opt/prisma-cli/node_modules /opt/prisma-cli/node_modules
 COPY --chmod=755 scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 # Worker and beat bundles (they import the standalone @prisma/client and sharp), root-owned.
 COPY --from=builder /app/dist ./dist
-# Operator tools (docker/ops), root-owned.
-COPY docker/ops ./docker/ops
-COPY lib/mfaCrypto.mjs ./lib/mfaCrypto.mjs
+# Direct source inputs may have installer-only modes; preserve them under the runtime UID.
+COPY --chown=nextjs:nodejs docker/ops ./docker/ops
+COPY --chown=nextjs:nodejs lib/mfaCrypto.mjs ./lib/mfaCrypto.mjs
 COPY --from=ops-modules /opt/ops/node_modules ./docker/ops/node_modules
 
 # Next's standalone trace may include dotenv files when a build is performed

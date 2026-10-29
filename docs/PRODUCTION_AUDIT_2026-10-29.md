@@ -18,6 +18,12 @@ The corrected staging passed an isolated actual PostgreSQL before/after reproduc
 18 focused regressions, warning-level ShellCheck and all 13 Compose configurations.
 The complete corrected 0.6.0 installation/recovery and CI rerun remain pending.
 
+The following CI run (`40953302232`) confirmed PostgreSQL and serving processes healthy, then
+exposed the same private-source ownership defect in `/app/docker/ops/check.mjs`. The two remaining
+direct runtime source copies (operator tools and their shared MFA crypto helper) now explicitly
+use the runtime UID. The installer regression forces private operator modes too and asserts exact
+non-root ownership/readability; the full native installation below must verify this final packaging.
+
 After the calendar correction, the complete native unit suite passed **687/687 in 101 files**,
 with no skips. Full TypeScript, changed-file ESLint and the frontend catalogue check passed.
 Real disposable PostgreSQL checks passed **12/12 in three files**, including both timezone-boundary

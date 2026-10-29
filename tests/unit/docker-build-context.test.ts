@@ -25,4 +25,10 @@ describe("Docker build context secret exclusions", () => {
       expect(section).toContain("overrides:require('/tmp/app-package.json').overrides");
     }
   });
+
+  it("assigns privately acquired operator sources to their non-root runtime reader", () => {
+    const dockerfile = readFileSync(new URL("../../Dockerfile", import.meta.url), "utf8");
+    expect(dockerfile).toContain("COPY --chown=nextjs:nodejs docker/ops ./docker/ops");
+    expect(dockerfile).toContain("COPY --chown=nextjs:nodejs lib/mfaCrypto.mjs ./lib/mfaCrypto.mjs");
+  });
 });
