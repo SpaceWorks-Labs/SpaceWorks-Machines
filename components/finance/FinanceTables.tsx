@@ -5,6 +5,7 @@ import { Table, TBody, TD, TH, THead, TR, TruncatedTD } from "@/components/ui/ta
 import { ReverseEntryButton } from "@/components/finance/ReverseEntryButton";
 import { CATEGORY_LABELS, METHOD_LABELS, type Breakdown, type FinanceSummary } from "@/lib/finance/summary";
 import { formatMoney, isCurrencyCode } from "@/lib/money/currencies";
+import { calendarDayAt } from "@/lib/calendarDay";
 
 const money = (value: number, currency: string, locale?: string) => isCurrencyCode(currency) ? formatMoney(value, currency, locale) : `${value} ${currency}`;
 
@@ -30,12 +31,12 @@ export function FinanceBreakdowns({ summary, currencyLocale }: { summary: Financ
 type Entry = { id: string; occurredAt: string; direction: string; category: string; amountMinor: number; currency: string; method: string; reference: string;
   note: string; machine: string | null; technician: string | null; supplier: string; href: string | null; reversible: boolean };
 
-export function FinanceEntries({ spaceSlug, entries, count, canManage, locale }: { spaceSlug: string; entries: Entry[]; count: number; canManage: boolean; locale?: string }) {
+export function FinanceEntries({ spaceSlug, entries, count, canManage, locale, timeZone = "UTC" }: { spaceSlug: string; entries: Entry[]; count: number; canManage: boolean; locale?: string; timeZone?: string }) {
   return <Card as="section" aria-label="Ledger entries">
     <CardHeader title="Ledger" description={count > entries.length ? `The newest ${entries.length} of ${count} entries; the export has them all.` : `${count} entries in this period.`} />
     {entries.length ? <Table label="Ledger" long><THead><TR><TH>Date</TH><TH>What</TH><TH className="text-right">Amount</TH><TH>Method</TH><TH>Details</TH>{canManage ? <TH><span className="sr-only">Actions</span></TH> : null}</TR></THead>
       <TBody>{entries.map((entry) => <TR key={entry.id}>
-        <TD className="whitespace-nowrap tabular-nums">{entry.occurredAt.slice(0, 10)}</TD>
+        <TD className="whitespace-nowrap tabular-nums">{calendarDayAt(new Date(entry.occurredAt), timeZone)}</TD>
         <TD>{entry.href ? <Link className="underline-offset-4 hover:underline" href={entry.href}>{CATEGORY_LABELS[entry.category] ?? entry.category}</Link> : CATEGORY_LABELS[entry.category] ?? entry.category}</TD>
         <TD className="whitespace-nowrap text-right tabular-nums"><Chip size="sm" tone={entry.direction === "IN" ? "success" : "neutral"}>{entry.direction === "IN" ? "In" : "Out"}</Chip> {money(entry.amountMinor, entry.currency, locale)}</TD>
         <TruncatedTD text={`${METHOD_LABELS[entry.method] ?? entry.method}${entry.reference ? ` · ${entry.reference}` : ""}`} className="max-w-[14rem]" />

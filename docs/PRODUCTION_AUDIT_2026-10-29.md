@@ -18,6 +18,14 @@ The corrected staging passed an isolated actual PostgreSQL before/after reproduc
 18 focused regressions, warning-level ShellCheck and all 13 Compose configurations.
 The complete corrected 0.6.0 installation/recovery and CI rerun remain pending.
 
+After the calendar correction, the complete native unit suite passed **687/687 in 101 files**,
+with no skips. Full TypeScript, changed-file ESLint and the frontend catalogue check passed.
+Real disposable PostgreSQL checks passed **12/12 in three files**, including both timezone-boundary
+cases exercising finance, repair payouts, purchases and acquisition dates against actual domains.
+The first database fixture omitted a required supplier; that test-only omission was corrected and
+its failed log retained. An earlier native unit attempt was interrupted; the complete rerun above
+used installed Git Bash first on PATH and exited successfully. No test services remain running.
+
 ## Findings fixed
 
 | Severity | Finding and impact | Change and regression evidence |
@@ -39,6 +47,7 @@ The complete corrected 0.6.0 installation/recovery and CI rerun remain pending.
 | Medium | Space SMTP settings committed separately from their audit, and logged setting values in legacy metadata. | Settings and field-name-only audit now share one transaction. A forced audit failure proves PostgreSQL rolls the settings back. |
 | Medium | A test SMTP send could resolve with a rejected recipient and still mark settings verified. | Verification checks the relay's accepted/rejected recipients before setting `verifiedAt`. Database tests cover rejection and acceptance. |
 | Medium | A successful SMTP test could mark a concurrently saved, untested configuration verified. | Verification now conditionally updates the captured settings revision (`updatedAt`), and returns a retest instruction if the saved settings changed while mail was in flight. The PostgreSQL regression saves a changed configuration during the send and proves it remains unverified until separately tested. |
+| Medium | Repair payout, purchase and manual finance date inputs silently clamped any future day into now; impossible calendar dates could normalise into another day. Acquisition dates compared UTC midnight against the clock, rejecting the current space day near a timezone boundary. | Strict calendar validation now preserves date-only acquisition storage and compares against the authorised space day. Financial dates resolve through the existing space-local day boundary and retain unchanged domain future guards, so tomorrow is rejected. Finance/payout displays and exports use the space day. Focused helper/action/domain regressions cover Kolkata, western offsets, DST and impossible dates; actual PostgreSQL actions exercise all four write flows and future-write rollback. |
 | Medium | The supported plain-HTTP installer could start normally, but verification, reset and magic-link outbox handlers rejected all HTTP links in production and permanently deleted their messages. | Production HTTP capability URLs now require the explicit HTTP/CI opt-in and exactly the configured application origin. Embedded credentials and foreign origins are refused. Policy units and actual PostgreSQL claim/send/delete regressions cover all three kinds and repeated delivery. The source installer/recovery test also exercises these kinds through real workers and local authenticated STARTTLS capture. |
 | Medium | A confirmed single-server setup could retain a previous split website's `SITE_ORIGIN`, producing links and authentication origins for the wrong host. | The setup writer applies `SITE_ORIGIN` only to split mode. Real writer regressions cover retained split origins, valid split host separation and single HTTP hosts. The fixture now includes its published HTTP port in its public origin, and invalid fixture ports fail before host tools run. Existing-install migration instructions explain that setup preserves `.env` and list the origins to update together. |
 | Medium | Local compose supplied only PostgreSQL and Redis, omitted real file/email services, and published data-service ports on all interfaces. Manual web startup with Redis also required undocumented worker/beat processes to deliver notifications. | Local compose now provides private Silo with a scoped app identity, Mailpit and persistent Redis, all bound to loopback. `npm run dev:local` starts services/migrations and supervises web, worker and beat with separate health ports and process-tree shutdown. The existing production installer remains the server path. |
