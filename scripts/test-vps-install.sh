@@ -104,6 +104,17 @@ test "$(stat -c %a /var/lib/postgresql/tls/server.key)" = 600
 test "$(stat -c %a /var/lib/postgresql/bootstrap/pg_hba.conf)" = 600
 test "$(stat -c %a /docker-entrypoint-initdb.d/10-app-role.sh)" = 700
 printf "Non-root PostgreSQL bootstrap probe passed.\n"'
+"${COMPOSE[@]}" exec -T backend node --input-type=module -e '
+import assert from "node:assert/strict";
+for (const method of ["GET", "POST"]) {
+  const response = await fetch("http://127.0.0.1:3000/api/v1/maintenance/logs", {
+    method, ...(method === "POST" ? { headers: { "Content-Type": "application/json" }, body: "{}" } : {}),
+  });
+  assert.equal(response.status, 401, `Packaged maintenance ${method} must require an API key, not return 404`);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal((await response.json()).error, "Use a valid API key.");
+}
+console.log("Packaged maintenance GET/POST API authentication probe passed.");'
 # shellcheck source=scripts/test-vps-mailpit.sh
 source scripts/test-vps-mailpit.sh
 test_worker_email

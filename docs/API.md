@@ -25,7 +25,7 @@
 | `GET /consumables` | consumables:read | |
 | `POST /consumables/{id}/adjustments` | consumables:write | `{ kind: restock \| correction, quantity, reason }` |
 | `POST /usage` | maintenance:write | A run outside the queue |
-| `GET /maintenance/schedules` · `GET /maintenance/logs` · `POST /maintenance/logs` | maintenance:read / write | |
+| `GET /maintenance/schedules` · `GET /maintenance/logs` · `POST /maintenance/logs` | maintenance:read / write | Positive costs require the creator's current finance permission. |
 | `GET /faults` · `POST /faults` | maintenance:read / write | |
 | `GET /payments` | payments:read | Filter `status` |
 

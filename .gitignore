@@ -43,7 +43,7 @@ Desktop.ini
 *.pid.lock
 *.seed
 *.tgz
-logs/
+/logs/
 
 # debug
 npm-debug.log*

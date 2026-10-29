@@ -6,6 +6,7 @@ to. Pushes to `dev` publish staging images tagged `dev` without a release.
 
 ## 0.6.0 - 2026-10-30
 
+- Ship the documented maintenance records API in clean checkouts and return only its public response fields.
 - Require current MFA and machine-type permissions for private files.
 - Protect active jobs and downtime from conflicting machine state changes.
 - Pin validated outbound addresses and audit SMTP settings atomically.

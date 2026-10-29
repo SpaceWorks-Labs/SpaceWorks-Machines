@@ -1,5 +1,23 @@
 # Production readiness audit — 29 October 2026
 
+## Maintenance API source correction — 30 October
+
+The final clean-source inventory found `app/api/v1/maintenance/logs/route.ts` ignored by the
+unanchored `logs/` rule. The previous 980-path archives and production images therefore omitted this
+advertised GET/POST endpoint; their passing gates below are historical for that source, not proof of
+this endpoint. The rule now ignores only root `/logs/`, and the reviewed route is tracked. POST now
+returns the same minimal DTO as GET rather than spreading the domain's private database row. Positive
+costs require the creator's current finance permission inside the write transaction; technicians retain
+zero-cost and cost-free maintenance access after a role change.
+
+A new completeness regression uses Git's tracked paths, reproducing the omission despite the file
+existing in the dirty checkout. It failed before staging the route and passes afterward. The scoped
+real PostgreSQL API suite passes **19/19**, including eleven new auth, scope, tenancy, actor/MFA revocation,
+validation, atomic audit/finance/webhook, cost authority, pagination and DTO cases. Complete units pass
+**689/689 in 101 files**; full lint, TypeScript and changed-script ShellCheck pass. The corrected source has
+**981** tracked paths. Actual image installation/encrypted recovery will be repeated and remain pending
+for this source. Version stays **0.6.0**; main publication must wait for green gates.
+
 Final evidence updated 30 October 2026. Scope: Space Works Machines, baseline `4278344` on `dev`;
 the checkout was clean before work. This is a risk-based source audit and verified local acceptance,
 not production certification. No production database, payment account or deployment was used. Existing

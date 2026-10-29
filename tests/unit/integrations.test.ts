@@ -1,4 +1,7 @@
 import { createHmac } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { nextAttemptDelay, signWebhook } from "@/lib/webhooks/sign";
 import { HEAT_SECONDS, injectError, readSimState, simTelemetry, simulatedAdapter } from "@/lib/printers/simulated";
@@ -60,6 +63,16 @@ describe("network adapter stubs", () => {
 });
 
 describe("OpenAPI document and scopes", () => {
+  it("ships a tracked route handler for every advertised endpoint and method", () => {
+    const root = join(import.meta.dirname, "../..");
+    const tracked = new Set(execFileSync("git", ["ls-files", "-z", "app/api/v1"], { cwd: root, encoding: "utf8" }).split("\0"));
+    for (const [path, methods] of Object.entries(openApiDocument("https://machines.example").paths)) {
+      const source = `app/api/v1${path.replace(/\{([^}]+)\}/g, "[$1]")}/route.ts`;
+      expect(tracked.has(source), `${source} must exist in a clean Git checkout`).toBe(true);
+      const handler = readFileSync(join(root, source), "utf8");
+      for (const method of Object.keys(methods)) expect(handler).toMatch(new RegExp(`export const ${method.toUpperCase()}\\s*=`));
+    }
+  });
   it("describes every route with its scope and bearer auth", () => {
     const doc = openApiDocument("https://machines.example/");
     expect(doc.openapi).toBe("3.1.0");
