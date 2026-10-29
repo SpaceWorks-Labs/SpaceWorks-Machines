@@ -1,23 +1,5 @@
 # Production readiness audit — 29 October 2026
 
-## Maintenance API source correction — 30 October
-
-The final clean-source inventory found `app/api/v1/maintenance/logs/route.ts` ignored by the
-unanchored `logs/` rule. The previous 980-path archives and production images therefore omitted this
-advertised GET/POST endpoint; their passing gates below are historical for that source, not proof of
-this endpoint. The rule now ignores only root `/logs/`, and the reviewed route is tracked. POST now
-returns the same minimal DTO as GET rather than spreading the domain's private database row. Positive
-costs require the creator's current finance permission inside the write transaction; technicians retain
-zero-cost and cost-free maintenance access after a role change.
-
-A new completeness regression uses Git's tracked paths, reproducing the omission despite the file
-existing in the dirty checkout. It failed before staging the route and passes afterward. The scoped
-real PostgreSQL API suite passes **19/19**, including eleven new auth, scope, tenancy, actor/MFA revocation,
-validation, atomic audit/finance/webhook, cost authority, pagination and DTO cases. Complete units pass
-**689/689 in 101 files**; full lint, TypeScript and changed-script ShellCheck pass. The corrected source has
-**981** tracked paths. Actual image installation/encrypted recovery will be repeated and remain pending
-for this source. Version stays **0.6.0**; main publication must wait for green gates.
-
 Final evidence updated 30 October 2026. Scope: Space Works Machines, baseline `4278344` on `dev`;
 the checkout was clean before work. This is a risk-based source audit and verified local acceptance,
 not production certification. No production database, payment account or deployment was used. Existing
@@ -26,30 +8,33 @@ private environment files were not read; all runtime accounts, credentials and r
 ## Final 0.6.0 disposition
 
 The requested **0.6.0** application and local clean-stack acceptance gates passed on
-`fd14f30d855ab0710fa2d604d9446045c217fb8c`. This final report is a documentation-only follow-up.
-The normalized source archive includes **980/980 tracked paths plus `.release`**, SHA-256
-`6c53d2cc103337f49bc697ba566827189be8682da579a445bc81f52c7f42bb63`.
+`27f1c5b5d5e6d6b142574348d599e7bcec4b96e7`. This final report is a documentation-only follow-up.
+The final clean inventory restored the advertised maintenance API omitted from the earlier 980-path build;
+all current image/install/recovery gates below were repeated on the corrected 981-path source.
+The normalized source archive includes **981/981 tracked paths plus `.release`**, SHA-256
+`d7ae4b5a09cab1751dc91ae045be714a2337f7289b5b0b846fbe54ca56195ea3`.
 The acceptance archive and current tracked source were compared before this report update.
 
 | Final gate | Evidence and result |
 | --- | --- |
-| Complete units | **688/688**, **101 files**, zero skips, 151.32 seconds, one worker. Native Git Bash was selected explicitly. |
-| Current CI | All six checks green on `fd14f30`; Tests run `40957780539`, Security Audit run `40957780578`. Includes full lint/type/build/security, **504 PostgreSQL tests in 33 files**, **19 browser journeys**, and clean production installation/encrypted recovery. |
-| Changed financial flows | **12/12 actual PostgreSQL tests in three files**, including tenant-day boundaries, finance, repair payouts, purchases/acquisition and future-write rollback. Helper/action/domain units cover Kolkata, western offsets, DST and impossible dates. |
-| Native application builds | Both final Alpine images built from the complete current source through committed installer paths. Backend compilation 113 seconds, TypeScript 101 seconds; frontend compilation 36.8 seconds, TypeScript 36.8 seconds. Static generation, job bundles and frontend dependency boundary passed. No previous application image bypass was used. |
-| Installer and private permissions | Actual `scripts/test-vps-install.sh` → `setup.sh --build` passed with PostgreSQL HBA/init, public probe and operator/helper files deliberately owner-only. PostgreSQL stages inputs to its own UID; backend/operator files have correct runtime ownership and readable bytes. No existing user assets were chmodded. |
+| Complete units | **689/689**, **101 files**, zero skips, 106.61 seconds, one worker. Native Git Bash was selected explicitly. |
+| Current CI | All six checks green on `27f1c5b`; Tests run `40966144675`, Security Audit run `40966144733`. Includes full lint/type/build/security, **515 PostgreSQL tests in 33 files**, **19 browser journeys**, and clean production installation/encrypted recovery. |
+| Maintenance API completeness and security | All advertised methods map to tracked route handlers; the new regression failed on the original dirty checkout and exact baseline Git archive omitted the advertised handler. **19/19 actual PostgreSQL API cases**, eleven new, cover keys/scopes, tenant-machine/schedule/fault isolation, creator MFA/role/membership revocation, validation, DTO allowlists, pagination, atomic audit/ledger/webhooks and current authority for positive costs. Technicians can still record explicit zero or omitted cost. |
+| Earlier calendar correction | **12/12 actual PostgreSQL tests in three files**, including tenant-day boundaries, finance, repair payouts, purchases/acquisition and future-write rollback. Helper/action/domain units cover Kolkata, western offsets, DST and impossible dates. |
+| Native application builds | Both final Alpine images built from the complete current source through committed installer paths. Backend compilation 56 seconds, TypeScript 58 seconds; frontend compilation 46 seconds, TypeScript 39.4 seconds. Static generation, job bundles and frontend dependency boundary passed. No previous application image bypass was used. |
+| Installer and private permissions | Actual `scripts/test-vps-install.sh` → `setup.sh --build` passed with PostgreSQL HBA/init, public probe and operator/helper files deliberately owner-only. PostgreSQL stages inputs to its own UID; backend/operator files have correct runtime ownership and readable bytes. No existing user assets were chmodded. Actual compiled maintenance GET and POST both return API-key 401 with no-store JSON, rather than 404. |
 | Encrypted disaster recovery | Actual committed recovery passed: age-encrypted archive copied outside the installation, original volumes deleted, fresh project and empty volumes, configuration/TLS recovered from the archive, database relationships and private object bytes restored, production MFA helper decrypts restored ciphertext. Schedulers remain paused until readiness succeeds, then resume last. |
 | Email before and after restore | Verification, password-reset and magic-link messages each crossed PostgreSQL outbox → Redis/BullMQ → real worker → authenticated STARTTLS capture before and after restore. Delivery occurred once and bearer payload rows were deleted. Worker/beat readiness passed. No external email was sent. |
 | Committed production smoke | `ci-compose-smoke.sh` exited zero after the recovery drill; TLS, least-privilege DB role, migrations, Redis, private storage, app readiness, hidden internal jobs and backup/restore passed. |
-| Actual final split-image journeys | Separate final backend/frontend images: manager password plus MFA, manual finance and repair-payout gateway writes, tomorrow rejected without writes, tenant-local dates and authenticated CSV passed. Both stored dates equal Kolkata midnight `2026-10-29T18:30:00Z` for 30 October. Frontend has no application credentials and uses an independent action key. |
-| Actual final UI evidence | Finance desktop and payout mobile **390 × 844** screenshots visually inspected. Mobile document width **390 px**, no document overflow or overlapping controls; the payout table scrolls inside its container. No browser runtime errors. This is bounded visual evidence, not a complete accessibility/mobile-device matrix. |
+| Earlier 0.6.0 split-image journeys | Before the maintenance API source correction, immutable images `32c0712e`/`0bb18c81` passed: manager password plus MFA, manual finance and repair-payout gateway writes, tomorrow rejected without writes, tenant-local dates and authenticated CSV passed. Both stored dates equal Kolkata midnight `2026-10-29T18:30:00Z` for 30 October. Frontend has no application credentials and uses an independent action key. |
+| Earlier 0.6.0 UI evidence | Finance desktop and payout mobile **390 × 844** screenshots visually inspected. Mobile document width **390 px**, no document overflow or overlapping controls; the payout table scrolls inside its container. No browser runtime errors. This is bounded visual evidence, not a complete accessibility/mobile-device matrix. |
 | Deployment checks | Exact CI ShellCheck 0.10.0 warning-level checks over **30 shell scripts**, **13 Compose configurations**, Python release helper **6/6**, all five migrations, worker/beat build, frontend catalogue **68 views/116 actions** and dependency boundary passed. No Helm chart exists here. |
 
 Immutable final image identities:
 
-- Backend: `sha256:32c0712e09cbb3eb8c6f2bdf6f8e7a03c4b5dd60719d4d672fd6653f95b51b9f`.
-- Frontend: `sha256:0bb18c812d200d75c04161e074c8c9b7482a8fba1d93ad3f8a9861d107b5cb20`.
-- Actual deployed edge: `sha256:98aff47f57cf2d97ff0895b13101f9de15616e712fcf97e8b2c6e19f87bbe4b1`.
+- Backend: `sha256:7bf95b12c46b21cf8ec1cdcb4789faea409643a77e6662b8a42d09ddbbe1ef31`.
+- Frontend: `sha256:d51014558a521c71d0d39d9d6705355fb1e3a6a7b2e8131d8012315bec678c8a`.
+- Actual deployed edge: `sha256:a0414bc7c57e07efe18bac390560c588b4a86bf70cd771ae978d0ca3ed52ff8c`.
 
 Independent unsuppressed Trivy scans with the frozen 29 October database report **zero OS/library
 findings at every severity** for both final application images. This is advisory evidence, not a universal
@@ -81,6 +66,7 @@ suppressed. The entire shared service stack is not claimed to have a zero-findin
 | High advisory; application exploitability not demonstrated | Prisma 6's configuration dependency resolved to `deepmerge-ts` 7.1.5, affected by recursive-object stack exhaustion ([GHSA-ggr8-5vv4-36mx](https://github.com/advisories/GHSA-ggr8-5vv4-36mx)). Plain JSON does not produce the recursive graph required by the advisory. | Root override pins patched 8.0.2. Both isolated Docker migration CLI and operator installs inherit sanitized security overrides; a regression covers their build definitions. Clean Linux installs, production image builds and actual fresh-volume migrations passed. |
 | High advisory; bundled tooling | Unsuppressed Trivy scans of both actual final images found 10 high, 10 medium and one low advisory occurrences each, with zero critical. All high findings were in inherited global npm tooling; Alpine OS and application/isolated Prisma dependencies had no high findings. | Both final runtime stages now remove `/usr/local/lib/node_modules/npm` and the global `npm`/`npx` launchers before switching user. All published roles invoke Node directly, including the isolated Prisma migration CLI and operator clients. Build stages retain their package managers. Final 0.6.0 backend and frontend scans report zero OS/library findings at every severity. Actual Node/Prisma migrations, operator commands, workers, installation and encrypted recovery passed with npm absent. |
 | Critical/high advisory; shared edge | The actual official Caddy 2.11.7 image contains vulnerable Alpine Brotli/curl packages, Go 1.26.8 and affected x/net/Go JOSE dependencies. Re-pulling the official tag retained the same image digest. | An independent `docker/caddy/` build preserves standard modules/runtime with Go 1.26.10, x/net 0.62.0, Chi 5.4.0 and Go JOSE v4 4.1.6 under verified module sums, plus Alpine security upgrades. Setup, upgrades and smoke build it locally even with published app images. The final image compiled and passed actual generated-CA HTTPS with explicit HTTP/2, proxy and module-parity checks. Unsuppressed scanning reports 0 critical/1 high/2 medium/1 unknown, with every known fixable finding removed. Unpatched JOSE v3 symbols remain in the binary; shipped/adapted configs expose no ACME-server/JWK handler. The raw findings, GoDB lag and configuration limits remain documented. |
+| Medium | An unanchored `logs/` ignore rule hid the documented maintenance records route from clean Git checkouts and production images. Its untracked POST also spread private fields and allowed a demoted technician to post positive costs. | `/logs/` now applies only to generated root logs; the reviewed route is tracked. Every OpenAPI path/method must have a tracked handler. POST uses the GET DTO allowlist and checks current positive-cost finance permission inside its transaction. The new actual-image GET/POST authentication probe and complete renewed installation/recovery pass. Eleven real database regressions cover isolation, revocation, zero-cost compatibility and atomic writes. |
 | Medium | Manual status changes or retirement/restoration could return a machine with open downtime to service. | Operational statuses and restoration require downtime to be closed. The existing end-downtime flow closes its window before restoring idle. PostgreSQL tests cover status and retirement bypass attempts. |
 | Medium | A source checkout acquired under a private umask can contain owner-only public asset directories/files. The backend copied those assets as root and then served as a different UID, causing Next to exit with `EACCES` while scanning `public/brand`. | Backend public assets now use the same explicit non-root ownership as the frontend. The CI-only installer fixture refuses probe collisions, creates a new owner-only public probe (directory 700/file 600), and checks its non-root UID, permissions and exact bytes inside the running backend. Existing assets are never chmodded. Whole-fixture cleanup removes the probe. The same rule now covers direct operator-tool and MFA-helper copies. Actual 0.6.0 setup and recovery passed with owner-only probe files, explicit runtime UID and byte/read checks. Directory checks require real traversal access after Docker merges directory metadata. Failed runs remain retained. |
 | Medium | The installer’s private umask can produce HBA mode 600 and init script mode 700 owned by the installer. PostgreSQL drops to another UID and the directly mounted files caused a real fresh-install `Permission denied` failure. | Its root bootstrap now copies readonly source inputs into PostgreSQL-owned runtime paths with HBA/key mode 600 and init/directory mode 700. Source permissions stay private. The actual PG probe reproduces the old failure and verifies healthy TLS/application-role initialization after the fix. The committed installer forces private input modes only in its temporary fixture and checks runtime access as PostgreSQL; failure traps retain database/Redis/Silo logs before teardown. |
@@ -127,11 +113,17 @@ Historical failures were fixed and retained rather than counted as passing gates
   harness now waits only for persistent data services, then explicitly runs bucket creation and migration.
 - CI `40948766876` exposed private PostgreSQL bootstrap ownership; `40953302232` exposed private direct
   operator-source ownership. Both now pass actual restrictive-input installation and recovery.
+- The later clean-source inventory found the advertised maintenance logs route ignored by `logs/`. Exact
+  `origin/dev` archive `cc2386a` contains its OpenAPI entry but no route. The tracked-source regression
+  failed before the fix even with the file present on disk, then passed with `/logs/` anchored and the
+  route tracked. Corrected source `27f1c5b` passed 689 units, 515 database cases, 19 browser journeys,
+  complete new images, restrictive-input setup, compiled-route probe and encrypted recovery. Earlier
+  980-path evidence is historical and does not prove availability of this endpoint.
 - CI `40956066564` passed application/setup behavior but hit an over-specific test expecting directory 700
   after Docker merged it to 755. `fd14f30` checks actual runtime traversal and retains exact file mode 600,
   UID and byte assertions. Its complete CI and independent native installer/recovery passed.
 - The first new calendar integration fixture omitted a required supplier; correcting the fixture yielded
-  12/12 real PostgreSQL passes. Final units are 688; earlier 687/663 counts are historical.
+  12/12 real PostgreSQL passes. Final units are 689; earlier 688/687/663 counts are historical.
 - The supplemental split harness initially rejected mismatched public/private backend origins, then found
   Docker Desktop host-network loopback unavailable from Windows. The final isolated bridge/shared network
   namespace publishes only loopback fixture ports and passes without application changes.
@@ -146,24 +138,30 @@ CI explicitly installs age. Run destructive acceptance only in its explicitly gu
 
 Key final evidence:
 
-- `source-final-060.tar` and `.json`: complete normalized source snapshot and digest.
-- `logs/native-060-overall.log`, `fresh-installer-recovery-060.log`, `ci-compose-smoke-060.log` and matching
-  `.exit` files: all exit zero; `production-drill-result-060.json` records every recovery proof.
-- `logs/final-c235-full-units.log`: 688/101; `logs/calendar-days-integration.log`: affected 12/12.
-- `logs/split-finance-060.log` and `artifacts/split-finance-060/{result.json,image-proof.json}`:
-  final immutable-image split journey/DB/credential proofs. Screens: `finance-desktop.png` and
-  `payouts-mobile-390.png`; authenticated CSV is retained beside them.
-- Historical complete browser artifacts: `artifacts/browser-monolith/`, `browser-split/`,
-  `mobile-browser/`, with original success/failure logs preserved separately.
-- Sibling `../image-security/machines-060-{backend,frontend}-final/` and
-  `../image-security/shared-caddy-machines-060-final/`: unsuppressed exact-ID scans and layer equivalence.
+- `source-maintenance-api-060.tar` and `.json`: frozen clean 981-path source and digest;
+  `logs/maintenance-api-source-coverage.json` proves no omitted or extra tracked paths.
+- `logs/maintenance-api-native-060-overall.log`, `maintenance-api-fresh-installer-recovery-060.log`,
+  `maintenance-api-ci-compose-smoke-060.log` and matching `.exit` files: all exit zero;
+  `maintenance-api-production-drill-result-060.json` records every recovery proof.
+- `logs/maintenance-api-full-units.log`: 689/101; final full lint/typecheck/ShellCheck/catalog logs;
+  `maintenance-api-integration.log`: 19/19; `maintenance-api-ci-passed.log`: full current CI 515/33 and 19 browsers.
+- `maintenance-api-before-git-archive.tar`, `logs/maintenance-api-before-proof.json`,
+  `api-source-before-unit.log` and `api-source-after-unit.log`: reproducible missing-route failure and fix.
+- Earlier actual split finance/payout and UI proofs: `artifacts/split-finance-060/` and its browser log.
+  Historical complete browser artifacts remain under `artifacts/browser-monolith/`, `browser-split/`,
+  `mobile-browser/`; source correction changes no UI components or frontend gateway contract.
+- Sibling `../image-security/machines-maintenance-api-060-{backend,frontend}-final/` and
+  `../image-security/shared-caddy-machines-maintenance-api-060-final/`: current exact-ID unsuppressed scans
+  and edge layer equivalence. Previous image scans remain explicitly historical.
 
-Every disposable Machines runtime fixture was stopped/removed after its check. Audit-owned source/cache
-volumes and image tags remain recorded for coordinated final cleanup. The user subsequently expanded
-cleanup to resources belonging to all four repositories, including pre-existing generated caches once
-identity is established. Database/object/user data must first be preserved outside Docker. Source checkouts
-and evidence remain; shared BuildKit/cache belongs to the coordinator. No global prune or unrelated
-resource deletion is permitted.
+Every disposable Machines runtime stack was stopped/removed after its check. The final source volume
+and image tags are subject to coordinated cleanup after these receipts. Earlier confirmed Machines
+resources, including pre-existing generated caches, were removed only after identity/reference checks;
+full database/source archives and hashes were retained before data-volume removal. The user subsequently
+authorized removal of temporary audit evidence/recovery data after main publication, retaining the codebases.
+The coordinator owns shared builder/cache cleanup. No global prune or unrelated resource deletion is permitted.
+Automatic approval review blocked recursive deletion of obsolete extracted Windows source directories;
+those paths were left in place and no alternate deletion method was attempted.
 
 ## Remaining external boundaries
 
