@@ -6,6 +6,7 @@ import { financePeriod, PERIOD_KINDS, type PeriodKind } from "@/lib/finance/peri
 import { CATEGORY_LABELS, METHOD_LABELS } from "@/lib/finance/summary";
 import { isCurrencyCode, toInputValue } from "@/lib/money/currencies";
 import { buildXlsx, XLSX_TYPE } from "@/lib/xlsx";
+import { calendarDayAt } from "@/lib/calendarDay";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ spac
   const machine = new Map(machines.map((row) => [row.id, row.name])), technician = new Map(technicians.map((row) => [row.id, row.name]));
   const amount = (minor: number, currency: string) => (isCurrencyCode(currency) ? toInputValue(minor, currency) : String(minor));
   const rows: Array<Array<string | number>> = [["Date", "Direction", "Category", "Amount", "Currency", "Method", "Reference", "Machine", "Technician", "Supplier", "Note", "Source", "Entry"],
-    ...entries.map((entry) => [entry.occurredAt.toISOString().slice(0, 10), entry.direction === "IN" ? "In" : "Out", CATEGORY_LABELS[entry.category] ?? entry.category,
+    ...entries.map((entry) => [calendarDayAt(entry.occurredAt, space.timezone), entry.direction === "IN" ? "In" : "Out", CATEGORY_LABELS[entry.category] ?? entry.category,
       format === "xlsx" ? Number(amount(entry.amountMinor, entry.currency)) : amount(entry.amountMinor, entry.currency), entry.currency, METHOD_LABELS[entry.method] ?? entry.method,
       entry.reference, entry.machineId ? machine.get(entry.machineId) ?? "" : "", entry.technicianId ? technician.get(entry.technicianId) ?? "" : "", entry.supplier, entry.note,
       entry.sourceType, entry.id])];

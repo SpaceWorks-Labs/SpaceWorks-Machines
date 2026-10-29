@@ -9,6 +9,7 @@ import { changeMachineStatus, createMachine, MachineInputError, MachineNotFoundE
 import { createMachineSchema, machineDetailsSchema, machineStatusSchema } from "@/lib/machines/schemas";
 import { enqueueWebhookDeliveries } from "@/lib/webhooks/emit";
 import { TypeNotFoundError } from "@/lib/machines/types";
+import { calendarDayAt, parseCalendarDay } from "@/lib/calendarDay";
 import type { ActionResult } from "./space";
 
 const NOT_FOUND = { ok: false as const, error: "Machine not found." };
@@ -24,13 +25,13 @@ function failure(error: unknown): Failure {
 /** Details as typed, with the purchase cost turned into minor units of the space's currency. */
 async function details(spaceId: string, values: z.infer<typeof machineDetailsSchema>, money = true): Promise<MachineDetails | Failure> {
   let purchaseCost: number | null | undefined = money ? null : undefined;
+  const space = await prisma.space.findUniqueOrThrow({ where: { id: spaceId }, select: { currency: true, timezone: true } });
   if (values.purchaseCost && money) {
-    const space = await prisma.space.findUniqueOrThrow({ where: { id: spaceId }, select: { currency: true } });
     purchaseCost = isCurrencyCode(space.currency) ? parseAmount(values.purchaseCost, space.currency) : null;
     if (purchaseCost === null) return { ok: false, error: "Check the highlighted fields.", fieldErrors: { purchaseCost: ["Enter an amount like 125000 or 1,25,000.50"] } };
   }
-  const acquiredOn = values.acquiredOn ? new Date(`${values.acquiredOn}T00:00:00Z`) : null;
-  if (acquiredOn && (Number.isNaN(acquiredOn.getTime()) || acquiredOn > new Date())) return { ok: false, error: "Check the highlighted fields.", fieldErrors: { acquiredOn: ["Enter a date that isn't in the future"] } };
+  const acquiredOn = values.acquiredOn ? parseCalendarDay(values.acquiredOn) : null;
+  if (values.acquiredOn && (!acquiredOn || values.acquiredOn > calendarDayAt(new Date(), space.timezone))) return { ok: false, error: "Check the highlighted fields.", fieldErrors: { acquiredOn: ["Enter a date that isn't in the future"] } };
   return { ...values, purchaseCost, acquiredOn };
 }
 

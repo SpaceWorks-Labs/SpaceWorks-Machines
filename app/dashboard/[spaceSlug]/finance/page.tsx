@@ -43,6 +43,6 @@ export default async function FinancePage(props: Parameters<typeof loadFinanceVi
       ]) : <EmptyState mood="sleepy" className="sm:col-span-3" title="No money in or out">Nothing was paid in or out in this period.</EmptyState>}
     </section>
     <FinanceBreakdowns summary={view.summary} currencyLocale={space.locale ?? undefined} />
-    <FinanceEntries spaceSlug={space.slug} entries={view.entries} count={view.count} canManage={view.canManage} locale={space.locale ?? undefined} />
+    <FinanceEntries spaceSlug={space.slug} entries={view.entries} count={view.count} canManage={view.canManage} locale={space.locale ?? undefined} timeZone={space.timezone} />
   </div>;
 }

@@ -1,10 +1,11 @@
 import { z } from "zod";
+import { parseCalendarDay } from "@/lib/calendarDay";
 
 /** Inputs for repairs, technicians, to-buy and finance actions. Client-safe. Amounts are minor units. */
 const id = z.string().trim().min(1).max(64);
 const slug = z.string().trim().min(1).max(80);
 const amount = z.number().int().min(0).max(2147483647);
-const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional();
+const day = z.string().refine((value) => parseCalendarDay(value) !== null, "Choose a valid date.").optional();
 export const PAYOUT_METHODS = ["CASH", "BANK_TRANSFER", "UPI", "OTHER"] as const;
 export const FINANCE_METHODS = ["GATEWAY_RAZORPAY", "GATEWAY_STRIPE", "CASH", "BANK_TRANSFER", "UPI", "OTHER"] as const;
 export const TECHNICIAN_CHANNELS = ["EMAIL", "WHATSAPP", "TELEGRAM"] as const;
@@ -40,6 +41,3 @@ export const manualEntrySchema = z.object({ spaceSlug: slug, category: z.enum(["
   amount: amount.min(1), method: z.enum(FINANCE_METHODS), reference: z.string().max(200).default(""), note: z.string().trim().min(2, "Say what it was for").max(500),
   occurredOn: day, supplier: z.string().max(200).default(""), machineId: id.nullable().optional() });
 export const reverseEntrySchema = z.object({ spaceSlug: slug, entryId: id, reason: z.string().trim().min(3, "Say why").max(500) });
-
-/** A YYYY-MM-DD day as noon UTC (so it lands on that calendar day in any zone), never later than now. */
-export const noonOf = (value: string | undefined) => (value ? new Date(Math.min(Date.parse(`${value}T12:00:00Z`), Date.now())) : undefined);

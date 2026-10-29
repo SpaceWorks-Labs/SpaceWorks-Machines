@@ -42,7 +42,7 @@ export function RepairPanel({ spaceSlug, faultId, currency, locale, timeZone, da
           ? <PayoutDialog spaceSlug={spaceSlug} faultId={faultId} currency={currency} due={data.money.approvedAmount - (data.money.paidAmount ?? 0)} /> : null}
       </div> : null}
       {data.payouts.length ? <Table label="Payouts"><THead><TR><TH>Paid on</TH><TH>Amount</TH><TH>Method</TH><TH>Reference</TH></TR></THead>
-        <TBody>{data.payouts.map((row) => <TR key={row.id}><TD className="whitespace-nowrap">{formatDate(row.paidAt, "UTC")}</TD><TD className="whitespace-nowrap">{money(row.amount)}</TD><TD>{PAYOUT_METHOD_LABELS[row.method]}</TD><TD>{row.reference || <span className="text-ink-muted">None</span>}</TD></TR>)}</TBody></Table> : null}
+        <TBody>{data.payouts.map((row) => <TR key={row.id}><TD className="whitespace-nowrap">{formatDate(row.paidAt, timeZone)}</TD><TD className="whitespace-nowrap">{money(row.amount)}</TD><TD>{PAYOUT_METHOD_LABELS[row.method]}</TD><TD>{row.reference || <span className="text-ink-muted">None</span>}</TD></TR>)}</TBody></Table> : null}
     </div> : null}
   </Card>;
 }

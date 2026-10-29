@@ -6,7 +6,8 @@ import { invalid, revalidate, slugOf, staffAction } from "@/lib/actionAccess";
 import type { Capability } from "@/lib/permissionRoles";
 import { approveRepairAmount, recordFix, recordRepairPayout, verifyRepair } from "@/lib/repairs/fix";
 import { ANSWER_ERRORS, answerRepairRequest, assignTechnician, lockFault, RepairError, RepairNotFoundError, sendRepairRequests } from "@/lib/repairs/requests";
-import { answerRequestSchema, approveAmountSchema, assignTechnicianSchema, noonOf, payoutSchema, revokeRequestSchema, sendRequestsSchema, staffFixSchema, verifySchema } from "@/lib/repairs/schemas";
+import { answerRequestSchema, approveAmountSchema, assignTechnicianSchema, payoutSchema, revokeRequestSchema, sendRequestsSchema, staffFixSchema, verifySchema } from "@/lib/repairs/schemas";
+import { CalendarDayError, financialDay } from "@/lib/calendarDay";
 import { UpkeepError, UpkeepNotFoundError } from "@/lib/upkeep";
 import { enqueueWebhookDeliveries } from "@/lib/webhooks/emit";
 import { FinanceError } from "@/lib/finance/post";
@@ -29,7 +30,7 @@ async function run(input: unknown, capability: Capability, schema: { safeParse(v
     if (ids?.length) await enqueueWebhookDeliveries(ids);
   } catch (error) {
     if (error instanceof RepairNotFoundError || error instanceof UpkeepNotFoundError) return NOT_FOUND;
-    if (error instanceof RepairError || error instanceof UpkeepError || error instanceof FinanceError) return { ok: false, error: error.message };
+    if (error instanceof RepairError || error instanceof UpkeepError || error instanceof FinanceError || error instanceof CalendarDayError) return { ok: false, error: error.message };
     throw error;
   }
   revalidate(`/dashboard/${access.space.slug}`, "layout");
@@ -83,6 +84,8 @@ export async function approveRepairAmountAction(input: unknown) {
 }
 
 export async function recordRepairPayoutAction(input: unknown) {
-  return run(input, "repairs.pay", payoutSchema, (tx, actor, data: { faultId: string; amount: number; method: "CASH" | "BANK_TRANSFER" | "UPI" | "OTHER"; reference: string; paidOn?: string; note: string }) =>
-    recordRepairPayout(tx, actor, { ...data, paidAt: noonOf(data.paidOn) }));
+  return run(input, "repairs.pay", payoutSchema, async (tx, actor, data: { faultId: string; amount: number; method: "CASH" | "BANK_TRANSFER" | "UPI" | "OTHER"; reference: string; paidOn?: string; note: string }) => {
+    const space = await tx.space.findUniqueOrThrow({ where: { id: actor.spaceId }, select: { timezone: true } });
+    return recordRepairPayout(tx, actor, { ...data, paidAt: financialDay(data.paidOn, space.timezone) });
+  });
 }

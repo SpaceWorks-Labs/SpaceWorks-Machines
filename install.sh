@@ -18,6 +18,9 @@ What you need first
   - macOS/Windows: Docker Desktop installed and running before you start.
   - Internet access to github.com and ghcr.io.
   - At least 8 GiB free disk. Ports are checked after you choose the topology.
+  - Bundled web edge: allow at least 4 GiB RAM with swap, including published-app
+    installs and upgrades. The patched Caddy edge is compiled locally; an external
+    reverse proxy skips that build.
   - curl (or wget) and tar to read the release questions before installing anything.
   - A terminal: setup asks questions. Have ready the web address (host name or IP, or
     a domain whose DNS points here), the super-admin email and an SMTP relay login.
@@ -28,7 +31,7 @@ What it does
      website, HTTPS, storage, super admin, email, GitHub repository and optional Actions runner.
   3. Shows answers, services and host actions; proceeds only after confirmation.
   4. Installs dependencies, copies the release into /opt/spaceworks-machines
-     (SWM_DIR overrides it), writes private settings and TLS certificates, and starts
+     (SWM_DIR overrides it), builds the patched web edge locally, writes private settings and TLS certificates, and starts
      PostgreSQL, Redis, Silo storage, migrations, the app, the worker and beat, backups and Caddy.
   Run it again later to update, back up or roll back; it detects the existing install.
 
@@ -324,7 +327,7 @@ fi
 if [[ "$ACTION" == fresh ]]; then
   # shellcheck source=scripts/setup-questions.sh
   source "$STAGE_DIR/scripts/setup-questions.sh"
-  SETUP_HOST_PLAN="install/ensure ${missing[*]:-no missing packages}; enable Docker/access if needed; install $RELEASE_TAG in $INSTALL_DIR; write private settings; write TLS certificates; pull images; apply migrations; start services and scheduled backups; install the optional GitHub Actions runner"
+  SETUP_HOST_PLAN="install/ensure ${missing[*]:-no missing packages}; enable Docker/access if needed; install $RELEASE_TAG in $INSTALL_DIR; write private settings; write TLS certificates; pull app/data images; build patched Caddy unless using your own proxy; apply migrations; start services and scheduled backups; install the optional GitHub Actions runner"
   ask_setup_questions || exit 0
   persist_setup_answers "$STAGE_DIR/.spaceworks-answers"
   ports=()

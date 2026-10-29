@@ -89,7 +89,7 @@ async function lockMachine(tx: Prisma.TransactionClient, spaceId: string, machin
 }
 
 /** A status change with an optional note: audited and announced as `machine.status_changed`. */
-export async function changeMachineStatus(tx: Prisma.TransactionClient, input: { spaceId: string; actorId: string | null; machineId: string; status: MachineStatus; note: string }) {
+export async function changeMachineStatus(tx: Prisma.TransactionClient, input: { spaceId: string; actorId: string | null; machineId: string; status: MachineStatus; note: string; jobId?: string }) {
   const machine = await lockMachine(tx, input.spaceId, input.machineId, input.actorId);
   if (machine.retiredAt) throw new MachineInputError({ status: ["A retired machine stays offline. Bring it back into service first."] });
   if (machine.status === input.status) {
@@ -99,6 +99,14 @@ export async function changeMachineStatus(tx: Prisma.TransactionClient, input: {
     }
     return { changed: false, webhookDeliveryIds: [] as string[] };
   }
+  // The machine lock also serialises job starts. Only the owning job's lifecycle may move a busy
+  // machine: manual edits, upkeep and a stale printer poll must not strand its job or release it.
+  const activeJob = await tx.job.findFirst({ where: { spaceId: input.spaceId, assignedMachineId: machine.id,
+    status: { in: ["RUNNING", "PAUSED"] } }, select: { id: true } });
+  if (activeJob && activeJob.id !== input.jobId) throw new MachineInputError({ status: ["Finish, fail or cancel the machine's active job first."] });
+  if (["IDLE", "RESERVED", "RUNNING", "PAUSED"].includes(input.status) && await tx.downtime.findFirst({
+    where: { spaceId: input.spaceId, machineId: machine.id, endedAt: null }, select: { id: true },
+  })) throw new MachineInputError({ status: ["End the machine's downtime before returning it to service."] });
   await tx.machine.update({ where: { spaceId_id: { spaceId: input.spaceId, id: machine.id } }, data: { status: input.status, statusNote: input.note } });
   await recordAuditEvent({ action: "machine.status_changed", actorUserId: input.actorId, spaceId: input.spaceId, targetType: "Machine", targetId: machine.id, metadata: { from: machine.status, to: input.status }, client: tx });
   const webhookDeliveryIds = await emitWebhook(tx, input.spaceId, "machine.status_changed", { machineId: machine.id, from: machine.status, to: input.status });
@@ -109,6 +117,12 @@ export async function changeMachineStatus(tx: Prisma.TransactionClient, input: {
 export async function setMachineRetired(tx: Prisma.TransactionClient, input: { spaceId: string; actorId: string; machineId: string; retired: boolean }) {
   const machine = await lockMachine(tx, input.spaceId, input.machineId, input.actorId);
   if ((machine.retiredAt !== null) === input.retired) return { webhookDeliveryIds: [] as string[] };
+  if (input.retired && (["RUNNING", "PAUSED"].includes(machine.status) || await tx.job.findFirst({
+    where: { spaceId: input.spaceId, assignedMachineId: machine.id, status: { in: ["RUNNING", "PAUSED"] } }, select: { id: true },
+  }))) throw new MachineInputError({ _root: ["Finish, fail or cancel the machine's active job before retiring it."] });
+  if (!input.retired && await tx.downtime.findFirst({ where: { spaceId: input.spaceId, machineId: machine.id, endedAt: null }, select: { id: true } })) {
+    throw new MachineInputError({ _root: ["End the machine's downtime before returning it to service."] });
+  }
   await tx.machine.update({
     where: { spaceId_id: { spaceId: input.spaceId, id: machine.id } },
     data: input.retired ? { retiredAt: new Date(), status: "OFFLINE", isPublic: false, acceptsJobs: false } : { retiredAt: null, status: "IDLE", statusNote: "" },

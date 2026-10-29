@@ -47,7 +47,10 @@ ANSWERS_CONFIRMED=yes
 write_setup_environment
 sed -i "s/^HTTP_PORT=.*/HTTP_PORT='$port'/" "$SWM_STATIC_ENV_FILE"
 mkdir -p "$work/tls" "$work/backups"
-if [[ "${SWM_COMPOSE_BUILD_LAYER:-0}" == 1 ]]; then "${COMPOSE[@]}" build backend; fi
+if [[ "${SWM_COMPOSE_BUILD_LAYER:-0}" == 1 ]]; then
+  "${COMPOSE[@]}" build backend || die 'Backend image build failed.'
+fi
+build_web_edge || die 'Patched web edge build failed.'
 MSYS_NO_PATHCONV=1 docker run --rm --network none --user "$(id -u):$(id -g)" --entrypoint sh \
   -v "$SWM_TLS_DIR:/tls" -v "$(host_path "$ROOT/deploy/certificates.sh"):/certificates.sh:ro" \
   "$SWM_BACKEND_IMAGE:$SWM_IMAGE_TAG" /certificates.sh

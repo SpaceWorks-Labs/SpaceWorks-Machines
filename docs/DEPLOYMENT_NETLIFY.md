@@ -64,3 +64,11 @@ variables in the table above and `FRONTEND_TRUSTED_IP_HEADER=x-real-ip` behind a
 Answer **Run the website on this server? 1) Yes** in the installer (`DEPLOYMENT_MODE` stays unset) and point
 your domain at the VPS; the same app then serves the landing page, dashboards and API together.
 `NEXT_PUBLIC_HOSTED_BY` works the same way there.
+
+For an existing split installation, `setup.sh` preserves its existing `.env`; rerunning the questionnaire
+does not change the layout. Set `DEPLOYMENT_MODE='monolith'` and `PUBLIC_APP_BASE_URL` to the website's
+new complete origin, including any nonstandard port. Set `SITE_ADDRESS` (or the existing reverse proxy's
+host) to that same hostname, retaining the matching HTTPS layer. Remove `FRONTEND_GATEWAY_SECRET`
+from the monolith's settings. `AUTH_URL` and `NEXT_PUBLIC_BASE_URL` are both derived from
+`PUBLIC_APP_BASE_URL` by Compose. Run `scripts/spaceworks-compose.sh bundled up -d`, then cut traffic
+over and retire the separate frontend. Keep the database, Redis, storage and encryption keys in place.

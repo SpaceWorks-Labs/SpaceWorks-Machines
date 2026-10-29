@@ -58,7 +58,7 @@ describe("machine file visibility", () => {
     expect(await resolveMachineFile(documentKey, null)).toBeNull();
     expect((await get(documentKey)).status).toBe(404);
     expect(mocks.download).not.toHaveBeenCalled();
-    mocks.member.mockResolvedValue({ role: "VIEWER", status: "ACTIVE" });
+    mocks.member.mockResolvedValue({ role: "VIEWER", status: "ACTIVE", user: { mfaEnabledAt: new Date() } });
     expect(await resolveMachineFile(documentKey, "staff-1")).toEqual({ public: false, kind: "documents", filename: "staff.pdf" });
     expect(mocks.member).toHaveBeenCalledWith(expect.objectContaining({ where: { userId_spaceId: { userId: "staff-1", spaceId: "space-1" } } }));
   });
@@ -73,7 +73,7 @@ describe("machine file visibility", () => {
 
   it.each(["ACTIVE", "SUSPENDED", "ARCHIVED"])("keeps private files readable by active staff in %s spaces", async (status) => {
     mocks.photo.mockResolvedValue({ machine: { ...machine, isPublic: false, space: { ...machine.space, status } } });
-    mocks.member.mockResolvedValue({ role: "MACHINE_MANAGER", status: "ACTIVE" });
+    mocks.member.mockResolvedValue({ role: "MACHINE_MANAGER", status: "ACTIVE", user: { mfaEnabledAt: new Date() } });
     expect(await resolveMachineFile(photoKey, "staff-1")).toMatchObject({ public: false });
   });
 

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { assertPublicHost } from "@/lib/net/publicHost";
+import { postPublicJson } from "@/lib/net/postJson";
 import type { ChatConfig } from "./config";
 import type { ChatKind } from "./events";
 
@@ -17,17 +17,22 @@ export class ChatSendError extends Error {
   }
 }
 
-async function post(url: string, body: unknown, headers: Record<string, string> = {}, goneStatuses = [401, 403, 404, 410]) {
-  let response: Response;
+async function post(url: string, body: unknown, headers: Record<string, string> = {}, goneStatuses = [401, 403, 404, 410], customHost = false) {
+  let status: number;
   try {
     // Never follow redirects: a destination must not bounce us somewhere else.
-    response = await fetch(url, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body), redirect: "error", signal: AbortSignal.timeout(10_000), cache: "no-store" });
+    if (customHost) status = await postPublicJson(new URL(url), JSON.stringify(body), headers);
+    else {
+      const response = await fetch(url, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body), redirect: "error", signal: AbortSignal.timeout(10_000), cache: "no-store" });
+      status = response.status;
+      await response.body?.cancel().catch(() => undefined);
+    }
   } catch {
     throw new ChatSendError("The chat service could not be reached.", true);
   }
-  if (response.ok) return;
-  if (goneStatuses.includes(response.status)) throw new ChatGoneError(`The chat service refused the message (${response.status}). Check the channel's settings.`);
-  throw new ChatSendError(`The chat service answered ${response.status}.`, response.status === 429 || response.status >= 500);
+  if (status >= 200 && status < 300) return;
+  if (goneStatuses.includes(status)) throw new ChatGoneError(`The chat service refused the message (${status}). Check the channel's settings.`);
+  throw new ChatSendError(`The chat service answered ${status}.`, status === 429 || status >= 500);
 }
 
 /** WhatsApp template parameters may not contain line breaks, tabs or runs of spaces. */
@@ -48,8 +53,7 @@ export async function sendChatMessage(kind: ChatKind, config: ChatConfig[ChatKin
     }
     case "MATTERMOST": {
       const { webhookUrl } = config as ChatConfig["MATTERMOST"];
-      await assertPublicHost(new URL(webhookUrl).hostname);
-      return post(webhookUrl, { text });
+      return post(webhookUrl, { text }, {}, [401, 403, 404, 410], true);
     }
     case "TELEGRAM": {
       const { botToken, chatId } = config as ChatConfig["TELEGRAM"];

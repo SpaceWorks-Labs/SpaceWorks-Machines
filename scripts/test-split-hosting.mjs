@@ -5,7 +5,7 @@ import { createServer } from "node:net";
 import { setTimeout as delay } from "node:timers/promises";
 import { rm } from "node:fs/promises";
 
-const system = Object.fromEntries(["PATH", "HOME", "TMPDIR", "TEMP", "TMP", "LANG", "LC_ALL", "TERM", "SSL_CERT_FILE", "NODE_EXTRA_CA_CERTS"].filter((key) => process.env[key]).map((key) => [key, process.env[key]]));
+const system = Object.fromEntries(["PATH", "HOME", "TMPDIR", "TEMP", "TMP", "LANG", "LC_ALL", "TERM", "SSL_CERT_FILE", "NODE_EXTRA_CA_CERTS", "NODE_OPTIONS", "PLAYWRIGHT_BROWSERS_PATH", "PLAYWRIGHT_CHROMIUM_PATH"].filter((key) => process.env[key]).map((key) => [key, process.env[key]]));
 const frontendKeys = ["NEXT_PUBLIC_BASE_URL", "BACKEND_ORIGIN", "NEXT_PUBLIC_BACKEND_ORIGIN", "FRONTEND_GATEWAY_SECRET", "FRONTEND_TRUSTED_IP_HEADER", "CI", "ALLOW_INSECURE_PRODUCTION_TESTS", "NEXT_TELEMETRY_DISABLED", "__NEXT_PROCESSED_ENV", "SWM_DISABLE_BUILD_CACHE"];
 function frontendEnvironment(source) {
   return { ...system, ...Object.fromEntries(frontendKeys.map((key) => [key, source[key]])), NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: source.FRONTEND_ACTIONS_KEY, NODE_ENV: "production" };

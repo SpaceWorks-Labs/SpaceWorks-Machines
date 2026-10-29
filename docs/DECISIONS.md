@@ -91,8 +91,8 @@ Taken conservatively without the owner; each one may be changed.
 - A fault's reporter can add photos only within a day of reporting; makers can't see fault photos afterwards.
 - API writes act as the key's creator and need their current permission; there is no separate service account.
   A key whose creator is now a Machine type manager can't write, because keys act space-wide.
-- Webhook hosts are checked against private addresses when saved and before each send, without DNS pinning
-  between the check and the request (the same as chat alerts).
+- Tenant-selected webhook, SMTP and self-hosted chat hosts are checked for public addresses and delivery
+  connects to those vetted addresses without another DNS resolution. HTTP redirects are never followed.
 - Printer connections allow only public hosts for future network adapters; LAN printers would need an
   explicit instance setting.
 - Overdue schedules with "take out of service" only block a machine that is idle or reserved, never a running job.

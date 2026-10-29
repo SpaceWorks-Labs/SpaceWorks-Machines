@@ -45,18 +45,27 @@ project name `swmach`, and the overlays the settings select:
 | `db` | `postgres:16-alpine` | TLS only (`hostnossl … reject`), owner role `swmach`, runtime role `swmach_app` with data rights only |
 | `redis` | `redis:7-alpine` | TLS only, password, append-only file |
 | `minio` | `pgsty/silo` | TLS only, private bucket `spaceworks-machines`, versioning on |
-| `createbuckets` | `pgsty/silo` | Creates the bucket and the `swmach-app` identity limited to it, then exits |
+| `createbuckets` | `pgsty/mc` | Creates the bucket and the `swmach-app` identity limited to it, then exits |
 | `migrate` | backend, `--role migrate` | `prisma migrate deploy` as the owner role, then exits |
 | `backend` | backend, `--role backend` | The app and API (Next.js) as `swmach_app` |
 | `worker` | backend, `--role worker` | BullMQ worker (`dist/worker.js`): email and chat delivery, retention and every job in `lib/queue/registry.ts`; health on `:3460/health` |
 | `beat` | backend, `--role beat` | BullMQ beat (`dist/beat.js`): keeps the repeatable schedules in Redis (outbox every minute, retention hourly); health on `:3460/health` |
-| `backup`, `backup-storage` | `postgres:16-alpine`, `pgsty/silo` | Scheduled database dumps and bucket mirror into `backups/` |
-| `caddy` | `caddy:2-alpine` | The web edge; blocks `/api/internal/*`; overwrites `X-Real-IP` |
+| `backup`, `backup-storage` | `postgres:16-alpine`, `pgsty/mc` | Scheduled database dumps and bucket mirror into `backups/` |
+| `caddy` | locally built `spaceworks-caddy:2.11.7-security-20261029` | Standard Caddy with patched Go/dependencies and Alpine packages; blocks `/api/internal/*`; overwrites `X-Real-IP` |
 | `ops` (profile `tools`) | backend, `--role ops` | Operator checks, run on demand |
 
 The data services sit on an internal network with no route to the internet. The backend, worker and beat also
 join the edge network, so they can reach SMTP relays, payment gateways and chat services. Only Caddy publishes
 ports.
+
+Silo and its separate `mc` utility use digest-pinned October 26 releases. Setup and
+upgrades build the patched edge locally, including when the app images are pulled
+from a published release. Its small independent build context is `docker/caddy/`;
+the standard-module graph, security changes and remaining upstream v3 advisory are
+documented in [its build notes](../docker/caddy/README.md).
+Allow at least 4 GiB RAM with swap and headroom for app/data services during upgrades.
+The measured edge build peaked at 2.21 GiB for the whole BuildKit cgroup with two
+CPUs; published-app installations still compile this independent edge image.
 
 ```bash
 scripts/spaceworks-compose.sh bundled ps
@@ -91,12 +100,29 @@ bash scripts/restore.sh backups/scheduled-20261020T020000Z.sql.gz               
 bash scripts/restore.sh backups/manual-20261020T090000Z.sql.gz --with-storage     # and the files
 ```
 
-Restore asks you to type `RESTORE`, takes a fresh `pre-restore` dump, stops the app, worker, beat and edge,
-replaces the schema in one transaction, optionally copies the files back, and starts everything again;
-migrations bring an older dump up to the running release.
+Restore asks you to type `RESTORE`, stops the app, worker, beat, edge and backup schedulers, takes a fresh
+`pre-restore` dump and replaces the schema in one transaction. It optionally copies the files back, runs
+migrations explicitly, starts serving processes and checks readiness before resuming either scheduler.
+Failure before database commit restarts the original serving processes with schedulers kept stopped.
+Failure after commit leaves serving processes and schedulers offline; fix the cause and retry. Preserve
+the complete recovery archive until the restored installation has been checked.
 
-**New server:** install with the same answers, stop the stack, put the old `.env` and `tls/` back from the
-settings archive, start it, then restore the dump (and `backups/storage` with `--with-storage`).
+**New server:** obtain the same release sources/images and recover the old `.env`, `tls/`, database dump
+and `backups/storage` from the encrypted archive. Start only the data services and schema migration:
+
+```bash
+scripts/spaceworks-compose.sh bundled up -d --wait db redis minio
+scripts/spaceworks-compose.sh bundled run --rm --no-deps -T createbuckets
+scripts/spaceworks-compose.sh bundled run --rm --no-deps -T migrate
+bash scripts/restore.sh backups/manual-20261020T090000Z.sql.gz --with-storage
+```
+
+For external storage omit `minio` and the `createbuckets` command and restore files through the provider.
+Bucket initialization and migrations are one-shot jobs; run them explicitly after persistent services
+are healthy instead of selecting them with `up --wait`. Keep backup
+schedulers stopped until the restore finishes: starting `backup-storage` against an empty bucket can
+mirror that emptiness over `backups/storage` and erase the recovery source. The restore command starts
+serving processes and resumes backup schedules only after successful recovery and readiness checks.
 
 ## Super admins
 

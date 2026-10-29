@@ -150,7 +150,8 @@ docker pull --quiet "$SWM_BACKEND_IMAGE:$version" >/dev/null || die "Cannot pull
 host_configuration_started=1
 install_staged_host_bundle "$(cd "$UPDATE_SCRIPT_DIR/.." && pwd)"
 say "Pulling immutable release images."
-"${COMPOSE[@]}" pull --quiet
+"${COMPOSE[@]}" pull --quiet --ignore-buildable || die 'Release image pull failed.'
+build_web_edge || die 'Patched web edge build failed.'
 deployment_started=1
 if [[ "$ROLLBACK" == 1 ]]; then
   # Older migrations must never run against the newer schema.

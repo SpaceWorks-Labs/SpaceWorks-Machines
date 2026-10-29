@@ -24,6 +24,8 @@ const nextConfig: NextConfig = {
   agentRules: false,
   allowedDevOrigins,
   experimental: {
+    // Container CPU quotas do not reduce os.cpus(): keep page-data worker memory bounded.
+    cpus: 2,
     ...(process.env.SWM_DISABLE_BUILD_CACHE === "1" ? { turbopackFileSystemCacheForBuild: false } : {}),
     // The proxy buffers request bodies; machine documents (20 MB) go to a route handler through it.
     proxyClientMaxBodySize: "25mb",

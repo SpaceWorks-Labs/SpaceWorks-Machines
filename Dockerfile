@@ -27,6 +27,8 @@ RUN npm ci
 # migrate role (and MIGRATE_ON_START=1). Kept apart from the app's node_modules.
 FROM node:22-alpine AS prisma-cli
 WORKDIR /opt/prisma-cli
+COPY package.json /tmp/app-package.json
+RUN node -e "const fs=require('node:fs');fs.writeFileSync('package.json',JSON.stringify({private:true,overrides:require('/tmp/app-package.json').overrides||{}}))"
 COPY --from=deps /app/node_modules/prisma/package.json /tmp/prisma-package.json
 RUN npm install --omit=dev --no-save --no-audit --no-fund \
       "prisma@$(node -p "require('/tmp/prisma-package.json').version")" \
@@ -36,6 +38,8 @@ RUN npm install --omit=dev --no-save --no-audit --no-fund \
 # lockfile's versions. The application bundles its own copies into its build.
 FROM node:22-alpine AS ops-modules
 WORKDIR /opt/ops
+COPY package.json /tmp/app-package.json
+RUN node -e "const fs=require('node:fs');fs.writeFileSync('package.json',JSON.stringify({private:true,overrides:require('/tmp/app-package.json').overrides||{}}))"
 COPY --from=deps /app/node_modules/ioredis/package.json /tmp/ioredis-package.json
 COPY --from=deps /app/node_modules/@aws-sdk/client-s3/package.json /tmp/s3-package.json
 COPY --from=deps /app/node_modules/bcryptjs/package.json /tmp/bcryptjs-package.json
@@ -113,6 +117,8 @@ COPY --from=frontend-builder --chown=nextjs:nodejs /app/frontend/.next/static ./
 COPY --from=frontend-builder --chown=nextjs:nodejs /app/frontend/public ./frontend/public
 COPY --chmod=755 scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN rm -f frontend/.env frontend/.env.local frontend/.env.production .env
+# Runtime roles invoke Node directly; keep build-only npm dependencies out of the image.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
@@ -138,7 +144,8 @@ RUN apk add --no-cache openssl
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
+# A checkout acquired under a private umask can contain owner-only asset directories.
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
@@ -153,14 +160,17 @@ COPY --from=prisma-cli /opt/prisma-cli/node_modules /opt/prisma-cli/node_modules
 COPY --chmod=755 scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 # Worker and beat bundles (they import the standalone @prisma/client and sharp), root-owned.
 COPY --from=builder /app/dist ./dist
-# Operator tools (docker/ops), root-owned.
-COPY docker/ops ./docker/ops
+# Direct source inputs may have installer-only modes; preserve them under the runtime UID.
+COPY --chown=nextjs:nodejs docker/ops ./docker/ops
+COPY --chown=nextjs:nodejs lib/mfaCrypto.mjs ./lib/mfaCrypto.mjs
 COPY --from=ops-modules /opt/ops/node_modules ./docker/ops/node_modules
 
 # Next's standalone trace may include dotenv files when a build is performed
 # from a developer checkout. Secrets belong only in the runtime environment.
 RUN rm -f .env .env.local .env.production .env.development
 
+# Migrations use the isolated Prisma CLI through Node, without global npm/npx.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 USER nextjs
 
 EXPOSE 3000

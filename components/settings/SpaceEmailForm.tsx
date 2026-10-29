@@ -21,7 +21,7 @@ export function SpaceEmailForm({ slug, initial, canEdit, verified }: { slug: str
   const [errors, setErrors] = useState<Record<string, string[] | undefined>>({});
   const [pending, startTransition] = useTransition();
   const set = <K extends keyof SpaceEmailValues>(key: K, value: SpaceEmailValues[K]) => setValues((current) => ({ ...current, [key]: value }));
-  const { hasPassword: _, ...fields } = values;
+  const { hasPassword, ...fields } = values;
 
   return (
     <form
@@ -65,7 +65,7 @@ export function SpaceEmailForm({ slug, initial, canEdit, verified }: { slug: str
         <Field label="SMTP login" optional error={errors.smtpUser?.[0]}>
           <Input value={values.smtpUser} disabled={!canEdit} autoComplete="off" onChange={(event) => set("smtpUser", event.target.value.trim())} />
         </Field>
-        <Field label="SMTP password or key" optional={values.hasPassword} helperText={values.hasPassword ? "Saved. Leave blank to keep it." : undefined}>
+        <Field label="SMTP password or key" optional={hasPassword} helperText={hasPassword ? "Saved. Leave blank to keep it." : undefined}>
           <Input type="password" value={password} disabled={!canEdit} autoComplete="new-password" onChange={(event) => setPassword(event.target.value)} />
         </Field>
       </div>
