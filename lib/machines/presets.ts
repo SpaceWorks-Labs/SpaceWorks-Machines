@@ -49,7 +49,6 @@ export const DEFAULT_QUEUE_RULES: QueueRules = {
 
 type Extra = Partial<Pick<FieldDefinition, "unit" | "help" | "min" | "max" | "required" | "public">>;
 const num = (key: string, label: string, extra: Extra = {}): FieldDefinition => ({ key, label, kind: "number", min: 0, ...extra });
-const text = (key: string, label: string, extra: Extra = {}): FieldDefinition => ({ key, label, kind: "text", ...extra });
 const yesNo = (key: string, label: string, extra: Extra = {}): FieldDefinition => ({ key, label, kind: "boolean", ...extra });
 const dims = (key: string, label: string, extra: Extra = {}): FieldDefinition => ({ key, label, kind: "dimensions", unit: "mm", ...extra });
 const pick = (key: string, label: string, options: string[], extra: Extra = {}): FieldDefinition => ({ key, label, kind: "select", options, ...extra });

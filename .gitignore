@@ -43,7 +43,7 @@ Desktop.ini
 *.pid.lock
 *.seed
 *.tgz
-logs/
+/logs/
 
 # debug
 npm-debug.log*
@@ -92,6 +92,7 @@ deploy/cloudflare-cron/node_modules/
 next-env.d.ts
 
 # prisma (local/dev artifacts)
+__pycache__/
 prisma/*.db
 prisma/*.db-journal
 prisma/.env

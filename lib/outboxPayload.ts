@@ -22,7 +22,14 @@ export function isSafeMessageUrl(value: unknown): value is string {
   if (!isBoundedString(value, 2048)) return false;
   try {
     const url = new URL(value);
-    return url.protocol === "https:" || (process.env.NODE_ENV !== "production" && url.protocol === "http:");
+    if (url.username || url.password) return false;
+    if (url.protocol === "https:") return true;
+    if (url.protocol !== "http:") return false;
+    if (process.env.NODE_ENV !== "production") return true;
+    const httpAllowed = process.env.ALLOW_PLAIN_HTTP === "1"
+      || (process.env.CI === "true" && process.env.ALLOW_INSECURE_PRODUCTION_TESTS === "1");
+    const configuredOrigin = process.env.NEXT_PUBLIC_BASE_URL || process.env.AUTH_URL;
+    return httpAllowed && Boolean(configuredOrigin) && url.origin === new URL(configuredOrigin!).origin;
   } catch {
     return false;
   }

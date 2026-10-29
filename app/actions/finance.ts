@@ -3,7 +3,8 @@
 import { prisma } from "@/lib/db";
 import { invalid, revalidate, slugOf, staffAction } from "@/lib/actionAccess";
 import { FinanceError, postManualEntry, reverseFinanceEntry } from "@/lib/finance/post";
-import { manualEntrySchema, noonOf, reverseEntrySchema } from "@/lib/repairs/schemas";
+import { manualEntrySchema, reverseEntrySchema } from "@/lib/repairs/schemas";
+import { CalendarDayError, financialDay } from "@/lib/calendarDay";
 import { enqueueWebhookDeliveries } from "@/lib/webhooks/emit";
 import type { ActionResult } from "./space";
 
@@ -21,11 +22,14 @@ export async function addFinanceEntryAction(input: unknown): Promise<ActionResul
   const parsed = manualEntrySchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
   try {
-    const result = await prisma.$transaction((tx) => postManualEntry(tx, { spaceId: access.space.id, actorId: access.userId },
-      { ...parsed.data, amountMinor: parsed.data.amount, occurredAt: noonOf(parsed.data.occurredOn) ?? new Date() }));
+    const result = await prisma.$transaction(async (tx) => {
+      const space = await tx.space.findUniqueOrThrow({ where: { id: access.space.id }, select: { timezone: true } });
+      return postManualEntry(tx, { spaceId: access.space.id, actorId: access.userId },
+        { ...parsed.data, amountMinor: parsed.data.amount, occurredAt: financialDay(parsed.data.occurredOn, space.timezone) ?? new Date() });
+    });
     return finish(access.space.slug, result.webhookDeliveryIds);
   } catch (error) {
-    if (error instanceof FinanceError) return { ok: false, error: error.message };
+    if (error instanceof FinanceError || error instanceof CalendarDayError) return { ok: false, error: error.message };
     throw error;
   }
 }

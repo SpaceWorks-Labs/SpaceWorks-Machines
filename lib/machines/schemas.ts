@@ -3,6 +3,7 @@ import { requestFieldsSchema, specFieldsSchema } from "./fields";
 import { filePolicySchema } from "./filePolicy";
 import { MACHINE_ICON_NAMES } from "./icons";
 import { PRESET_KEYS } from "./presets";
+import { parseCalendarDay } from "@/lib/calendarDay";
 
 /** Inputs for machine types, machines and consumable pools, shared by forms and server actions. Client-safe. */
 
@@ -60,7 +61,7 @@ export const createTypeSchema = z.object({
   ]),
 });
 
-const dateOnly = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a full date").nullable();
+const dateOnly = z.string().trim().refine((value) => parseCalendarDay(value) !== null, "Use a valid full date").nullable();
 
 export const machineDetailsSchema = z.object({
   name: z.string().trim().min(1, "Name the machine").max(80, "Keep the name under 80 characters"),

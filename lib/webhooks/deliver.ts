@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/lib/db";
 import { assertPublicHost } from "@/lib/net/publicHost";
+import { postPublicJson } from "@/lib/net/postJson";
 import { decryptSpaceSecret } from "@/lib/spaceSecrets";
 import { getQueues } from "@/lib/queue/client";
 import { jobId, WEBHOOK_DELIVER_JOB } from "@/lib/queue/definitions";
@@ -11,6 +12,9 @@ import { DISABLE_AFTER_FAILURES, nextAttemptDelay, signWebhook } from "./sign";
 export type Sender = (url: string, init: RequestInit) => Promise<Response>;
 const LEASE_MS = 2 * 60_000;
 const TIMEOUT_MS = 10_000;
+const sendPinned: Sender = async (raw, init) => new Response(null, {
+  status: await postPublicJson(new URL(raw), String(init.body ?? ""), init.headers as Record<string, string>),
+});
 
 /** https only in production; the host must resolve to public addresses (checked again at every send). */
 export async function assertDeliverableUrl(raw: string) {
@@ -25,7 +29,7 @@ export async function assertDeliverableUrl(raw: string) {
  * Send one delivery attempt. The attempt is claimed with a conditional update (status PENDING, due, this attempt
  * count), so a delivery queued twice is sent once. Failures schedule the next try in SQL; the relay re-queues it.
  */
-export async function deliverWebhook(deliveryId: string, send: Sender = fetch, now = new Date()): Promise<void> {
+export async function deliverWebhook(deliveryId: string, send: Sender = sendPinned, now = new Date()): Promise<void> {
   const row = await prisma.webhookDelivery.findUnique({ where: { id: deliveryId }, include: { endpoint: true } });
   if (!row || row.status !== "PENDING" || (row.nextAttemptAt && row.nextAttemptAt > now)) return;
   const claimed = await prisma.webhookDelivery.updateMany({ where: { id: row.id, status: "PENDING", attempts: row.attempts },
@@ -77,7 +81,7 @@ export async function relayDueWebhooks(now = new Date()) {
   const inline = !process.env.REDIS_URL || process.env.REDIS_URL === "memory://";
   const due = await prisma.webhookDelivery.findMany({ where: { status: "PENDING", nextAttemptAt: { lte: now } }, select: { id: true, attempts: true }, take: inline ? 20 : 500, orderBy: { nextAttemptAt: "asc" } });
   if (inline) {
-    for (const row of due) await deliverWebhook(row.id, fetch, now);
+    for (const row of due) await deliverWebhook(row.id, sendPinned, now);
     return { sent: due.length };
   }
   if (due.length) await getQueues().sync.addBulk(due.map((row) => ({ name: WEBHOOK_DELIVER_JOB, data: { kind: "webhook" as const, deliveryId: row.id },

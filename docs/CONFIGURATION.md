@@ -1,6 +1,23 @@
 # Configuration reference
 
 Every environment variable the app, its background roles, its images and the deployment scripts read.
+
+For local development, `docker compose up -d` starts PostgreSQL, persistent Redis, Silo with a private bucket
+and scoped application identity, and Mailpit. `.env.example` targets these loopback services. Mailpit captures
+email at `http://127.0.0.1:8025`; Silo's console is `http://127.0.0.1:9001`. These public development credentials
+are never suitable for a server. Build jobs with `npm run build:jobs`, run `npm run worker` and run beat in
+another terminal with `JOBS_HEALTH_PORT=3461 npm run beat` (PowerShell: `$env:JOBS_HEALTH_PORT='3461'; npm run beat`).
+Alternatively `npm run dev:local` loads `.env`, starts the local services, applies migrations and supervises
+the web, worker and beat in one terminal; Ctrl+C or a child failure stops the app processes together.
+For already-provisioned local services, `npm run dev:stack` generates Prisma/builds jobs and starts the same
+supervisor. Both refuse remote database, migration, Redis, S3 and SMTP targets. Local health ports default
+to 3460/3461; `SWM_DEV_WORKER_PORT` and `SWM_DEV_BEAT_PORT` override them. Web uses `PORT` (3000 by default).
+`SPACEWORKS_LOCAL_STACK=1` is injected into supervised children for loopback health and graceful IPC shutdown;
+it is an internal local-tool flag, not a production deployment setting.
+Production uses the installer's generated secrets and TLS stack, including separate worker and beat containers.
+The backend and separate frontend share a Next build limit of two page-data workers. Container CPU
+quotas can leave the larger host CPU count visible; this bound prevents a build from spawning dozens
+of static-generation workers on a small memory allocation.
 Templates: [`.env.example`](../.env.example) (development) and
 [`.env.production.example`](../.env.production.example) (the bundled install's `.env` and the cloud
 `cloud.env`). The installer generates every secret for you.
@@ -117,3 +134,23 @@ set in the settings file.
 | `SWM_NEXT_DIR` | entrypoint | Where the web build is (`/app/.next`, frontend `/app/frontend/.next`). |
 | `SWM_DISABLE_BUILD_CACHE`, `SWM_FRONTEND_STANDALONE` | Dockerfile | Image build switches. |
 | `SWM_SMOKE_PORT` | `compose-smoke.sh` | The smoke test's edge port (18080). |
+
+### Disposable installer and recovery acceptance
+
+On an isolated Linux CI runner with Docker, Buildx, Compose, OpenSSL and `age`, run
+`CI=true SWM_IMAGE_TAG=acceptance bash scripts/test-vps-install.sh`. It uses the confirmed setup
+writer and `setup.sh --build`, builds both images, checks Docker secret exclusions and invokes
+`scripts/test-vps-recovery.sh`. The latter accepts only a `swmach-recovery-*` project carrying the
+`.spaceworks-recovery-test` marker. It encrypts a real SQL/object/configuration backup with age,
+copies the encrypted archive off the installation, destroys the source volumes, and restores into
+a different empty project/configuration directory. It verifies relational data, a private object,
+the actual application MFA cipher and worker/beat health. Before and after restoration, a local Mailpit
+capture using the recovered CA proves verification, reset and magic-link messages travel through SQL,
+Redis and the real worker over authenticated STARTTLS, with bearer payload deletion and no resend.
+`SWM_RECOVERY_SMOKE=1` enables only the
+operator fixture probe; it is never needed in a deployed application. The optional
+`SWM_TEST_HTTP_PORT` selects the fixture's loopback HTTP port (default 18081).
+
+This source test does not verify public release downloads, a host Docker/systemd installation,
+public DNS/ACME or external SMTP deliverability. Host backups still document operator-managed
+off-server encryption; the acceptance recipe exercises that exact boundary.

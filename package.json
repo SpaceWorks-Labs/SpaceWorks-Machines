@@ -1,6 +1,6 @@
 {
   "name": "spaceworks-machines",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "engines": {
@@ -8,6 +8,8 @@
   },
   "scripts": {
     "dev": "prisma generate && next dev",
+    "dev:local": "node --env-file-if-exists=.env scripts/dev-local.mjs",
+    "dev:stack": "node --env-file-if-exists=.env scripts/check-local-services.mjs && prisma generate && npm run build:jobs && node --env-file-if-exists=.env scripts/dev-stack.mjs",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
@@ -87,6 +89,9 @@
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "vitest": "4.1.12"
+  },
+  "overrides": {
+    "deepmerge-ts": "8.0.2"
   },
   "allowScripts": {
     "@prisma/client@6.19.3": true,

@@ -49,7 +49,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ spac
   const query = new URL(request.url).searchParams;
   const range = reportRange(query.get("from"), query.get("to"));
   let table: unknown[][];
-  if (kind === "spend" || kind === "repairs") table = spendRows(kind, await loadSpendReports(access.space.id, range.from, range.to));
+  if (kind === "spend" || kind === "repairs") {
+    const space = await prisma.space.findUniqueOrThrow({ where: { id: access.space.id }, select: { timezone: true } });
+    table = spendRows(kind, await loadSpendReports(access.space.id, range.from, range.to, space.timezone));
+  }
   else {
     const [reports, space] = await Promise.all([loadReports(access.space.id, range.from, range.to, access.typeScope),
       prisma.space.findUniqueOrThrow({ where: { id: access.space.id }, select: { currency: true } })]);

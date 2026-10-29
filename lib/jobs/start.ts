@@ -34,7 +34,7 @@ export async function prepareStart(tx: Prisma.TransactionClient, job: Job, actor
   if (await tx.job.findFirst({ where: { spaceId: job.spaceId, assignedMachineId: machine.id, status: { in: ["RUNNING", "PAUSED"] } } })) {
     throw new JobGuardError("This machine already has an active job.");
   }
-  const webhookDeliveryIds = (await changeMachineStatus(tx, { spaceId: job.spaceId, machineId: machine.id, actorId, status: "RUNNING", note: "Job started" })).webhookDeliveryIds;
+  const webhookDeliveryIds = (await changeMachineStatus(tx, { spaceId: job.spaceId, machineId: machine.id, actorId, jobId: job.id, status: "RUNNING", note: "Job started" })).webhookDeliveryIds;
   const quantity = command.plannedQuantity ?? job.estimatedQuantity?.toString() ?? "0";
   if (toMilli(quantity) < BigInt(0)) throw new JobGuardError("Planned quantity cannot be negative.");
   let poolId: string | null = null;

@@ -12,7 +12,7 @@ export async function loadPayoutsView({ params, searchParams }: Props) {
   const query = await searchParams;
   const range = reportRange(query.from, query.to);
   const [profile, payouts] = await Promise.all([
-    prisma.space.findUniqueOrThrow({ where: { id: space.id }, select: { logoUrl: true, currency: true, locale: true } }),
+    prisma.space.findUniqueOrThrow({ where: { id: space.id }, select: { logoUrl: true, currency: true, locale: true, timezone: true } }),
     prisma.repairPayout.findMany({ where: { spaceId: space.id, paidAt: { gte: range.from, lt: range.to } }, orderBy: { paidAt: "desc" }, take: 500,
       include: { technician: { select: { name: true } }, fault: { select: { number: true, title: true, machine: { select: { name: true } } } } } }),
   ]);

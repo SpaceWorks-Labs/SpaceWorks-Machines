@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { faultNumber } from "@/lib/upkeep/labels";
+import { calendarDayAt } from "@/lib/calendarDay";
 
 /**
  * What each machine cost to keep running over [from, to), from the finance ledger: repair payouts, maintenance,
@@ -9,7 +10,7 @@ import { faultNumber } from "@/lib/upkeep/labels";
 const SPEND = ["REPAIR_PAYOUT", "MAINTENANCE", "PARTS", "CONSUMABLES"] as const;
 type SpendKey = (typeof SPEND)[number];
 
-export async function loadSpendReports(spaceId: string, from: Date, to: Date) {
+export async function loadSpendReports(spaceId: string, from: Date, to: Date, timezone = "UTC") {
   const [entries, machines, payouts] = await Promise.all([
     prisma.financeEntry.findMany({ where: { spaceId, occurredAt: { gte: from, lt: to }, machineId: { not: null },
       OR: [{ category: { in: [...SPEND] } }, { category: "REVERSAL" }] }, select: { id: true, category: true, direction: true, amountMinor: true, currency: true, machineId: true, reversesId: true } }),
@@ -34,7 +35,7 @@ export async function loadSpendReports(spaceId: string, from: Date, to: Date) {
   return {
     spend: [...rows.values()].sort((a, b) => b.total - a.total || a.machine.localeCompare(b.machine)).map((row) => ({ machine: row.machine, currency: row.currency,
       repairs: row.REPAIR_PAYOUT, maintenance: row.MAINTENANCE, parts: row.PARTS, consumables: row.CONSUMABLES, total: row.total })),
-    repairs: payouts.map((row) => ({ month: row.paidAt.toISOString().slice(0, 7), paidOn: row.paidAt.toISOString().slice(0, 10), fault: `${faultNumber(row.fault.number)} ${row.fault.title}`,
+    repairs: payouts.map((row) => ({ month: calendarDayAt(row.paidAt, timezone).slice(0, 7), paidOn: calendarDayAt(row.paidAt, timezone), fault: `${faultNumber(row.fault.number)} ${row.fault.title}`,
       machine: row.fault.machine.name, technician: row.technician.name, method: row.method, reference: row.reference, amount: row.amount, currency: row.currency })),
   };
 }

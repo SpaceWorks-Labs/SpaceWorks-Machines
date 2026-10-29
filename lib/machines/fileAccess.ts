@@ -1,7 +1,9 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
-import { can, isStaffRole, spaceAllows } from "@/lib/permissionRoles";
+import { can, isStaffRole, spaceAllows, type Capability } from "@/lib/permissionRoles";
+import type { SpaceStatus } from "@prisma/client";
+import { scopeForRole } from "@/lib/typeScope";
 import { parseMachineFileKey } from "@/lib/storage/machineFiles";
 import { spaceShowsMachines } from "@/lib/publicSpace";
 
@@ -16,6 +18,18 @@ function publiclyVisible(machine: { isPublic: boolean; retiredAt: Date | null; s
 }
 
 const MACHINE_SELECT = { isPublic: true, retiredAt: true, space: { select: { status: true, visibility: true } } } as const;
+
+/** Direct file URLs enforce the same current MFA and type scope as the dashboard. */
+async function staffMayRead(spaceId: string, machineId: string, userId: string, status: string, capability: Capability) {
+  const member = await prisma.spaceMember.findUnique({ where: { userId_spaceId: { userId, spaceId } },
+    select: { role: true, status: true, user: { select: { mfaEnabledAt: true } } } });
+  if (!member || member.status !== "ACTIVE" || !isStaffRole(member.role) || !member.user?.mfaEnabledAt ||
+    !can(member.role, capability) || !spaceAllows(status as SpaceStatus, capability)) return false;
+  const scope = await scopeForRole(prisma, spaceId, userId, member.role);
+  return scope === null || Boolean(await prisma.machine.findFirst({
+    where: { spaceId, id: machineId, typeId: { in: scope } }, select: { id: true },
+  }));
+}
 
 /**
  * Who may fetch a stored machine file: anyone for a photo or public document of a publicly listed machine,
@@ -32,8 +46,7 @@ export async function resolveMachineFile(key: string, userId: string | null) {
   if (!file) return null;
   if (publiclyVisible(file.machine, file.documentPublic)) return { public: true, kind: parsed.kind, filename: file.filename };
   if (!userId) return null;
-  const member = await prisma.spaceMember.findUnique({ where: { userId_spaceId: { userId, spaceId: parsed.spaceId } }, select: { role: true, status: true } });
-  if (!member || member.status !== "ACTIVE" || !isStaffRole(member.role) || !can(member.role, "machines.view") || !spaceAllows(file.machine.space.status as never, "machines.view")) return null;
+  if (!await staffMayRead(parsed.spaceId, parsed.machineId, userId, file.machine.space.status, "machines.view")) return null;
   return { public: false, kind: parsed.kind, filename: file.filename };
 }
 
@@ -47,10 +60,7 @@ async function resolveUpkeepFile(key: string, parsed: { spaceId: string; machine
       ? await prisma.warrantyDocument.findFirst({ where: { ...scope, warranty: { machineId: parsed.machineId } }, select: { filename: true } })
       : await prisma.faultPhoto.findFirst({ where: { ...scope, fault: { machineId: parsed.machineId } }, select: { id: true } }).then((row) => row && { filename: null as string | null });
   if (!file) return null;
-  const [member, space] = await Promise.all([
-    prisma.spaceMember.findUnique({ where: { userId_spaceId: { userId, spaceId: parsed.spaceId } }, select: { role: true, status: true } }),
-    prisma.space.findUnique({ where: { id: parsed.spaceId }, select: { status: true } }),
-  ]);
-  if (!member || !space || member.status !== "ACTIVE" || !isStaffRole(member.role) || !can(member.role, "maintenance.view") || !spaceAllows(space.status, "maintenance.view")) return null;
+  const space = await prisma.space.findUnique({ where: { id: parsed.spaceId }, select: { status: true } });
+  if (!space || !await staffMayRead(parsed.spaceId, parsed.machineId, userId, space.status, "maintenance.view")) return null;
   return { public: false, kind: parsed.kind, filename: file.filename };
 }

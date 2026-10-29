@@ -18,7 +18,7 @@ write_setup_environment() {
   [[ "$HTTPS_MODE" != 3 ]] || layer=proxy
   app_url="$scheme://$WEBHOST"
   # Backend for a Netlify website: links, sign-in and Server Actions use the website's origin.
-  [[ -z "$SITE_ORIGIN" ]] || app_url="$SITE_ORIGIN"
+  [[ "$RUN_FRONTEND" != 2 || -z "$SITE_ORIGIN" ]] || app_url="$SITE_ORIGIN"
   configure_release_repository || die 'Invalid GitHub repository.'
   env_setting SWM_REPOSITORY "$SWM_REPOSITORY"
   env_setting SWM_BACKEND_IMAGE "$SWM_BACKEND_IMAGE"

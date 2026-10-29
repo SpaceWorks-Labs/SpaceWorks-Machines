@@ -3,7 +3,8 @@
 import { prisma } from "@/lib/db";
 import { invalid, revalidate, slugOf, staffAction } from "@/lib/actionAccess";
 import { PoolNotFoundError } from "@/lib/consumables/ledger";
-import { noonOf, toBuyRequestSchema, toBuyStepSchema } from "@/lib/repairs/schemas";
+import { toBuyRequestSchema, toBuyStepSchema } from "@/lib/repairs/schemas";
+import { CalendarDayError, financialDay } from "@/lib/calendarDay";
 import { advanceToBuy, requestToBuy, ToBuyError, ToBuyNotFoundError, type ToBuyStep } from "@/lib/repairs/toBuy";
 import { enqueueWebhookDeliveries } from "@/lib/webhooks/emit";
 import type { ActionResult } from "./space";
@@ -31,15 +32,18 @@ export async function advanceToBuyAction(input: unknown): Promise<ActionResult> 
   const parsed = toBuyStepSchema.safeParse(input);
   if (!parsed.success) return invalid(parsed.error);
   const data = parsed.data;
-  const step: ToBuyStep = data.status === "BOUGHT"
-    ? { status: "BOUGHT", amount: data.amount ?? 0, method: data.method ?? "CASH", reference: data.reference, supplier: data.supplier, boughtAt: noonOf(data.boughtOn) }
-    : { status: data.status };
   try {
-    const result = await prisma.$transaction((tx) => advanceToBuy(tx, { spaceId: access.space.id, actorId: access.userId }, data.itemId, step));
+    const result = await prisma.$transaction(async (tx) => {
+      const space = await tx.space.findUniqueOrThrow({ where: { id: access.space.id }, select: { timezone: true } });
+      const step: ToBuyStep = data.status === "BOUGHT"
+        ? { status: "BOUGHT", amount: data.amount ?? 0, method: data.method ?? "CASH", reference: data.reference, supplier: data.supplier, boughtAt: financialDay(data.boughtOn, space.timezone) }
+        : { status: data.status };
+      return advanceToBuy(tx, { spaceId: access.space.id, actorId: access.userId }, data.itemId, step);
+    });
     if (result.webhookDeliveryIds.length) await enqueueWebhookDeliveries(result.webhookDeliveryIds);
   } catch (error) {
     if (error instanceof ToBuyNotFoundError) return { ok: false, error: "Space not found." };
-    if (error instanceof ToBuyError || error instanceof PoolNotFoundError) return { ok: false, error: error.message };
+    if (error instanceof ToBuyError || error instanceof PoolNotFoundError || error instanceof CalendarDayError) return { ok: false, error: error.message };
     throw error;
   }
   revalidate(`/dashboard/${access.space.slug}`, "layout");

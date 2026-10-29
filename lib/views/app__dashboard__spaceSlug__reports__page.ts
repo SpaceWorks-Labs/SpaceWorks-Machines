@@ -17,7 +17,7 @@ export async function loadReportsView({ params, searchParams }: Props) {
     loadReports(space.id, range.from, range.to, typeScope),
   ]);
   const showMoney = can(membership.role, "finance.view") && spaceAllows(space.status, "finance.view");
-  const spend = showMoney ? await loadSpendReports(space.id, range.from, range.to) : null;
+  const spend = showMoney ? await loadSpendReports(space.id, range.from, range.to, profile.timezone) : null;
   return { space: { ...space, ...profile }, range: { from: range.fromInput, to: range.toInput }, showMoney,
     reports: showMoney ? reports : withoutMoney(reports), spend };
 }
