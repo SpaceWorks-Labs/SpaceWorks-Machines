@@ -34,7 +34,7 @@ cleanup() {
   local status=$?
   if [[ "$status" != 0 && -f "$ROOT/.env" ]]; then
     "${COMPOSE[@]}" ps -a || true
-    "${COMPOSE[@]}" logs --no-color --tail 60 backend || true
+    "${COMPOSE[@]}" logs --no-color --tail 60 backend db redis minio || true
   fi
   [[ ! -f "$ROOT/.env" ]] || "${COMPOSE[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
   as_root rm -rf -- "$work"
@@ -69,6 +69,10 @@ asset_probe="$ROOT/public/__swmach_ci_asset_probe__"
 mkdir -m 700 -- "$asset_probe"
 printf 'spaceworks-runtime-asset-probe\n' > "$asset_probe/asset.txt"
 chmod 600 "$asset_probe/asset.txt"
+# The temporary CI source copy must also work when the installer owns its
+# bootstrap inputs privately; PostgreSQL drops to a different UID during init.
+chmod 600 "$ROOT/deploy/pg_hba.conf"
+chmod 700 "$ROOT/deploy/init-database.sh"
 bash setup.sh --build
 unset SWM_COMPOSE_BUILD_LAYER
 [[ "$(stat -c %a .env)" == 600 ]]
@@ -82,6 +86,13 @@ assert.equal(fs.statSync(directory).uid, process.getuid());
 assert.equal(fs.statSync(file).uid, process.getuid());
 assert.equal(fs.readFileSync(file, "utf8"), "spaceworks-runtime-asset-probe\n");
 console.log("Non-root public asset probe passed.");'
+"${COMPOSE[@]}" exec -T --user postgres db sh -ec '
+test -r /var/lib/postgresql/bootstrap/pg_hba.conf
+test -x /docker-entrypoint-initdb.d/10-app-role.sh
+test "$(stat -c %a /var/lib/postgresql/tls/server.key)" = 600
+test "$(stat -c %a /var/lib/postgresql/bootstrap/pg_hba.conf)" = 600
+test "$(stat -c %a /docker-entrypoint-initdb.d/10-app-role.sh)" = 700
+printf "Non-root PostgreSQL bootstrap probe passed.\n"'
 # shellcheck source=scripts/test-vps-mailpit.sh
 source scripts/test-vps-mailpit.sh
 test_worker_email

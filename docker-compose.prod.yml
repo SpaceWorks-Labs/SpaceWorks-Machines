@@ -68,8 +68,8 @@ services:
       - swmach_pgdata:/var/lib/postgresql/data
       - ${SWM_TLS_DIR:-./tls}/db:/run/server-tls:ro
       - ./deploy/postgres-start.sh:/bootstrap/postgres-start.sh:ro
-      - ./deploy/init-database.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
-      - ./deploy/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./deploy/init-database.sh:/bootstrap/init-database.sh:ro
+      - ./deploy/pg_hba.conf:/bootstrap/pg_hba.conf:ro
     healthcheck: {test: ["CMD", "pg_isready", "-h", "db", "-U", "swmach", "-d", "swmach"], interval: 5s, timeout: 5s, retries: 20}
     networks: [data]
   redis:

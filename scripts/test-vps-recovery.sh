@@ -18,6 +18,10 @@ work="$(mktemp -d)"
 COMPOSE=("$ROOT/scripts/spaceworks-compose.sh" bundled)
 cleanup() {
   local status=$?
+  if [[ "$status" != 0 ]]; then
+    "${COMPOSE[@]}" ps -a || true
+    "${COMPOSE[@]}" logs --no-color --tail 60 backend db redis minio || true
+  fi
   "${COMPOSE[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true
   as_root rm -rf -- "$work"
   exit "$status"
