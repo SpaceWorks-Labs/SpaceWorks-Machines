@@ -92,6 +92,7 @@ deploy/cloudflare-cron/node_modules/
 next-env.d.ts
 
 # prisma (local/dev artifacts)
+__pycache__/
 prisma/*.db
 prisma/*.db-journal
 prisma/.env

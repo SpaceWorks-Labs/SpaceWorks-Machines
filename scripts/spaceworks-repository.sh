@@ -37,3 +37,9 @@ serving_services() {
   SERVING_SERVICES=(backend worker beat)
   [[ "$(repository_env_value SWM_LAYER)" == proxy ]] || SERVING_SERVICES+=(caddy)
 }
+
+# The security-patched edge is built locally even when app images are published.
+# An installation behind its own proxy has no bundled edge to build.
+build_web_edge() {
+  [[ "$(repository_env_value SWM_LAYER)" == proxy ]] || "${COMPOSE[@]}" build caddy
+}

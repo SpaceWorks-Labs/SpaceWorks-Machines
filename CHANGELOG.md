@@ -4,6 +4,16 @@ Releases are published from `main` and titled **`Space Works Machines <version>`
 file selects the series; each build is tagged `v<series>-main.<run>.<sha>`, which is what a deployment pins
 to. Pushes to `dev` publish staging images tagged `dev` without a release.
 
+## 0.6.0 - 2026-10-30
+
+- Require current MFA and machine-type permissions for private files.
+- Protect active jobs and downtime from conflicting machine state changes.
+- Pin validated outbound addresses and audit SMTP settings atomically.
+- Provide the complete supervised local PostgreSQL, Redis, Silo and Mailpit stack.
+- Preserve Sharp native companions and non-root public asset access in packaged builds.
+- Make encrypted recovery atomic, keep backup schedulers paused until readiness, and prove fresh-volume restore with worker email.
+- Remove inherited npm tooling from runtime images and build the patched standard Caddy edge locally.
+
 ## 0.5.0
 
 The first public release: everything since Space Works Machines was split out of SpaceWorks (0.1.0 and 0.2.0

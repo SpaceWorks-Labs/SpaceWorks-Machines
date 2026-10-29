@@ -4,12 +4,13 @@ import { z } from "zod";
 import { revalidatePath as nextRevalidatePath } from "next/cache";
 import { trackedRevalidation } from "@/lib/frontend/revalidation";
 import { prisma } from "@/lib/db";
-import { recordAuditEvent } from "@/lib/audit";
+import { recordSettingsChange } from "@/lib/audit";
 import { isActionRateLimited } from "@/lib/actionRateLimit";
 import { spaceActionAccess } from "@/lib/permissions";
 import { decryptSpaceSecret, encryptSpaceSecret } from "@/lib/spaceSecrets";
 import { assertPublicHost, PrivateHostError } from "@/lib/net/publicHost";
 import { spaceSmtpTransport } from "@/lib/email/spaceTransport";
+import { assertEmailAccepted } from "@/lib/email/transporter";
 import { renderBrandedEmail } from "@/lib/email/message";
 import { PaymentSecretsUnavailable } from "@/lib/payments/secrets";
 import type { ActionResult } from "./space";
@@ -48,18 +49,21 @@ function failure(error: unknown): { ok: false; error: string } {
 export async function saveSpaceEmailSettings(input: unknown): Promise<ActionResult> {
   const parsed = settingsSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Check the highlighted fields.", fieldErrors: flattenZodErrors(parsed.error) };
-  const ctx = await access(parsed.data.spaceSlug);
+  const { spaceSlug, smtpPassword, ...data } = parsed.data;
+  const ctx = await access(spaceSlug);
   if (!ctx.ok) return ctx;
-  const { spaceSlug: _, smtpPassword, ...data } = parsed.data;
   try {
     await assertPublicHost(data.smtpHost);
     const passwordUpdate = smtpPassword ? { smtpPasswordEncrypted: encryptSpaceSecret(smtpPassword, ctx.space.id, "email") } : {};
     const values = { ...data, smtpSecure: data.smtpPort === 465, ...passwordUpdate, verifiedAt: null };
-    await prisma.spaceEmailSettings.upsert({ where: { spaceId: ctx.space.id }, create: { spaceId: ctx.space.id, ...values }, update: values });
+    await prisma.$transaction(async (tx) => {
+      await tx.spaceEmailSettings.upsert({ where: { spaceId: ctx.space.id }, create: { spaceId: ctx.space.id, ...values }, update: values });
+      await recordSettingsChange({ spaceId: ctx.space.id, actorUserId: ctx.userId, area: "space.email",
+        fields: [...Object.keys(data), ...(smtpPassword ? ["smtpPassword"] : [])], client: tx });
+    });
   } catch (error) {
     return failure(error);
   }
-  await recordAuditEvent({ action: "SPACE_EMAIL_SETTINGS_SAVED", actorUserId: ctx.userId, spaceId: ctx.space.id, targetType: "Space", targetId: ctx.space.id, metadata: { enabled: data.enabled, smtpHost: data.smtpHost, passwordChanged: Boolean(smtpPassword) } });
   revalidatePath(`/dashboard/${ctx.space.slug}/settings/email`);
   return { ok: true };
 }
@@ -79,12 +83,16 @@ export async function sendSpaceTestEmail(input: unknown): Promise<ActionResult> 
     const password = settings.smtpPasswordEncrypted ? decryptSpaceSecret(settings.smtpPasswordEncrypted, ctx.space.id, "email") : null;
     const transporter = await spaceSmtpTransport({ ...settings, smtpHost: settings.smtpHost, password });
     const { html, text } = renderBrandedEmail({ subject: "", heading: "Test email", paragraphs: [`This came through ${ctx.space.name}'s own email settings. Member emails will be sent this way once they're switched on.`] });
-    await transporter.sendMail({ from: { name: settings.fromName || ctx.space.name, address: settings.fromAddress }, replyTo: settings.replyTo ?? undefined, to: user.email, subject: `${ctx.space.name}: test email`, text, html });
+    const result = await transporter.sendMail({ from: { name: settings.fromName || ctx.space.name, address: settings.fromAddress }, replyTo: settings.replyTo ?? undefined, to: user.email, subject: `${ctx.space.name}: test email`, text, html });
+    assertEmailAccepted(result);
   } catch (error) {
     if (error instanceof PrivateHostError || error instanceof PaymentSecretsUnavailable) return { ok: false, error: error.message };
     return { ok: false, error: "The SMTP server refused the test. Check the host, port, login and password." };
   }
-  await prisma.spaceEmailSettings.update({ where: { spaceId: ctx.space.id }, data: { verifiedAt: new Date() } });
+  const verified = await prisma.spaceEmailSettings.updateMany({
+    where: { spaceId: ctx.space.id, updatedAt: settings.updatedAt }, data: { verifiedAt: new Date() },
+  });
   revalidatePath(`/dashboard/${ctx.space.slug}/settings/email`);
+  if (verified.count !== 1) return { ok: false, error: "The email settings changed while the test was sending. Test the saved settings again." };
   return { ok: true };
 }

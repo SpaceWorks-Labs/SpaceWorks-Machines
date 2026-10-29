@@ -25,7 +25,7 @@ export async function prepareFinish(tx: Prisma.TransactionClient, job: Job, acto
     actorId, minutes: command.actualMinutes, quantity: actualQuantity, unit: run?.consumableUnit ?? run?.meteringUnit ?? type.consumableUnit ?? type.meteringUnit,
     poolId: job.poolId ?? undefined, succeeded: !failed, percentComplete: failed ? command.percent : 100,
     startedAt: job.startedAt ?? undefined, endedAt: now });
-  const machine = await changeMachineStatus(tx, { spaceId: job.spaceId, machineId: job.assignedMachineId, actorId, status: "IDLE", note: failed ? "Job failed" : "Job completed" });
+  const machine = await changeMachineStatus(tx, { spaceId: job.spaceId, machineId: job.assignedMachineId, actorId, jobId: job.id, status: "IDLE", note: failed ? "Job failed" : "Job completed" });
   const reconciliation = job.poolId ? await reconcile(tx, { spaceId: job.spaceId, poolId: job.poolId, jobId: job.id,
     reserved: job.reservedQuantity, actual: actualQuantity, actorId }) : null;
   const price = finalPrice(job, command.actualMinutes, actualQuantity);

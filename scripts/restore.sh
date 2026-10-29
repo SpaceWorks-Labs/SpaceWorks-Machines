@@ -39,23 +39,40 @@ if [[ "$assume_yes" == 0 ]]; then
   IFS= read -r answer </dev/tty || answer=''
   [[ "${answer%$'\r'}" == RESTORE ]] || { say 'Cancelled. Nothing was changed.'; exit 2; }
 fi
-bash "$SCRIPT_DIR/backup.sh" --prefix pre-restore --no-storage
-stopped=0
+serving_services
+BACKUP_SERVICES=(backup)
+[[ "$(repository_env_value SWM_STORAGE)" == external ]] || BACKUP_SERVICES+=(backup-storage)
+stopped=0 database_committed=0
 restart_on_failure() {
   local status=$?
   [[ $status != 0 && $stopped == 1 ]] || return 0
-  warn 'The restore failed; starting the services again.'
-  "${COMPOSE[@]}" up -d >/dev/null 2>&1 || warn 'Start them with scripts/spaceworks-compose.sh bundled up -d.'
+  if [[ "$database_committed" == 1 ]]; then
+    warn 'The database was restored, but a later restore stage failed. Keeping the site offline; fix the failure and retry the restore.'
+    "${COMPOSE[@]}" stop "${SERVING_SERVICES[@]}" "${BACKUP_SERVICES[@]}" >/dev/null 2>&1 \
+      || warn 'Stop the serving services and backups manually before investigating.'
+  else
+    warn 'The restore failed before database commit; starting the original services again.'
+    "${COMPOSE[@]}" up -d --no-deps "${SERVING_SERVICES[@]}" >/dev/null 2>&1 \
+      || warn 'Start the serving services manually. Keep backup schedulers stopped until recovery succeeds.'
+  fi
   exit "$status"
 }
 trap restart_on_failure EXIT
 stopped=1
-serving_services
-"${COMPOSE[@]}" stop "${SERVING_SERVICES[@]}" backup
+"${COMPOSE[@]}" stop "${SERVING_SERVICES[@]}" "${BACKUP_SERVICES[@]}"
+bash "$SCRIPT_DIR/backup.sh" --prefix pre-restore --no-storage
 "${COMPOSE[@]}" run --rm --no-deps -T backup restore "$name"
+database_committed=1
 if [[ "$with_storage" == 1 ]]; then
   "${COMPOSE[@]}" run --rm --no-deps -T backup-storage restore-storage
 fi
-"${COMPOSE[@]}" up -d --wait --wait-timeout 300
+# A previously completed migrate container is not proof that an older restored
+# dump has the current schema. Run migrations explicitly before serving it.
+"${COMPOSE[@]}" run --rm --no-deps -T migrate
+"${COMPOSE[@]}" up -d --wait --wait-timeout 300 --no-deps "${SERVING_SERVICES[@]}"
+"${COMPOSE[@]}" run --rm --no-deps -T ops
+# Never mirror an empty/partial live bucket over the recovery source. Only
+# resume schedulers after object restore, migrations and readiness all succeed.
+"${COMPOSE[@]}" up -d --no-deps "${BACKUP_SERVICES[@]}"
 stopped=0
 say 'Restore finished. Sign in and check recent members, payments and uploads.'

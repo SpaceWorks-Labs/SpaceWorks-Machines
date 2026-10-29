@@ -1,9 +1,10 @@
 import "server-only";
 
 import nodemailer, { type Transporter } from "nodemailer";
+import { isIP } from "node:net";
 import { prisma } from "@/lib/db";
 import { decryptSpaceSecret } from "@/lib/spaceSecrets";
-import { assertPublicHost } from "@/lib/net/publicHost";
+import { resolvePublicHost } from "@/lib/net/publicHost";
 import { getEmailTransport } from "./transporter";
 
 type Address = { name: string; address: string };
@@ -15,13 +16,14 @@ export function senderAddress(from: string) {
 
 /** A transport for the space's own SMTP settings. Throws when the host isn't public. */
 export async function spaceSmtpTransport(settings: { smtpHost: string; smtpPort: number; smtpSecure: boolean; smtpUser: string | null; password: string | null }) {
-  await assertPublicHost(settings.smtpHost);
+  const addresses = await resolvePublicHost(settings.smtpHost);
+  const hostname = settings.smtpHost.replace(/^\[|\]$/g, "");
   const production = process.env.NODE_ENV === "production";
   return nodemailer.createTransport({
-    host: settings.smtpHost, port: settings.smtpPort, secure: settings.smtpSecure,
+    host: addresses[0].address, port: settings.smtpPort, secure: settings.smtpSecure,
     auth: settings.smtpUser && settings.password ? { user: settings.smtpUser, pass: settings.password } : undefined,
     requireTLS: production && !settings.smtpSecure,
-    tls: production ? { minVersion: "TLSv1.2", rejectUnauthorized: true } : undefined,
+    tls: production ? { minVersion: "TLSv1.2", rejectUnauthorized: true, ...(!isIP(hostname) ? { servername: hostname } : {}) } : undefined,
     disableFileAccess: true, disableUrlAccess: true,
     connectionTimeout: 30_000, greetingTimeout: 30_000, socketTimeout: 60_000,
   });

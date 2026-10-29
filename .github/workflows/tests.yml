@@ -153,3 +153,7 @@ jobs:
             --tag swmach-frontend:ci .
       - name: Build the backend image and run the compose smoke test
         run: SWM_COMPOSE_BUILD_LAYER=1 SWM_IMAGE_TAG=ci bash scripts/compose-smoke.sh
+      - name: Install encrypted recovery tooling
+        run: sudo apt-get update && sudo apt-get install -y age
+      - name: Fresh source installer and encrypted recovery onto empty volumes
+        run: SWM_IMAGE_TAG=ci bash scripts/test-vps-install.sh

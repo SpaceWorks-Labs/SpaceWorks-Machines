@@ -89,7 +89,7 @@ services:
     networks: [data]
   # Bundled Silo (the maintained MinIO fork); docker/compose.external-storage.yml turns it off.
   minio:
-    image: pgsty/silo:${SILO_IMAGE_TAG:-RELEASE.2026-09-16T00-00-00Z}
+    image: ${SILO_IMAGE:-pgsty/silo:RELEASE.2026-10-26T00-00-00Z@sha256:7bb2aff6b89efe1cb1303c10fc21d579447434ed06649ac9ec05a5e2dbf30ad7}
     restart: *default-restart
     logging: *default-logging
     command: ["server", "/data", "--certs-dir", "/server-tls", "--console-address", ":9001"]
@@ -103,7 +103,7 @@ services:
     healthcheck: {test: ["CMD", "curl", "--fail", "--silent", "--cacert", "/tls/ca.crt", "https://minio:9000/minio/health/live"], interval: 5s, timeout: 5s, retries: 20}
     networks: [data]
   createbuckets:
-    image: pgsty/silo:${SILO_IMAGE_TAG:-RELEASE.2026-09-16T00-00-00Z}
+    image: ${SILO_MC_IMAGE:-pgsty/mc:RELEASE.2026-10-26T00-00-00Z@sha256:ce62c9053c69ce12a527a322345b5ad9f44b5f8a7b8189f82e516f2e3f30f1d8}
     restart: "no"
     entrypoint: ["/bin/sh", "/bootstrap/createbuckets.sh"]
     environment:
@@ -189,7 +189,9 @@ services:
       migrate: {condition: service_completed_successfully}
     networks: [edge, data]
   caddy:
-    image: caddy:2-alpine
+    image: spaceworks-caddy:2.11.7-security-20261029
+    build:
+      context: ./docker/caddy
     restart: *default-restart
     logging: *default-logging
     environment:
@@ -227,7 +229,7 @@ services:
     depends_on: {db: {condition: service_healthy}}
     networks: [data]
   backup-storage:
-    image: pgsty/silo:${SILO_IMAGE_TAG:-RELEASE.2026-09-16T00-00-00Z}
+    image: ${SILO_MC_IMAGE:-pgsty/mc:RELEASE.2026-10-26T00-00-00Z@sha256:ce62c9053c69ce12a527a322345b5ad9f44b5f8a7b8189f82e516f2e3f30f1d8}
     restart: *default-restart
     logging: *default-logging
     entrypoint: ["/bin/sh", "/bootstrap/backup.sh"]

@@ -180,6 +180,10 @@ gh api "repos/SpaceWorks-Labs/SpaceWorks-Machines/contents/install.sh?ref=dev" -
 
 Everything about the server install is in [docs/DEPLOYMENT_VPS.md](docs/DEPLOYMENT_VPS.md).
 
+Allow at least **4 GiB RAM with swap** for the bundled edge, including installs using
+published app images and in-place upgrades. Setup builds the patched standard Caddy
+image locally. Choosing your own reverse proxy skips that build.
+
 ### Update, back up and check
 
 Run the installer again to update, back up or roll back: it detects the existing install. On the server:
@@ -215,19 +219,28 @@ Each of these has a free tier somewhere. The full walk-through is in
 
 ## Quick start (local)
 
-Needs Node.js 22 or later and Docker (for PostgreSQL and Redis).
+Needs Node.js 22 or later and Docker. The local stack supplies PostgreSQL, persistent Redis, private Silo
+storage and Mailpit for captured email. Every service port is bound to loopback.
 
 ```bash
 npm ci
-docker compose up -d          # PostgreSQL 16 and Redis 7 on localhost
+docker compose up -d          # PostgreSQL, Redis, Silo and Mailpit on localhost
 cp .env.example .env          # then set AUTH_SECRET (openssl rand -base64 32) and the keys it lists
 npm run db:deploy             # apply the migrations
 DEMO_PASSWORD='a-long-password' npm run db:seed-demo   # optional: the Tinkerspace demo
-npm run dev                   # http://localhost:3000
+npm run dev:local             # services, migrations, web, worker and beat; http://localhost:3000
 ```
 
-Background jobs run in their own processes (`npm run build:jobs`, then `npm run worker` and `npm run beat`).
-Without Redis, set `JOBS_INPROCESS=true` to deliver email from the web process instead.
+`npm run dev:local` supervises the web, worker and beat together, with separate health ports, and stops all
+three when you press Ctrl+C or one fails. Docker data services stay available. It refuses remote database
+and Redis addresses and production mode. For separate terminals, run `npm run dev` for the web and then
+run background jobs after `npm run build:jobs`: `npm run worker`, and
+`JOBS_HEALTH_PORT=3461 npm run beat` (PowerShell: `$env:JOBS_HEALTH_PORT='3461'; npm run beat`). Beat registers
+the BullMQ schedules; workers deliver the database outbox, email and chat notifications. The worker uses health
+port 3460, so beat needs a separate port when both run on the host. Open [Mailpit](http://127.0.0.1:8025) to inspect
+captured email and [Silo](http://127.0.0.1:9001) for storage; the development credentials in compose are public
+fixtures and must never be reused in production. `createbuckets` creates a private bucket and scoped app identity.
+Without Redis, development may set `JOBS_INPROCESS=true` to deliver email from the web process instead.
 
 ## Design system
 

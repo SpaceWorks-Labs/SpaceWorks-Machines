@@ -1,4 +1,5 @@
-# Local development services only. For a server, use the installer (scripts/spaceworks-compose.sh).
+# Local development services. Credentials here are public development fixtures only.
+# For a server, use the installer (scripts/spaceworks-compose.sh).
 services:
   postgres:
     image: postgres:16-alpine
@@ -7,7 +8,7 @@ services:
       POSTGRES_PASSWORD: swmach_dev
       POSTGRES_DB: swmach_dev
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - swmach_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -19,12 +20,52 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - swmach_redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  silo:
+    image: pgsty/silo:RELEASE.2026-10-26T00-00-00Z@sha256:7bb2aff6b89efe1cb1303c10fc21d579447434ed06649ac9ec05a5e2dbf30ad7
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: swmach-dev-root
+      MINIO_ROOT_PASSWORD: swmach_dev_root_password
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - swmach_silo:/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  createbuckets:
+    image: pgsty/mc:RELEASE.2026-10-26T00-00-00Z@sha256:ce62c9053c69ce12a527a322345b5ad9f44b5f8a7b8189f82e516f2e3f30f1d8
+    depends_on:
+      silo: { condition: service_healthy }
+    restart: "no"
+    entrypoint: ["/bin/sh", "/bootstrap/createbuckets-dev.sh"]
+    environment:
+      MC_HOST_local: http://swmach-dev-root:swmach_dev_root_password@silo:9000
+    volumes:
+      - ./deploy/createbuckets-dev.sh:/bootstrap/createbuckets-dev.sh:ro
+      - ./deploy/storage-policy.json:/bootstrap/storage-policy.json:ro
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
 volumes:
   swmach_pgdata:
+  swmach_redis:
+  swmach_silo:

@@ -110,6 +110,9 @@ There are no OAuth or SSO providers. People sign in with email and password, or 
   server. `PWNED_PASSWORDS_CHECK=0` turns it off for offline installs.
 - **Sessions** use the `swm.session-token.v1` cookie (HTTP-only, secure in production). Changing a password or
   signing out everywhere ends every other session.
-- **Space-entered hosts** (a space's SMTP relay, a self-hosted Mattermost) must resolve to public
-  addresses, checked when saved and again when used, so they can't reach the server's own network. Chat
-  deliveries never follow redirects.
+- **Space-entered hosts** (SMTP, self-hosted Mattermost and outbound webhooks) must resolve entirely to
+  public addresses. Delivery pins each connection to those vetted addresses while retaining hostname TLS
+  verification, preventing a second DNS lookup from switching to the server's own network. HTTP deliveries
+  never follow redirects. Reserved, mapped private and transition-network addresses are rejected.
+- **Private machine files** require current staff MFA, the relevant capability and the machine type scope,
+  including direct URLs for maintenance attachments, warranty documents and fault photos.
